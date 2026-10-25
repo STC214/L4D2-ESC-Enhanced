@@ -1,0 +1,25 @@
+# Generated packages, extracted upstream content, and verification output.
+/dist/
+/extracted/
+/reports/
+
+# Downloaded archives/backups and cached Workshop pages; retain JSON metadata.
+/originals/*.vpk
+/originals/*.html
+
+# Python bytecode, test/tool caches, and local virtual environments.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local temporary files and operating-system metadata.
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+Desktop.ini
