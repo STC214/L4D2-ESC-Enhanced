@@ -9,6 +9,8 @@
 
 ## 文件
 
+- 后续自动化 EXE 的检查、适配与恢复逻辑：[实现规范](docs/L4D2Evolved_自动适配流程与EXE实现规范.md)；配套[版本化规则数据](docs/evolved-adaptation-rules.v1.json)。当前为设计资料，尚未实现安装器。
+
 - 原版 A：`originals/A_3467154613.vpk`
 - 原版 B：`originals/B_2906960647.vpk`
 - 修改版：`dist/B_fullscreen_esc.vpk`

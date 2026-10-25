@@ -1,0 +1,209 @@
+V1.2.5
+Optimized real-time solving.
+Optimized navigation.
+256-bone support, real-time solving, first-person body rendering, and crosshair correction have been separated from the Evo core and can now run independently. Performance is also improved whether Evo itself is installed or not.
+The separated feature toggles are available in the L4N plugin menu.
+Added the -noevo launch parameter, which disables the Evo core while keeping the separated features above available.
+优化实时解算
+优化导航
+256骨骼、实时解算、第一人称身体、准星修正从evo本体拆分，可独立运行，同时无论装不装evo帧率都得到提升
+新增启动参数-noevo，可关闭evo本体，仅保留上述拆分功能
+
+V1.2.4
+Improved navigation support for more complex terrain and fixed obvious incorrect pathing.
+Added support for models with up to 256 bones and real-time solving. Model-specific adaptation is required.
+优化导航支持多复杂地形，修复明显错误路径
+新增256骨骼模型支持和实时解算（需模型适配暂未开放文档）
+
+V1.2.3
+Added minimap navigation, enabled by default.
+Further optimized Evo performance, reducing stutters and frame-time spikes during movement.
+Fixed an issue where external ADS scripts still could not work properly after disabling Evo's built-in iron-sight aiming.
+Corrected third-person movement direction calculation so movement now follows the camera direction while retaining crosshair aiming correction.
+Changed Alt free-look behavior: while stationary, hold Alt continuously for 2 seconds and release it to keep free look active. A short press and release exits normally, and movement cancels the persistent free-look state.
+Fixed iron-sight aiming forcibly changing the normal FOV outside of ADS.
+Fixed missing sound effects with certain mods when same-slot mod coexistence is enabled.
+新增小地图导航，默认开启
+进一步优化 Evo 性能，减少移动时的卡顿和帧时间尖峰。
+修复关闭 Evo 自带机瞄后，外部 ADS 脚本仍无法正常使用的问题。
+修正第三人称移动方向计算，让移动跟随画面方向，同时保留准星瞄准修正。
+Alt 自由视角改为静止时连续按住两秒，松键后才保持；短按松开正常退出，移动后解除保持。
+修复机械瞄准强制更改常态下的fov，修复同模共存开启某些mod音效丢失。
+
+V1.2.2
+Fixed a long-standing FPS degradation issue. Updating to this version is strongly recommended. Some performance loss still remains, but at around 300 FPS, Evo now only reduces performance by approximately 20–30 FPS compared with running the game without Evo installed.
+Fixed the flashlight not following weapon movement. Added a new menu option: Disable Flashlight Sway.
+修复长期存在的帧率下降问题，建议立即升级该版本，虽然还是有损失，300帧对比不安装evo仅下降20到30帧
+修复手电筒不随枪械摆动问题（菜单新增-禁用手电晃动）
+
+V1.2.1
+Fixed a muzzle flash conflict between Evo and NCL.
+Fixed an issue where exiting iron-sight aiming in first-person could unexpectedly switch back to third-person.
+Fixed official weapon skins not displaying correctly when using same-slot mod coexistence.
+Removed the enable/disable lock in the mod manager while cache scanning is in progress.
+修复evo与ncl枪口火焰冲突的问题
+修复第一人称退出机瞄可能回到第三人称的问题
+修复官方贴皮枪同模共存不显示问题
+mod管理器解除缓存扫描期间的启停锁定
+
+V1.2.0
+Added third-person shoulder aiming while holding Shift.
+Added support for l4d2bridge. However, there is currently a compatibility issue in this version when frame generation is disabled.
+Fixed crashes caused by certain models or decals.
+新增第三人称shift按住肩射
+新增对l4d2bridge的支持，但是关闭帧生成功能当前版本有兼容性问题
+修复某些模型或者贴花导致的崩溃问题
+
+
+V1.1.9
+Added a DC offloading mechanism that can move most cached data out of the game's memory and into a helper process.
+Frame generation memory usage has been moved out of the game's memory and is now handled by the helper process.
+When the player remains stationary for more than 2 seconds, pressing Alt will no longer reset free look. Free look will reset again after movement resumes.
+Third-person crosshair correction can now be disabled.
+新增dc搬运机制，可将大部分缓存搬出游戏内存放进辅助进程
+帧生成内存占用从游戏内存里移出，由辅助进程接管
+玩家不移动超过2秒，Alt不再重置自由视角，移动后重置
+第三人称准星修正可以被关闭
+
+V1.1.8
+Added profile presets to the mod manager, allowing different Mod enable/disable combinations to be saved and applied.
+Improved first-person body compatibility. Body positioning will no longer break or become invalid after changing maps.
+Reworked the iron-sight aiming system. Some features require you to be the host to take effect, such as reduced weapon spread; otherwise, only the visual effects will apply.
+Fixed an issue where Evo could incorrectly enable game-managed Mod options during the first installation.
+Fixed a bug that could severely reduce performance, in some cases cutting the maximum FPS roughly in half.
+Improved compatibility handling for Immersive Ladder.
+mod管理器新增方案预设，可以保存、应用不同的 Mod 开关组合。
+第一人称身体兼容性提高，不再换图后位置失效
+重做机械瞄准功能，部分功能需要为房主才能生效，比如散布判定减小，不然只有视觉上的效果
+修复evo首次安装时误开启游戏管理的mod开关
+修复严重影响帧率(帧数最大能对半砍)的bug
+改善 Immersive Ladder 兼容处理
+
+
+V1.1.7
+Added an option to roll back to the previous version.
+Added a first-person-only option for private weapon models.
+Increased the animblock limit from 64 MB to 256 MB.
+Fixed the mod manager forcibly enabling mods in the addons folder.
+Fixed the mod manager being unable to install archives containing multiple folders.
+Fixed hit detection offsets when aiming at close range in third-person view.
+Fixed older dance resources failing to find the correct character.
+Fixed iron-sight and ladder-climbing VScript files incorrectly forcing Evo's built-in features to stay enabled.
+Fixed L4N sound effects not taking effect immediately after entering a map.
+新增回滚上一版本功能开关
+新增武器私模只第一人称功能
+animblock锁64m改成锁256m
+修复mod管理器强制开启addons里的mod问题
+修复mod管理器面对多文件夹压缩包无法安装的问题
+修复第三人称近距离瞄准造成判定偏移的问题
+修复老跳舞资源找不到角色的问题
+修复机瞄和爬楼梯vs脚本导致evo自带的功能强制开启的问题
+修复刚进图l4n音效没有生效的问题
+
+
+V1.1.6
+Unlocked teammate model switching for same-character mod coexistence. Also added same-slot coexistence support for weapons and items, with the management panel accessible via F4.
+Added opacity adjustment to the component/material hiding feature. Some clothing materials can now be made more transparent.
+Added XDR compatibility for the Miniature Platform, fixing an issue where characters on the platform could not dance.
+Added 2x frame generation. Depending on the resolution, it may use up to approximately 300 MB of additional memory. NVIDIA RTX 20 series and newer GPUs provide the best results, while results on AMD GPUs may be less effective.
+Fixed additional CPU frame-time overhead caused by the plugin under certain conditions.
+同模共存解锁队友切换功能，新增武器/道具同模共存F4打开面板
+部件/材质隐藏功能新增透明度调整，某些服饰可以变得更色
+新增小人平台xdr兼容，修复小人平台无法跳舞的问题
+新增两倍帧生成，根据分辨率最高将占用300m左右的可用内存，N卡20系以上效果最佳，A卡效果一般
+修复插件在某些情况下额外的cpu帧时间占用
+
+V1.1.5
+Added support for multiple mods of the same character. No additional setup is required—simply install multiple mods for the same character and switch the currently controlled character model at any time. Switching teammate character models is not supported yet.
+Added a mod manager, accessible with F5. It supports downloading and updating Workshop mods in the background and is compatible with the Fireaxe resource library.
+Added component and material hiding, accessible with F6. Character components and materials can now be hidden without requiring dedicated bodygroup toggles.
+Added background game audio playback.
+Fixed an issue where the stage camera caused ReShade depth-based filters to stop working.
+新增同角色mod共存，无需额外处理直接安装同角色模组生效，当前操纵角色随时切换，暂不支持切换队友角色。
+新增mod管理器，通过F5呼出支持工坊mod后台下载与更新，兼容Fireaxe资源库
+新增部件/材质隐藏，可在无小开关的情况下隐藏角色部件，F6呼出
+新增游戏声音后台播放功能
+修复舞台相机让reshade深度滤镜失效的问题
+
+
+V1.1.4
+Added shadows for dance clones and the player-controlled character
+Adjusted the upper-body locking logic for fallback models. Kicking XDR animations can now work properly, but you may need to readjust the body anchor position
+跳舞分身、玩家操控角色添加阴影
+调整回退模型上身锁定逻辑，现在可是正常使用踢腿xdr，可能需要重新调整锚点位置
+
+V1.1.3
+Reworked the menu system to improve compatibility.",
+Added an option to disable view locking while climbing ladders.",
+Fixed an issue where playlists could detect songs from older resource packs but could not actually use them."
+重写菜单系统，提高兼容性。
+新增爬梯时关闭视角锁定的开关。
+修复歌单能够扫描出旧曲资源但无法实际使用的问题。
+
+V1.1.2
+Added multiplayer dance mode. Only single-player dances are supported; multiplayer dance simply repeats the lead dancer's movements.
+Game input is now locked while the menu is open to prevent unintended camera movement.
+DXVK is now optional and can be installed from the menu. Existing installations will not be changed.
+Fixed flashlight-related issues.
+Fixed the body and arms appearing when aiming with sniper rifles.
+舞蹈菜单新增多人舞，仅支持单人的舞蹈多人跳只是重复领舞的动作 
+菜单打开时锁定游戏输入避免视角旋转 dxvk改为可选安装，从菜单中选择，已安装过的不调整
+修复手电筒异常问题
+修复使用狙击枪瞄准时显示身体手臂的问题
+
+V1.1.1
+Added a dance mode that lets the player dance directly without creating a clone.
+Added dynamic crosshair.
+Added options to hide the body while climbing ladders or when incapacitated.
+Fixed stocking clipping issues during dance.
+Reworked the menu system. It can now be opened in fullscreen mode.
+Known issue: the self-dance mode cannot hide secondary weapons. Please do not dance while holding a secondary weapon.
+舞蹈功能新增不创建分身自己跳
+新增动态准星
+新增爬楼、倒地不显示身体开关
+修复舞蹈时丝袜穿模的问题
+重做菜单功能，现在支持全屏打开了
+已知问题：自己跳功能无法隐藏副武器请不要在手持副武器时跳
+
+V1.1.0
+The song list now supports scanning playlists from older resource packs
+Added a new feature menu, currently including Immersive Appreciation and Lyrics Display
+Arms will no longer appear when using mounted machine guns
+歌曲清单支持扫描旧资源包歌单，新增功能菜单，目前包含沉浸式鉴赏、歌词显示功能
+使用机枪台时不再出现手臂
+
+V1.0.9
+Added shortcut keys to the feature menu, and the menu can now be adjusted with the keyboard.
+Body anchor points are now adjusted independently per mod instead of being based on characters.
+The dance feature now supports subscribing to single songs or multiple songs on demand. The playlist is rebuilt each time, but it requires dedicated resources to be subscribed to. These resources will be released later. Playlist scanning does not support compatible resource packs.
+Fixed the third-person crosshair correction option not being able to be disabled.
+Fixed an issue where other windows could open when closing the feature menu.
+Added a timeout for the auto-update waiting process, with a reminder that manual update may be required.
+Known issue: the first-person body may not work or may behave incorrectly for some users.
+Known issue: the dance feature may crash on first use, especially if the game has not been launched for a while.
+Known issue: if the dance feature has not been used before death, dancing after death may also cause a crash.
+功能菜单新增快捷键、菜单可用键盘调整
+身体锚点改为每个mod独立调整不再基于角色
+舞蹈功能支持按需单曲或多曲订阅，每次重建歌单，但需要订阅专用资源，后续会放出。歌单不支持扫描兼容的资源包
+修复第三人称准星修复无法关闭的问题、
+修复关闭功能菜单时打开其他窗口的问题
+自动更新新增等待超时，并提醒需要手动更新
+已知问题：部分人第一人称身体无法使用或者异常
+已知问题：舞蹈功能在第一次调用时可能闪退，尤其是过段时间没开游戏
+已知问题：死前没有调用过舞蹈功能，死后跳舞也会闪退
+
+V1.0.5
+dxvk has been separated from the evo plugin, so you can now freely choose the dxvk version. The current dxvk version is DXVK-GPLALL 2.7.1-4
+dxvk已和evo插件分离，现在可以自由选择dxvk版本，当前版本dxvk版本为DXVK-GPLALL 2.7.1-4 
+
+V1.0.3
+Fix an issue where ADS for certain weapons couldn't be triggered and instead played the reload animation
+修复个别ADS枪械机瞄无法触发而是播放换弹动画的问题
+
+V1.0.1
+Added first-person body display mode B. If you can't see your body, press F8 to open the menu and adjust the settings
+新增第一人称显示身体模式B，看不到自己身体的可以按F8打开菜单设置一下     
+
+V1.0.0
+First release
+初版发布

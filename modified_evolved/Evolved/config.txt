@@ -1,0 +1,14 @@
+# Evolved 1.2.5 profile for the existing local L4N installation.
+# Map and world navigation start enabled; their built-in menu switches remain editable.
+NoHmdMinimapEnabled=true
+NoHmdWorldNavigationEnabled=true
+
+# Preserve the current renderer and C crosshair preference.
+FrameGenerationEnabled=false
+InstallBundledDxvkIfMissing=false
+DynamicSpreadCircleEnabled=false
+
+# Keep the game's existing F5 screenshot and P bindings.
+NoHmdConfigMenuKey=key:f8
+ModManagerMenuKey=key:f9
+ClientDancePlaylistKey=key:f10

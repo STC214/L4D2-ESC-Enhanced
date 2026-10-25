@@ -1,0 +1,86 @@
+{
+  "item": "3785109042",
+  "original": "F:\\Project\\03_Game_Tools\\14_L4D2_ESC\\research\\workshop_3785109042\\3785109042.vpk",
+  "zip_copy": "F:\\Project\\03_Game_Tools\\14_L4D2_ESC\\research\\workshop_3785109042\\3785109042.zip",
+  "sha256": "0d79e10915130f52d00657c43b04a0a6a5eee01a49955d0acbdc09b8a47d788b",
+  "format": "ZIP (not Valve VPK)",
+  "extracted": "F:\\Project\\03_Game_Tools\\14_L4D2_ESC\\research\\workshop_3785109042\\unpacked",
+  "members": [
+    {
+      "path": "bin/neko/plugins/L4D2Evolved.dll",
+      "bytes": 6856192,
+      "sha256": "05819c701943781c9d7868502f7926fbfa763b600be4bfe8c88fa3b4892fcd6d"
+    },
+    {
+      "path": "bin/neko/plugins/L4d2evomodel.dll",
+      "bytes": 3028480,
+      "sha256": "a21ddb162076163aad18dd9d7e3927784eeb918a8a2ebdbb4b0c7f5979e17039"
+    },
+    {
+      "path": "bin/winmm.dll",
+      "bytes": 31232,
+      "sha256": "adeed50031270c273a9e6bfe597e4486c3131b44b0c6d11444927a8e852db537"
+    },
+    {
+      "path": "Evolved/config.sample",
+      "bytes": 3916,
+      "sha256": "92444a296fb499d90ca4cef185df4a41cb1038d24abbb7bea5b9451b6b74fa21"
+    },
+    {
+      "path": "Evolved/d3d9.dll",
+      "bytes": 2654208,
+      "sha256": "f7c9ae2f826be3f381b1797990b3124a623897fa686e3bf47fb348e82521134e"
+    },
+    {
+      "path": "Evolved/version.txt",
+      "bytes": 5,
+      "sha256": "0a5d71a53024d9d6a410062789da3fe155ba44cca15210791fb8ae09c749426c"
+    },
+    {
+      "path": "left4dead2/addons/killicon.vpk",
+      "bytes": 13982458,
+      "sha256": "9e18aacbea4005686f85cb62368c5f967775d892767bea99105210f265d009fe"
+    },
+    {
+      "path": "left4dead2/addons/mdR_Anims_Base_for_l4d2vr.vpk",
+      "bytes": 1478185,
+      "sha256": "87ce5255ee0775c4a812d09535b69910df30a1e011033a550191137c2818856e"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/headshot.wav",
+      "bytes": 318900,
+      "sha256": "755842402165188f9f6e69bd1b82d31087d26d7b5f3e64348d87719e2bc5b2ca"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/hit.wav",
+      "bytes": 63602,
+      "sha256": "e76ab525bff3fd616ee4e908213d385a8f18f9628972f3c8bc9905aa2a2c0698"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/kill.wav",
+      "bytes": 152228,
+      "sha256": "d3950891c75b5e6eb357900ec81db87986b824cdf196583dfbc182bdc7e0b80d"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 832,
+      "sha256": "071a642566c1c336c84660563a243a3e7d3c07d66048b3532f47b7a67e9a89be"
+    },
+    {
+      "path": "updatelog.txt",
+      "bytes": 14472,
+      "sha256": "3b1c1658680c0f662fef5a8cae6b94df43f66e97d0158d704a20600f7945c7ad"
+    },
+    {
+      "path": "winmm.dll",
+      "bytes": 31232,
+      "sha256": "adeed50031270c273a9e6bfe597e4486c3131b44b0c6d11444927a8e852db537"
+    },
+    {
+      "path": "删除evo[放游戏根目录使用].bat",
+      "bytes": 6699,
+      "sha256": "7f82dd442198541c0437c6f0de5ae1b6fcec4cc57ad8bb935c05f7a948a5647c"
+    }
+  ],
+  "executed_payloads": false
+}

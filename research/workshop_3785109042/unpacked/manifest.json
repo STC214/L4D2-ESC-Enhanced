@@ -1,0 +1,15 @@
+{
+  "version": "1.2.5",
+  "changes": [
+    "Optimized real-time solving.",
+    "Optimized navigation.",
+    "256-bone support, real-time solving, first-person body rendering, and crosshair correction have been separated from the Evo core and can now run independently. Performance is also improved whether Evo itself is installed or not.",
+    "Added the -noevo launch parameter, which disables the Evo core while keeping the separated features above available."
+  ],
+  "changesh": [
+    "优化实时解算。",
+    "优化导航。",
+    "256 骨骼支持、实时解算、第一人称身体和准星修正已从 Evo 本体拆分，现在可以独立运行。同时无论是否安装 Evo，帧率都能得到提升。",
+    "新增启动参数 -noevo，可关闭 Evo 本体，仅保留上述已拆分功能。"
+  ]
+}

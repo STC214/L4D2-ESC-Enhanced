@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "status": "design_reference_not_an_implemented_rule_engine",
+  "profile": {
+    "id": "evolved-1.2.5-existing-l4n-v1",
+    "workshop_id": "3785109042",
+    "package_version": "1.2.5",
+    "package_sha256": "0d79e10915130f52d00657c43b04a0a6a5eee01a49955d0acbdc09b8a47d788b",
+    "package_format": "zip",
+    "architecture": "x86",
+    "plugin_export": "GetL4NPluginInstance",
+    "loader_route": "existing_l4n_candidate_requires_runtime_validation",
+    "first_run_config_creation_validated": false,
+    "evidence": [
+      "research/workshop_3785109042/extraction_verification.json",
+      "research/workshop_3785109042/static_inspection.json",
+      "research/workshop_3785109042/local_game_assessment.json"
+    ]
+  },
+  "execution_defaults": {
+    "mode": "inspect",
+    "dry_run": true,
+    "require_plan_confirmation": true,
+    "launch_game": false,
+    "execute_package_scripts": false,
+    "replace_existing_loader": false,
+    "modify_game_executable": false,
+    "modify_player_bindings": false,
+    "unknown_condition": "review",
+    "unknown_package_version": "review",
+    "rollback_if_postinstall_file_changed": "conflict_preserve"
+  },
+  "install_files": [
+    "bin/neko/plugins/L4D2Evolved.dll",
+    "bin/neko/plugins/L4d2evomodel.dll",
+    "Evolved/config.sample",
+    "Evolved/d3d9.dll",
+    "Evolved/version.txt",
+    "left4dead2/addons/killicon.vpk",
+    "left4dead2/addons/mdR_Anims_Base_for_l4d2vr.vpk",
+    "left4dead2/sound/vrmod/headshot.wav",
+    "left4dead2/sound/vrmod/hit.wav",
+    "left4dead2/sound/vrmod/kill.wav",
+    "manifest.json",
+    "updatelog.txt"
+  ],
+  "skip_package_files": [
+    {"path": "winmm.dll", "reason": "existing_l4n_route_no_second_loader"},
+    {"path": "bin/winmm.dll", "reason": "existing_l4n_route_no_second_loader"},
+    {"path": "删除evo[放游戏根目录使用].bat", "reason": "use_transaction_journal_not_vendor_uninstaller"}
+  ],
+  "protected_paths": [
+    "left4dead2.exe",
+    "bin/left4neko.dll",
+    "bin/neko/plugins/l4n_plugin.h",
+    "winmm.dll",
+    "bin/winmm.dll",
+    "d3d9.dll",
+    "dxgi.dll",
+    "dxvk_d3d9.dll",
+    "bin/dxvk_d3d9.dll",
+    "left4dead2/neko/config.vdf",
+    "left4dead2/neko/user_config.vdf",
+    "left4dead2/cfg/config.cfg",
+    "left4dead2/cfg/autoexec.cfg",
+    "left4dead2/cfg/video.txt",
+    "left4dead2/addonlist.txt",
+    "left4dead2/addons/【00】C_ESC_LED_血条和速度_TUMTaRA.vpk"
+  ],
+  "config_proposals": [
+    {"key": "FrameGenerationEnabled", "value": "false", "reason": "preserve_existing_render_path"},
+    {"key": "InstallBundledDxvkIfMissing", "value": "false", "reason": "no_automatic_render_component_install"},
+    {"key": "DynamicSpreadCircleEnabled", "value": "false", "reason": "preserve_C_crosshair_preference_not_all_overlay_layers"},
+    {"key": "NoHmdConfigMenuKey", "candidates": ["key:f8"], "reason": "propose_only_after_binding_scan"},
+    {"key": "ModManagerMenuKey", "candidates": ["key:f9"], "reason": "local_F5_is_jpeg"},
+    {"key": "ClientDancePlaylistKey", "candidates": ["key:f10"], "reason": "local_P_is_SM_LDW"}
+  ],
+  "rules": [
+    {"id": "R01", "priority": 100, "fact": "target.validated", "equals": false, "outcome": "block", "action": "request_valid_game_root"},
+    {"id": "R02", "priority": 100, "fact": "package.verified", "equals": false, "outcome": "block", "action": "preserve_input_report_failure"},
+    {"id": "R03", "priority": 100, "fact": "target.game_running", "equals": true, "outcome": "block_apply", "action": "inspect_only_request_exit"},
+    {"id": "R04", "priority": 90, "fact": "package.profile_known", "equals": false, "outcome": "review", "action": "require_new_version_profile"},
+    {"id": "R05", "priority": 80, "fact": "loader.l4n_candidate", "equals": true, "outcome": "plan", "action": "use_l4n_plugin_route_skip_both_winmm"},
+    {"id": "R06", "priority": 90, "fact": "loader.l4n_candidate", "equals": false, "outcome": "review", "action": "no_automatic_loader_fallback_in_v1"},
+    {"id": "R07", "priority": 90, "fact": "loader.mixed_or_unknown", "equals": true, "outcome": "review", "action": "preserve_loaders_explain_candidates"},
+    {"id": "R08", "priority": 80, "fact": "render.existing_components", "equals": true, "outcome": "plan", "action": "preserve_render_files_propose_framegen_off"},
+    {"id": "R09", "priority": 90, "fact": "config.missing", "equals": true, "outcome": "review", "action": "defer_config_until_generated_or_validated_bootstrap"},
+    {"id": "R10", "priority": 90, "fact": "config.ambiguous_or_unknown_format", "equals": true, "outcome": "review", "action": "preserve_original_no_automatic_config_patch"},
+    {"id": "R11", "priority": 90, "fact": "keys.proposed_candidate_occupied", "equals": true, "outcome": "review", "action": "request_other_Evolved_key_preserve_player_bindings"},
+    {"id": "R12", "priority": 90, "fact": "files.same_path_different_bytes", "equals": true, "outcome": "review", "action": "show_diff_and_require_backup_replacement_decision"},
+    {"id": "R13", "priority": 100, "fact": "snapshot.changed_since_plan", "equals": true, "outcome": "block_apply", "action": "reinspect_replan_invalidate_confirmation"},
+    {"id": "R14", "priority": 80, "fact": "minimap.multiple_implementations", "equals": true, "outcome": "review", "action": "choose_one_implementation_no_automatic_dll_deletion"},
+    {"id": "R15", "priority": 80, "fact": "files.already_identical", "equals": true, "outcome": "plan", "action": "noop_never_acquire_rollback_ownership"},
+    {"id": "R16", "priority": 100, "fact": "transaction.write_or_verify_failed", "equals": true, "outcome": "rollback", "action": "recover_applied_actions_in_reverse_with_hash_guards"}
+  ],
+  "states": [
+    "CREATED", "INSPECTED", "PLANNED", "NEEDS_REVIEW", "AWAITING_CONFIRMATION",
+    "BACKED_UP", "APPLYING", "FILES_VERIFIED", "RUNTIME_PENDING",
+    "RUNTIME_VERIFIED", "FAILED", "ROLLING_BACK", "ROLLED_BACK", "ROLLBACK_CONFLICT"
+  ],
+  "acceptance": {
+    "static_checks": ["source_hashes", "plan_preconditions", "installed_file_hashes", "config_diff", "protected_paths_unchanged", "rollback_journal"],
+    "runtime_checks": ["fresh_session_plugin_load", "Evolved_menu", "hotkey_preservation", "C_features", "single_minimap", "clean_exit"],
+    "static_success_does_not_imply_runtime_success": true
+  }
+}

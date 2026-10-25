@@ -1,0 +1,49 @@
+{
+  "dll_sha256": "05819c701943781c9d7868502f7926fbfa763b600be4bfe8c88fa3b4892fcd6d",
+  "confidence": "static_observed_and_derived; runtime_not_tested",
+  "menu": [
+    {
+      "key": "NoHmdMinimapEnabled",
+      "descriptor": "0x103fee90",
+      "wide_label": "0x104119b4",
+      "label": "小地图导航",
+      "type": 0
+    },
+    {
+      "key": "NoHmdWorldNavigationEnabled",
+      "descriptor": "0x103feee0",
+      "wide_label": "0x10411ce4",
+      "label": "实景导航箭头",
+      "type": 0
+    }
+  ],
+  "rendering_loop": {
+    "evidence_id": "ev_cc2f10339fca972b6796e8fd2fcfd3f2336fddff325d3fc1a58ee67d84bda39b",
+    "function": "0x10107490",
+    "table_start": "0x103fea58",
+    "row_renderer": "0x10105d00"
+  },
+  "console": {
+    "command": "evo_config",
+    "registration_evidence": "ev_f76e6f5a6d8c639d004d7f3ffbd05b9cee44bf1523f56cf96bd7cea2af77e6c3",
+    "command_object": "0x105a4c4c",
+    "callback": "0x100ed2f0",
+    "bounded_disassembly": "mov byte ptr [0x105bcd5a], 1; ret",
+    "help": "Opens the L4D2Evolved configuration menu."
+  },
+  "config_load": {
+    "evidence_id": "ev_5f0d11c1550476ffff8e386d3a44d4eec8e680e2af865b8b1728672e96040a2b",
+    "function": "0x10351410",
+    "references": [
+      "0x10351a9b",
+      "0x10351ab5"
+    ],
+    "compiled_fallback_true": true,
+    "parser_evidence": "ev_88c95f04bd82e9a53087241e019adb0d52812e9faac35645c60a182cb79ba79b"
+  },
+  "conclusion": "Existing menu and console path retained; no DLL or C patch necessary; explicitly enable both config keys.",
+  "limitations": [
+    "No game launch, live menu clicks, NAV loading or rendered frame observed",
+    "Decompiled functions are not original source; large-function value-flow may be truncated"
+  ]
+}

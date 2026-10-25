@@ -1,0 +1,945 @@
+{
+  "scope": "read-only on selected game paths/configuration; no installs, binary execution, or Steam account inspection",
+  "game_root": "E:\\SteamLibrary\\steamapps\\common\\Left 4 Dead 2",
+  "package_version": "1.2.5",
+  "package_install_footprints": [
+    {
+      "path": "bin/neko/plugins/L4D2Evolved.dll",
+      "package_sha256": "05819c701943781c9d7868502f7926fbfa763b600be4bfe8c88fa3b4892fcd6d",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "bin/neko/plugins/L4d2evomodel.dll",
+      "package_sha256": "a21ddb162076163aad18dd9d7e3927784eeb918a8a2ebdbb4b0c7f5979e17039",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "bin/winmm.dll",
+      "package_sha256": "adeed50031270c273a9e6bfe597e4486c3131b44b0c6d11444927a8e852db537",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "Evolved/config.sample",
+      "package_sha256": "92444a296fb499d90ca4cef185df4a41cb1038d24abbb7bea5b9451b6b74fa21",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "Evolved/d3d9.dll",
+      "package_sha256": "f7c9ae2f826be3f381b1797990b3124a623897fa686e3bf47fb348e82521134e",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "Evolved/version.txt",
+      "package_sha256": "0a5d71a53024d9d6a410062789da3fe155ba44cca15210791fb8ae09c749426c",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "left4dead2/addons/killicon.vpk",
+      "package_sha256": "9e18aacbea4005686f85cb62368c5f967775d892767bea99105210f265d009fe",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "left4dead2/addons/mdR_Anims_Base_for_l4d2vr.vpk",
+      "package_sha256": "87ce5255ee0775c4a812d09535b69910df30a1e011033a550191137c2818856e",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/headshot.wav",
+      "package_sha256": "755842402165188f9f6e69bd1b82d31087d26d7b5f3e64348d87719e2bc5b2ca",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/hit.wav",
+      "package_sha256": "e76ab525bff3fd616ee4e908213d385a8f18f9628972f3c8bc9905aa2a2c0698",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "left4dead2/sound/vrmod/kill.wav",
+      "package_sha256": "d3950891c75b5e6eb357900ec81db87986b824cdf196583dfbc182bdc7e0b80d",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "manifest.json",
+      "package_sha256": "071a642566c1c336c84660563a243a3e7d3c07d66048b3532f47b7a67e9a89be",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "updatelog.txt",
+      "package_sha256": "3b1c1658680c0f662fef5a8cae6b94df43f66e97d0158d704a20600f7945c7ad",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "winmm.dll",
+      "package_sha256": "adeed50031270c273a9e6bfe597e4486c3131b44b0c6d11444927a8e852db537",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    },
+    {
+      "path": "删除evo[放游戏根目录使用].bat",
+      "package_sha256": "7f82dd442198541c0437c6f0de5ae1b6fcec4cc57ad8bb935c05f7a948a5647c",
+      "local": {
+        "exists": false
+      },
+      "action": "add"
+    }
+  ],
+  "selected_game_files": {
+    "Evolved/config.sample": {
+      "exists": false
+    },
+    "Evolved/config.txt": {
+      "exists": false
+    },
+    "Evolved/config2.txt": {
+      "exists": false
+    },
+    "Evolved/d3d9.dll": {
+      "exists": false
+    },
+    "Evolved/version.txt": {
+      "exists": false
+    },
+    "bin/dxvk_d3d9.dll": {
+      "exists": true,
+      "bytes": 7856142,
+      "sha256": "265888c31ca78dffa290c39cb7e50bfb02762590e41927906e46fb32f01497fa",
+      "pe_machine": "0x14c"
+    },
+    "bin/left4neko.dll": {
+      "exists": true,
+      "bytes": 2153472,
+      "sha256": "b38bf6dfde9c109387cb8505d330ef255e869f8cc742a1d42cbf3587f50c1a18",
+      "pe_machine": "0x14c"
+    },
+    "bin/neko/plugins/L4D2Evolved.dll": {
+      "exists": false
+    },
+    "bin/neko/plugins/L4d2evomodel.dll": {
+      "exists": false
+    },
+    "bin/neko/plugins/l4n_plugin.h": {
+      "exists": true,
+      "bytes": 2030,
+      "sha256": "7dc37e2e1a6e48cb486bf4ab50317eb214d8fd0ee9cbf28f87e112cf31556ebd"
+    },
+    "bin/winmm.dll": {
+      "exists": false
+    },
+    "d3d9.dll": {
+      "exists": false
+    },
+    "dxgi.dll": {
+      "exists": true,
+      "bytes": 5877774,
+      "sha256": "abd1449dc28d536a4289c256ae7f4b6bbd15fa552792b7170c2ddece473c8bda",
+      "pe_machine": "0x14c"
+    },
+    "dxvk_d3d9.dll": {
+      "exists": true,
+      "bytes": 7856142,
+      "sha256": "265888c31ca78dffa290c39cb7e50bfb02762590e41927906e46fb32f01497fa",
+      "pe_machine": "0x14c"
+    },
+    "left4dead2 no-insecure.bat": {
+      "exists": true,
+      "bytes": 373,
+      "sha256": "67e20f54caf4ee5574588c7fba0c92df3d980095d171dbe3cdb70ba738fa2510"
+    },
+    "left4dead2.exe": {
+      "exists": true,
+      "bytes": 136192,
+      "sha256": "75ff2703ae07aa549bc800dfe267699a03c3ff8ea16421c52466a7f14f366f6f",
+      "pe_machine": "0x14c"
+    },
+    "left4dead2/addonlist.txt": {
+      "exists": true,
+      "bytes": 3577,
+      "sha256": "865b7476caa77dce9d3b7b00d636368974eedb785692c225514d561fbf3a702c"
+    },
+    "left4dead2/addons/killicon.vpk": {
+      "exists": false
+    },
+    "left4dead2/addons/mdR_Anims_Base_for_l4d2vr.vpk": {
+      "exists": false
+    },
+    "left4dead2/cfg/autoexec.cfg": {
+      "exists": true,
+      "bytes": 121,
+      "sha256": "bdc8a14f4ff4c6ac8a2ae99f17bfce888e027d21900ae6511a304bfbfe74575a"
+    },
+    "left4dead2/cfg/config.cfg": {
+      "exists": true,
+      "bytes": 11043,
+      "sha256": "7894035002f59b016fce38eac32e359053259e606f8fccf9cf86fb7be50a18d1"
+    },
+    "left4dead2/cfg/video.txt": {
+      "exists": true,
+      "bytes": 574,
+      "sha256": "820a378fa0f0de029ab444f1a94a7c600b8216846b808baabb060895055420a4"
+    },
+    "left4dead2/gameinfo.txt": {
+      "exists": true,
+      "bytes": 1670,
+      "sha256": "e1d1bae00e7de0d3ec6fd2b335ec5377be0ef1b94a17f6a2df6d2496403ee887"
+    },
+    "left4dead2/sound/vrmod/headshot.wav": {
+      "exists": false
+    },
+    "left4dead2/sound/vrmod/hit.wav": {
+      "exists": false
+    },
+    "left4dead2/sound/vrmod/kill.wav": {
+      "exists": false
+    },
+    "manifest.json": {
+      "exists": false
+    },
+    "readme_l4n.txt": {
+      "exists": true,
+      "bytes": 95307,
+      "sha256": "129a8d90c64052f1ae44ba820f9608133acd011fc418a2f5495f9241c1e0ff1b"
+    },
+    "updatelog.txt": {
+      "exists": false
+    },
+    "winmm.dll": {
+      "exists": false
+    },
+    "删除evo[放游戏根目录使用].bat": {
+      "exists": false
+    }
+  },
+  "configuration_snapshots": {
+    "left4dead2/neko/config.vdf": {
+      "sha256": "81cfe57d2944e5d34b93a0e26618190ef73f8aff37a4e06a781a33f76108325b",
+      "text": "// 修改后需要将本文件保存为config.vdf\r\n// 版本更新增加了配置项的情况下，你可能需要检查config_template.vdf，获取新配置项的示例\r\n// Valve KeyValue Format\r\n\"config\" {\r\n    // version 2\r\n    // 1代表是，0代表否\r\n    // \"//\"表示注释，从\"//\"开始到行末的内容会被忽略\r\n\r\n    // !!!  语法错误会导致配置文件失效  !!!!\r\n    // 不要剪切或删减部分片段，除非你知道你在干什么\r\n    // config.vdf的格式和autoexec.cfg是不一样的，请按照config_template.vdf的格式来修改\r\n\r\n    // 环境变量设置\r\n    \"environment_variables\" {\r\n        // vulkan loader的环境变量\r\n        // 使用DXVK和ReShade Bridge的情况下，使用以下两条参数能解决内存占用异常；删除以下两行开头的\"//\"让参数生效\r\n        // \"VK_LOADER_LAYERS_DISABLE\" \"*\"               // 黑名单，参数\"*\"会禁用所有依赖vulkan layer机制的功能，例如rtss微星小飞机、obs游戏捕获、ReShade\r\n        // \"VK_LOADER_LAYERS_ENABLE\" \"*reshade*,*obs*\"  // 白名单，优先级比黑名单高\r\n        // 尚不清楚具体的原因，但确实能解决问题...\r\n\r\n        // \"DISABLE_VK_LAYER_reshade_1\" \"1\" // 完全禁用vulkan模式下的ReShade\r\n    }\r\n\r\n    // 自定义指令，通过l4n_custom_command_menu打开\r\n    \"custom_commands\" {\r\n        \"渲染第一人称实体\" { \"cvar\" \"r_drawviewmodel\" }\r\n        \"停止导演系统\" { \"cmd\" \"sv_cheats 1;director_stop\" }\r\n        \"HUD网络状态\" {\r\n            \"cvar\" \"net_graph\"\r\n            \"delta\" \"1\"\r\n            \"min\" \"0\"\r\n            \"max\" \"3\"\r\n        }\r\n        \"启用作弊(无视大厅建图限制)\" { \"cmd\" \"l4n_allow_lobby_cheats 1;sv_cheats 1\" }\r\n        \"禁用枪口抖动\" { \"cmd\" \"l4n_cvar z_gun_vertical_punch 0\" }\r\n        \"哥哥我摔倒了\" { \"cmd\" \"l4n_allow_lobby_cheats 1;sv_cheats 1;ent_fire !self sethealth 0\" }\r\n        \"实体外描边\" { \"cvar\" \"sv_glowenable\" }\r\n        \"渲染实体\" { \"cvar\" \"r_drawentities\" }\r\n        \"渲染静态道具\" { \"cvar\" \"r_drawstaticprops\" }\r\n        \"渲染贴花\" { \"cvar\" \"r_drawdecals\" }\r\n        // 一些比较有意思的convar和concmd\r\n        // r_cleardecals\r\n        // r_decals 2\r\n        // vm_debug 1\r\n        // vm_draw_addon 0\r\n    }\r\n\r\n    // 是否禁用引擎内置的浏览器内核，可以省下100mb左右的内存占用\r\n    // 会导致一些服务器的欢迎页面不显示\r\n    \"disable_chromehtml\" \"0\" \r\n\r\n    // 用于避免Too many indices for index buffer弹窗\r\n    // 可调成2进图测试效果，非默认值(32768)可能会有副作用(画面炸面花屏撕裂)\r\n    // 如果打了类似的补丁就保留默认值即可\r\n    \"index_buffer_size\" \"131072\" // 炸面貌似和数值大小有关，可以尝试用32768的倍数: 65535 131072\r\n\r\n    // 很罕见的有关vertex buffer弹窗，除非万不得已，大于默认值(32768)会导致炸面花屏\r\n    \"vertex_buffer_size\" \"32768\" // 推荐值65535\r\n\r\n    \"font\" // 字体配置\r\n    { \r\n        \"anti_aliasing\" \"1\"\r\n        \"min_tall\" \"20\" // 字体的最小尺寸，防止游戏内的一些文字过小\r\n        \"replace\" // 字体替换列表\r\n        {\r\n            // 写法：\"要被替代的字体\" \"替代字体\"\r\n            // 将Tahoma替换为微软雅黑的例子, 简体中文的默认字体是Tahoma\r\n            \"Tahoma\" \"Segoe UI\"\r\n\r\n            // 有的hud mod会将默认字体修改成别的，解包hud mod获取它所用的字体名以实现替换\r\n            // \"HUD使用的字体名\" \"微软雅黑\"\r\n\r\n            // english的默认字体是契合L4D系列破损风格的Stubble bold \r\n            // \"Stubble bold\" \"微软雅黑\"\r\n        }\r\n    }\r\n\r\n    // 启动项是程序启动时传递给程序的信息，这意味着需要启动着在启动程序时进行传递\r\n    // 如果你的游戏不是通过steam启动的，steam里设置的启动项是不会生效的\r\n    // bat或者快捷方式有提供添加启动项的功能，局限性也和steam启动一样\r\n    \"launch_options\"   \r\n    {\r\n        // 附加启动项，需要l4n生效的情况下才有效\r\n        // 语法：\r\n        // \"-novid\"要写成: \"-novid\" \"\"\r\n        // \"+mat_phong 1\"要写成: \"+mat_phong\" \"1\"\r\n\r\n        // \"-novid\" \"\" // 关掉游戏启动的阀门动画和美味的巧克力直升机\r\n\r\n        // \"-lv\" \"\" // 低血腥模式，用于避免某些血腥特效导致的闪退，例如特感挠人染在身上的血迹贴花\r\n\r\n        // 以下是l4n生效时才能使用的启动项\r\n        // \"-hide_addons\" \"\"            // 禁止引擎读取addons目录下的文件\r\n        // \"-l4n_use_neko_engine_post\" \"\" // 添加后l4n将接管引擎的后处理渲染\r\n        // \"-no_l4n_gui\" \"\"\r\n        // \"-no_l4n_vgui\" \"\"\r\n        // \"-mat_utf8\" \"\"\r\n\r\n        // ！！！！以下启动项不能在本文件添加，请在steam游戏属性里设置或者其它方式如bat、快捷方式！！！！\r\n            // -hide_neko                       禁用l4n，禁用平台后本配置文件会无效，你可能需要迁移启动项\r\n            // -hide_nekoshaders                禁用l4n的着色器\r\n            // -l4n_no_compatibility_check      禁止l4n检查游戏版本\r\n            // -l4n_no_crash_handler            禁用L4N的崩溃处理(config.vdf里无效)\r\n    }\r\n\r\n    // 是否强制绑定l4n_menu到\"\\\"键\r\n    \"force_bind_l4n_menu\" \"1\"\r\n\r\n    // 强制设置datacache的上限为2048MB\r\n    \"lock_datacache_size\" \"1\"\r\n\r\n    \"logging_system_log\" \"1\"    //将游戏所有通道的日志都写入到logging_system.log中\r\n\r\n// ==================== 除非你知道你在干什么，否则不要修改自本行起到文件末尾的内容 ========================\r\n\r\n    // 是否使用咪内存分配器(mimalloc)替换引擎tier0内置的内存分配器\r\n    // 此功能是实验性的，mimalloc会预先承包一大块内存给游戏的内存需求做分配\r\n    // 由于mimalloc喜欢从高位开始分配内存，游戏对象所处的内存布局会发生巨大的变化，能够将一些平时不容易触发的bug暴露出来\r\n    // 如果你平时的dc占用比较高，不建议使用该功能。因为该功能目前不会替换dxvk的内存分配器，容易内存不足崩溃\r\n    \"mimalloc\" \"0\"\r\n\r\n    \"wave_cache_max_kilobytes\" \"524288\" // 512mb\r\n\r\n    \"generate_addoninfo\" \"1\"\r\n    \r\n    \"survivors\" {\r\n        \"nick\" {\r\n            // l4n_survivor_sequence_strip会对序号大于max_sequences的动画进行截断，避免扩充的动画被调用\r\n            \"max_sequences\" \"923\"\r\n        }\r\n        \"ellis\" {\r\n            \"max_sequences\" \"927\"\r\n        }\r\n        \"rochelle\" {\r\n            \"max_sequences\" \"930\"\r\n        }\r\n        \"coach\" {\r\n            \"max_sequences\" \"912\"\r\n        }\r\n        \"bill\" {\r\n            \"max_sequences\" \"1013\"\r\n        }\r\n        \"louis\" {\r\n            \"max_sequences\" \"1013\"\r\n        }\r\n        \"francis\" {\r\n            \"max_sequences\" \"1016\"\r\n        }\r\n        \"zoey\" {\r\n            \"max_sequences\" \"947\"\r\n        }\r\n    }\r\n    \r\n}"
+    },
+    "left4dead2/neko/key_bind_acts.vdf": {
+      "sha256": "f0bd025876ca082b98f48f4f8961ee186a5b9a85665df3815cbb7f594cf26939",
+      "text": "// 游戏设置-按键绑定的自定义项目\r\n\"key_bind_acts\" {\r\n    \"🐱custom_command_menu\" \"l4n_custom_command_menu\"\r\n    \"🐱l4n_menu\"            \"l4n_menu\"\r\n    \"🐱lookat\"              \"+l4n_lookat\"\r\n    \"🐱lookat_item\"         \"+l4n_lookat itempickup\"\r\n    \"🐱lookat_help\"         \"+l4n_lookat helpinghand\"\r\n    \"🐱lookat_fidget\"       \"+l4n_lookat fidget\"\r\n    \"🐱player_list_modedef\" \"+l4n_player_list\"\r\n    \"🐱player_list_mode1\"   \"+l4n_player_list 1\"\r\n    \"🐱toggle_hud\"          \"toggle l4n_game_hud_visible\"\r\n    \"🐱vm_inspect\"          \"toggle l4n_vm_inspect_mode\"\r\n    //\"切换第三人称\"              \"thirdpersonshoulder\"\r\n}"
+    },
+    "left4dead2/neko/l4ngui_english.vdf": {
+      "sha256": "00b2b08db97b3d099f0baa13686ccf3ff8047cabc58a7b403caf1ae92a18df72",
+      "text": "\"lang\"\r\n{\r\n    \"Language\" \"English\" \r\n    \"Tokens\"\r\n    {\r\n        \"🐱disable\"\t                        \"Disable\"\r\n        \"🐱allow\"                           \"Allow\"\r\n        \"🐱brightness\"\t                    \"Brightness\"\r\n        \"🐱distance\"\t                    \"Distance\"\r\n        \"🐱tonemapping\"\t                    \"Tone Mapping\"\r\n        \"🐱allow_vomit\"                     \"Allow Vomit\"\r\n        \"🐱allow_vignette\"                  \"Allow Vignette\"\r\n        \"🐱allow_colorcorrection\"           \"Allow Color Correction\"\r\n        \"🐱allow_grain\"                     \"Allow Grain\"\r\n        \"🐱gamma\"                           \"Gamma\"\r\n        \"🐱local_contrast\"                  \"Local Contrast\"\r\n        \"🐱local_contrast_only_-\"           \"Negative Values Only\"\r\n        \"🐱local_contrast_only_+\"           \"Positive Values Only\"\r\n        \"🐱local_contrast_disable\"          \"Completely Disable\"\r\n        \"🐱local_contrast_enable\"           \"Completely Enable\"\r\n        \"🐱post_processing\"                 \"Post Processing\"\r\n        \"🐱drakness_limit\"                  \"Darkness Limit\"\r\n        \"🐱drakness_limit_disable\"          \"Disable\"\r\n        \"🐱drakness_limit_warn\"             \"Lightmap and Ambient represent the brush and model rendering systems in the Source Engine; it is normal for there to be differences in the lighting results.\"\r\n        \"🐱darkness_limit_cheap\"            \"Low-Quality Algorithms\"\r\n        \"🐱exposure\"                        \"Exposure\"\r\n        \"🐱clear_datacache\"                 \"Clear Datacache (DC)\"\r\n        \"🐱viewmodel\"                       \"Viewmodel\"\r\n        \"🐱sway_interp\"                     \"Sway Interp\"\r\n        \"🐱prevent_varms_stretching\"        \"Prevent Finger Stretching\"\r\n        \"🐱current_vm_offset\"               \"Pisition Offset\"\r\n        \"🐱current_vm_setting\"              \"Current Viewmodel\"\r\n        \"🐱current_vm_2pbr\"                 \"Converting Between VLG and PBR Materials\"\r\n        \"🐱current_vm_selfillum_+0.1\"       \"Selfillum +10%\"\r\n        \"🐱current_vm_selfillum_-0.1\"       \"Selfillum -10%\"\r\n        \"🐱current_vm_selfillum_reset\"      \"Selfillum Reset\"\r\n        \"🐱entity\"                          \"Entity Settings\"\r\n        \"🐱player_entity\"                   \"Player Entity\"\r\n        \"🐱player_identity_render_color\"    \"Disable Player Color\"\r\n        \"🐱reset_player_color\"              \"Reset Player Color\"\r\n        \"🐱roll_player_color\"               \"Roll Player Color\"\r\n        \"🐱survivor_lighting_scale\"         \"Survivor Lighting Factor\"\r\n        \"🐱survivor_scale\"                  \"Global Survivor Scaling\"\r\n        \"🐱arms_2nekotoon\"                  \"To Nekotoon Material (Arm Model)\"\r\n        \"🐱crosshair_2nekotoon\"             \"To Nekotoon Material (Crosshair)\"\r\n        \"🐱self_2nekotoon\"                  \"To Nekotoon Material (Self)\"\r\n        \"🐱nekosky_overlay_strength\"        \"NekoSky Overlay Strength\"\r\n        \"🐱tonemapping_algorithm_nature\"    \"Neutral (Unity)  <- Recommended\"\r\n        \"🐱tonemapping_force_linear\"        \"Force Linear\"\r\n        \"🐱tonemapping_doc1\"                \"You have already added “-l4n_use_neko_engine_post” to the launch options.\\nThe neko_engine_post shader has replaced the engine's post-processing shader.\\n\\n\"\r\n        \"🐱tonemapping_doc2\"                \"Tone Mapping: \\nThis feature helps reduce overexposure in bright areas of the game screen.\\nWe recommend using the Neutral curve.\"\r\n        \"🐱tonemapping_doc_title\"           \"about tonemapping\"\r\n        \"🐱neko_engine_post_unlock_warn\"    \"add \\\"-l4n_use_neko_engine_post\\\" to the launch options to enable this feature.\"\r\n        \"🐱neko_reshade_bridge_unlock_warn\" \"add \\\"-l4n_reshade_bridge 1\\\" to the launch options to enable this feature.\"\r\n        \"🐱model_option\"                    \"Model Options\"\r\n        \"🐱record_demo\"                     \"Record DEMO\"\r\n        \"🐱allow_hud_teamplayer_status\"     \"Display Team Player Status HUD\"\r\n        \"🐱allow_hud_hud_scope_display\"     \"Display Sniper Scope HUD\"\r\n        \"🐱thirdpersion_crosshair\"          \"Precise Third-Person Crosshair\"\r\n        \"🐱thirdpersion_crosshair_scale\"    \"Precise Third-Person Crosshair Scale\"\r\n        \"🐱allow_flashlightmuzzleflash\"     \"Allow Flashlight Muzzle Flash\"\r\n        \"🐱dlight_muzzleflash\"              \"Dynamic Light Muzzle Flash\"\r\n        \"🐱dlight_muzzleflash_mode1\"        \"Follow Gunfire Particle\"\r\n        \"🐱dlight_muzzleflash_mode2\"        \"Ignore Gunfire Particle\"\r\n        \"🐱prevent_tonemapscale\"            \"Prevent Tonemap Scale\"\r\n        \"🐱dlight_distance\"                 \"Maximum Distance\"\r\n        \"🐱refresh_entity_random\"           \"Refresh Entity RNG\"\r\n        \"🐱show_game_usage\"                 \"Show Game Usage\"\r\n        \"🐱commoninfected_noragdoll\"        \"Disable CommonInfected Ragdoll\"\r\n        \"🐱2pbr_warn\"                       \"Tried converting the current weapon model's materials to PBR materials\\nThis operation applies to materials generated by PBR2Source; manually created or modified materials may not produce optimal results.\\n\\nPBR2Source can convert PBR materials into materials for the Source Engine's Phong shader (VLG)\\nEach material typically generates three textures: $basetex，$bumpmap，$phongexponenttex\\nThis operation causes the PBR shader to use the first two textures and reconstruct some of the PBR material information through inverse calculation.\\nSince only two textures are used, the converted material will have a lower memory footprint.\t\\n\\nIf the material is not suitable and the result is unsatisfactory, simply repeat this step to revert the changes.\\n\\nUse `mat_pbr_where 1` to see which materials have been converted\\nSome PBR material data may be lost after conversion via PBR2Source，\\nThe PBR material reconstructed from the remaining data may not fully replicate the appearance of the original PBR material.\\nAdding `$source2pbr 0` to the material settings will skip the conversion\\n\"\r\n        \"🐱toggle_player_list\"              \"Toggle Player List\"\r\n        \"🐱neko_bloom\"                      \"NekoBloom\"\r\n        \"🐱neko_bloom_scale\"                \"Strength\"\r\n        \"🐱neko_bloom_luminance_threshold\"  \"Luminance Threshold\"\r\n        \"🐱neko_bloom_max_brightness\"       \"Maximum Brightness\"\r\n        \"🐱neko_bloom_radius\"               \"Radius\"\r\n        \"🐱neko_bloom_reset\"                \"Reset\"\r\n        \"🐱neko_bloom_blend_mode\"           \"Blend Mode\"\r\n        \"🐱neko_bloom_map_strength\"         \"Mask Texture Strength\"\r\n        \"🐱neko_bloom_map_weight\"           \"Mask Texture Weight\"\r\n        \"🐱flashlight_factor\"               \"Brightness Factor\"\r\n        \"🐱flashlight\"                      \"Flashlight\"\r\n        \"🐱flashlight_r\"                    \"Flashlight Color R\"\r\n        \"🐱flashlight_g\"                    \"Flashlight Color G\"\r\n        \"🐱flashlight_b\"                    \"Flashlight Color B\"\r\n        \"🐱nekosky_scale\"                   \"NekoSky Brightness Factor\"\r\n        \"🐱custom_commands\"                 \"Custom Commands\"\r\n        \"🐱custom_commands_edit\"            \"Edit Custom Commands\"\r\n        \"🐱beta_features\"                   \"Beta Features\"\r\n        \"🐱patch_team_player_display\"       \"Patch HUD Player Information\"\r\n        \"🐱hud_scope_draw_padding_block\"    \"HUD Sniper Scope Blank Area Padding\"\r\n        \"🐱tonemapping_occlusion_use_stencil_msg\" \"This option is used to correct underexposure issues in certain hardware configurations; if you are not experiencing this problem, there is no need to enable it.\"\r\n        \"🐱tonemapping_occlusion_use_stencil\" \"Fix underexposure\"\r\n        \"🐱2nekotoon_outline_type0\"         \"Outline - Disabled\"\r\n        \"🐱2nekotoon_outline_type1\"         \"Outline - Enabled (World Space Thickness)\"\r\n        \"🐱2nekotoon_outline_type2\"         \"Outline - Enabled (Screen-Space Thickness)\"\r\n        \"🐱2nekotoon_outline_warn\"          \"===\\nIf the character's outline appears abnormal after conversion (such as around the eyes or mouth), try switching between different outline options before conversion. Some models are not suitable for direct outline enabling (these models are usually from various anime games, or VRChat avatars). These models require data to control the outline thickness, which is generally provided by the model artist. \\nThe original material shaders do not support outlines, and mod porting usually does not port outline thickness data. \\nIf you want a normal outline effect, try unpacking the mod and manually adapting the materials to NekoToon.\\n===\"\r\n        \"🐱to_nekotoon\"                     \"VLG to NekoToon\"\r\n        \"🐱allow_consistency_check\"         \"Allow Consistency Check\"\r\n        \"🐱reshade_draw\"                    \"Takeover Effect Rendering\"\r\n        \"🐱thirdperson_fire_sound_fix\"      \"Third-Persion Fire Sound Fix\"\r\n        \"🐱allow_entity_dissolve\"           \"Allow Entity Dissolve Effects\"\r\n        \"🐱decal_allow_staticprop\"\t\t\t\"Allow Decals on Static Props\"\r\n\t\t\"🐱decal_allow_entity\"\t\t\t\t\"Allow Decals on Entities\"\r\n\t\t\"🐱decal_allow_special_infected\"\t\"Allow Decals on Special Infected\"\r\n\t\t\"🐱decal_allow_survivor\"\t\t\t\"Allow Decals on Survivors\"\r\n\t\t\"🐱decal_allow_common_infected\"\t\t\"Allow Decals on Common Infected\"\r\n        \"🐱decal\"                           \"Decal\"\r\n        \"🐱screen_shake_scale\"              \"Screen Shake Strength\"\r\n        \"🐱view_punch_scale\"                \"View Punch Strength\"\r\n        \"🐱nekotoon_normalized_lightwarp\"   \"Normalized LightWarp\"\r\n        \"🐱outline_thickness_scale\"         \"Outline - Thickness Factor\"\r\n        \"🐱patch_hud_scope\"                 \"Replace HudScope Rendering\"\r\n        \"🐱hud_scope\"                       \"Hud Scope\"\r\n        \"🐱vm_allow_camera_animation\"       \"Allow Camera Animation\"\r\n        \"🐱menu_back\"                       \"Back\"\r\n        \"🐱menu_next\"                       \"Next\"\r\n        \"🐱vm_inspect\"                      \"First-person Model Inspect Mode\"\r\n        \"🐱vm_inspect_help\"                 \"Hold down the number keys from 1 to 9, and use the mouse wheel to adjust the x, y, and z components for rotation, translation, and origin, hold down Shift to fine-tune, and press 0 to save the settings.\"\r\n        \"🐱toggle_hud\"                      \"Toggle HUD Display\"\r\n        \"🐱player_list_modedef\"             \"Show Player List (Double-Click show Scoreboard)\"\r\n        \"🐱player_list_mode1\"               \"Show Scoreboard (Double-Click show Player List)\"\r\n        \"🐱lookat\"                          \"Play ItemPickup/HelpingHand/Fidget Animation\"\r\n        \"🐱lookat_item\"                     \"Play ItemPickup Animation\"\r\n        \"🐱lookat_help\"                     \"Play HelpingHand Animation\"\r\n        \"🐱lookat_fidget\"                   \"Play Fidget Animation\"\r\n        \"🐱lookat_vmcfg\"                    \"===Current Weapon Model Options===\"\r\n        \"🐱lookat_vmcfg_reset\"              \"Clear All Settings\"\r\n        \"🐱lookat_vmcfg_itempickup_onlyloop\"        \"ItemPickup_Extend/Retract Animation (Enable/Disable)\"\r\n        \"🐱lookat_vmcfg_helpinghand_onlyloop\"       \"HelpingHand_Extend/Retract Animation (Enable/Disable)\"\r\n        \"🐱lookat_vmcfg_itempickup\"         \"ItemPickup Animation (Enable/Disable)\"\r\n        \"🐱lookat_vmcfg_helpinghand\"        \"HelpingHand Animation (Enable/Disable)\"\r\n        \"🐱lookat_vmcfg_fidget\"             \"Fidget Animation (Enable/Disable)\"\r\n        \"🐱l4n_menu\"                        \"Toggle L4N Hud Menu\"\r\n        \"🐱custom_command_menu\"             \"Custom Command Menu\"\r\n        \"🐱vm_addon_fix\"                    \"Match Arm to Player Model\"\r\n        \"🐱vm_inspect_save\"                 \"Saved Settings\"\r\n        \"🐱update_request\"                  \"You have subscribed to L4N updates. Are you ready to install the updates?\"\r\n        \"🐱update_success\"                  \"Restart the game to complete the update.\"\r\n        \"🐱update_failed\"                   \"Update failed.\"\r\n        \"🐱key_bind_acts_empty\"             \"This list is editable; it is empty because there are no corresponding configurations in config.vdf.\"\r\n        \"🐱survivor_random_scale\"           \"Survivor Random Scaling\"\r\n        \"🐱specialinfected_random_scale\"    \"Special Infected Random Scaling\"\r\n        \"🐱commoninfected_random_scale\"     \"Common Infected Random Scaling\"\r\n        \"🐱scope_fov_adjust\"                \"Scope Level Adjust\"\r\n        \"🐱vm_dual_quaternion_skinning\"     \"First-Person Arms Using Dual Quaternion Skinning\"\r\n        \"🐱host_setting\"                    \"Host\"\r\n        \"🐱steam_auth_bypass\"               \"Force 'Yes Steam Logon'\"\r\n        \"🐱display_settings\"                \"Graphics Settings\"\r\n        \"🐱l4n_plugins\"                     \"L4N Plugins\"\r\n        \"🐱installed_l4n_plugins\"           \"Installed\"\r\n        \"🐱analyze_dumps\"                   \"Analyze Crash Dump Files\"\r\n        \"🐱file\"                            \"File\"\r\n    }\r\n}  \r\n"
+    },
+    "left4dead2/neko/l4ngui_schinese.vdf": {
+      "sha256": "f055580a03566005e7ae3147982e4ece3f803f572c12f62b87f6119de26af25b",
+      "text": "\"lang\"\r\n{\r\n    \"Language\"\t\"schinese\"\r\n    \"Tokens\"\r\n    {\r\n        \"🐱disable\"                         \"禁用\"\r\n        \"🐱allow\"                           \"允许\"\r\n        \"🐱brightness\"\t                    \"亮度\"\r\n        \"🐱distance\"\t                    \"距离\"\r\n        \"🐱tonemapping\"\t                    \"色调映射\"\r\n        \"🐱allow_vomit\"                     \"允许胆汁模糊\"\r\n        \"🐱allow_vignette\"                  \"允许晕影\"\r\n        \"🐱allow_colorcorrection\"           \"允许色彩校正(调色滤镜)\"\r\n        \"🐱allow_grain\"                     \"允许胶片颗粒(临时)\"\r\n        \"🐱gamma\"                           \"伽马\"\r\n        \"🐱local_contrast\"                  \"局部对比度\"\r\n        \"🐱local_contrast_only_-\"           \"仅负(会影响打针，不让画面很脏)\"\r\n        \"🐱local_contrast_only_+\"           \"仅正(会影响雨天，让画面很干)\"\r\n        \"🐱local_contrast_disable\"          \"完全禁用\"\r\n        \"🐱local_contrast_enable\"           \"完全启用(默认)\"\r\n        \"🐱post_processing\"                 \"屏幕后处理设置\"\r\n        \"🐱drakness_limit\"                  \"光照暗度设置\"\r\n        \"🐱drakness_limit_disable\"          \"禁用/注意事项\"\r\n        \"🐱drakness_limit_warn\"             \"lightmap和ambient代表起源的笔刷和模型渲染系统，光照结果有差别是正常现象\\n在某些掉帧场景会加剧掉帧问题\"\r\n        \"🐱darkness_limit_cheap\"            \"使用低质量算法\"\r\n        \"🐱exposure\"                        \"场景曝光\"\r\n        \"🐱clear_datacache\"                 \"清理Datacache(DC)\"\r\n        \"🐱viewmodel\"                       \"第一人称设置\"\r\n        \"🐱sway_interp\"                     \"随视角滞后时间\"\r\n        \"🐱prevent_varms_stretching\"        \"禁止动画拉伸手指\"\r\n        \"🐱current_vm_offset\"               \"模型位置偏移\"\r\n        \"🐱current_vm_setting\"              \"当前第一人称模型设置\"\r\n        \"🐱current_vm_2pbr\"                 \"VLG与PBR材质互转\"\r\n        \"🐱current_vm_selfillum_+0.1\"       \"自发光 +10%\"\r\n        \"🐱current_vm_selfillum_-0.1\"       \"自发光 -10%\"\r\n        \"🐱current_vm_selfillum_reset\"      \"自发光重置\"\r\n        \"🐱entity\"                          \"实体相关设置\"\r\n        \"🐱player_entity\"                   \"玩家实体\"\r\n        \"🐱player_identity_render_color\"    \"禁止玩家实体染色\"\r\n        \"🐱reset_player_color\"              \"重置玩家实体染色\"\r\n        \"🐱roll_player_color\"               \"玩家实体随机染色\"\r\n        \"🐱survivor_lighting_scale\"         \"幸存者实体的光照强度\"\r\n        \"🐱survivor_scale\"                  \"全局幸存者模型缩放\"\r\n        \"🐱arms_2nekotoon\"                  \"将当前手模的材质转为NekoToon\"\r\n        \"🐱crosshair_2nekotoon\"             \"将准星处的角色模型材质转为NekoToon\"\r\n        \"🐱self_2nekotoon\"                  \"将自己的模型材质转为NekoToon\"\r\n        \"🐱nekosky_overlay_strength\"        \"NekoSky的叠加纹理强度\"\r\n        \"🐱tonemapping_algorithm_nature\"    \"Neutral (Unity)    <-- 推荐\"\r\n        \"🐱tonemapping_force_linear\"        \"强制Linear\"\r\n        \"🐱tonemapping_doc1\"                \"你已经在启动项里添加了\\\"-l4n_use_neko_engine_post\\\"\\nl4n的neko_engine_post着色器已经替代了引擎的后处理着色器engine_post\\n\\n\"\r\n        \"🐱tonemapping_doc2\"                \"色调映射：\\n此功能可以减小画面亮处过曝的问题，推荐使用Neutral曲线\\n\"\r\n        \"🐱tonemapping_doc_title\"           \"色调映射使用说明\"\r\n        \"🐱neko_engine_post_unlock_warn\"    \"请在启动项里添加\\\"-l4n_use_neko_engine_post\\\"来解锁该功能\"\r\n        \"🐱neko_reshade_bridge_unlock_warn\" \"请在启动项里添加\\\"-l4n_reshade_bridge 1\\\"来解锁该功能\"\r\n        \"🐱model_option\"                    \"模型选项\"\r\n        \"🐱record_demo\"                     \"快速录制DEMO\"\r\n        \"🐱allow_hud_teamplayer_status\"     \"允许HUD显示队友状态\"\r\n        \"🐱allow_hud_hud_scope_display\"     \"允许HUD显示开镜\"\r\n        \"🐱thirdpersion_crosshair\"          \"精确第三人称准星\"\r\n        \"🐱thirdpersion_crosshair_scale\"    \"精确第三人称准星缩放\"\r\n        \"🐱allow_flashlightmuzzleflash\"     \"允许手电筒枪火效果\"\r\n        \"🐱dlight_muzzleflash\"              \"动态枪火光源\"\r\n        \"🐱dlight_muzzleflash_mode1\"        \"遵循枪火粒子\"\r\n        \"🐱dlight_muzzleflash_mode2\"        \"忽略枪火粒子\"\r\n        \"🐱prevent_tonemapscale\"            \"抑制曝光影响\"\r\n        \"🐱dlight_distance\"                 \"光照最大距离\"\r\n        \"🐱refresh_entity_random\"           \"刷新实体随机数\"\r\n        \"🐱show_game_usage\"                 \"显示内存占用\"\r\n        \"🐱commoninfected_noragdoll\"        \"禁止普通感染者布娃娃\"\r\n        \"🐱2pbr_warn\"                       \"已尝试将当前第一人称武器模型的材质转换为PBR材质\\n本操作适用于PBR2Source生成的材质，手工制作或修改过的材质可能效果不佳。\\n\\nPBR2Source用于将PBR材质转换成起源原生着色器(VLG)的材质，每个材质\\n一般会生成三张贴图：$basetex，$bumpmap，$phongexponenttex\\n本操作会让PBR着色器使用前两张贴图，通过逆计算恢复出部分PBR材质信息\\n由于只使用两张贴图，转换后的材质会有着更低的内存占用\t\\n\\n如果材质不合适转换后的效果不理想，再次执行本操作即可还原\\n\\n使用“mat_pbr_where 1”可以对比哪些材质被转换\\npbr材质信息经过PBR2Source转换后会有所损失，\\n本操作根据残存信息重建的pbr材质不能完全代表原始pbr材质的表现。\\n如非业内人员，请勿报告有关转换结果的bug\\n材质里添加“$source2pbr 0”可跳过转换\\n\"\r\n        \"🐱toggle_player_list\"              \"显示/隐藏玩家列表\"\r\n        \"🐱neko_bloom\"                      \"泛光(NekoBloom)\"\r\n        \"🐱neko_bloom_scale\"                \"强度\"\r\n        \"🐱neko_bloom_luminance_threshold\"  \"激发亮度\"\r\n        \"🐱neko_bloom_max_brightness\"       \"亮度限制\"\r\n        \"🐱neko_bloom_radius\"               \"半径\"\r\n        \"🐱neko_bloom_reset\"                \"重置\"\r\n        \"🐱neko_bloom_blend_mode\"           \"混合模式\"\r\n        \"🐱neko_bloom_map_strength\"         \"遮罩贴图强度\"\r\n        \"🐱neko_bloom_map_weight\"           \"遮罩贴图权重\"\r\n        \"🐱flashlight_factor\"               \"亮度亮度倍率\"\r\n        \"🐱flashlight\"                      \"手电筒\"\r\n        \"🐱flashlight_r\"                    \"颜色R倍率\"\r\n        \"🐱flashlight_g\"                    \"颜色G倍率\"\r\n        \"🐱flashlight_b\"                    \"颜色B倍率\"\r\n        \"🐱nekosky_scale\"                   \"NekoSky亮度\"\r\n        \"🐱custom_commands\"                 \"自定义指令\"\r\n        \"🐱custom_commands_edit\"            \"编辑自定义指令\"\r\n        \"🐱beta_features\"                   \"实验性\"\r\n        \"🐱patch_team_player_display\"       \"接管HUD队友信息\"\r\n        \"🐱hud_scope_draw_padding_block\"    \"填充HUD开镜空白区域\"\r\n        \"🐱tonemapping_occlusion_use_stencil_msg\" \"此选项用于修复某些硬件配置的曝光过暗问题(如某些Intel核显)，没有遇到该问题不需要启用\"\r\n        \"🐱tonemapping_occlusion_use_stencil\" \"修复曝光过暗\"\r\n        \"🐱2nekotoon_outline_type0\"         \"描边 - 禁用\"\r\n        \"🐱2nekotoon_outline_type1\"         \"描边 - 启用(世界空间厚度)\"\r\n        \"🐱2nekotoon_outline_type2\"         \"描边 - 启用(屏幕空间厚度)\"\r\n        \"🐱2nekotoon_outline_warn\"          \"===\\n转换后若角色描边出现异常(如眼眶或嘴巴)，尝试在转换前切换不同的描边选项。\\n某些模型不适合直接启用描边(常见于各种二游或vrchat)，需要配合控制描边粗细的数据使用，一般由模型艺术家提供。\\n原材质的着色器不支持描边，mod移植通常不会将描边粗细数据移植过来。\\n如果想要保证正常的描边效果，需要解包mod并手动将材质适配到NekoToon\\n===\"\r\n        \"🐱to_nekotoon\"                     \"模型材质转NekoToon\"\r\n        \"🐱allow_consistency_check\"         \"允许一致性检查\"\r\n        \"🐱reshade_draw\"                    \"接管效果渲染\"\r\n        \"🐱thirdperson_fire_sound_fix\"      \"修复第三人称开火声音\"\r\n        \"🐱allow_entity_dissolve\"           \"允许实体消逝效果\"\r\n        \"🐱decal_allow_staticprop\"\t\t\t\"允许静态道具生成贴花\"\r\n\t\t\"🐱decal_allow_entity\"\t\t\t\t\"允许实体生成贴花\"\r\n\t\t\"🐱decal_allow_special_infected\"\t\"允许特殊感染者实体生成贴花\"\r\n\t\t\"🐱decal_allow_survivor\"\t\t\t\"允许幸存者实体生成贴花\"\r\n\t\t\"🐱decal_allow_common_infected\"\t\t\"允许普通感染者实体生成贴花\"\r\n        \"🐱decal\"                           \"贴花\"\r\n        \"🐱screen_shake_scale\"              \"屏幕震动强度\"\r\n        \"🐱view_punch_scale\"                \"屏幕晃动强度\"\r\n        \"🐱nekotoon_normalized_lightwarp\"   \"秦始皇统一度亮衡(LightWarp)\"\r\n        \"🐱outline_thickness_scale\"         \"描边厚度\"\r\n        \"🐱patch_hud_scope\"                 \"接管开镜渲染\"\r\n        \"🐱hud_scope\"                       \"HUD开镜\"\r\n        \"🐱vm_allow_camera_animation\"       \"允许动画驱动视角\"\r\n        \"🐱menu_back\"                       \"上一页\"\r\n        \"🐱menu_next\"                       \"下一页\"\r\n        \"🐱vm_inspect\"                      \"展示第一人称模型\"\r\n        \"🐱vm_inspect_help\"                 \"按住1到9之间的数字键，再配合鼠标滚轮来调整旋转/平移/原点的xyz分量，shift微调，按0保存参数\"\r\n        \"🐱toggle_hud\"                      \"HUD显示开关\"\r\n        \"🐱player_list_modedef\"             \"显示l4n玩家列表(双击显示计分板)\"\r\n        \"🐱player_list_mode1\"               \"显示计分板(双击显示l4n玩家列表)\"\r\n        \"🐱lookat\"                          \"随机触发动画(ItemPickup/HelpingHand/Fidget)\"\r\n        \"🐱lookat_item\"                     \"触发 ItemPickup动画\"\r\n        \"🐱lookat_help\"                     \"触发 HelpingHand动画\"\r\n        \"🐱lookat_fidget\"                   \"触发 Fidget动画\"\r\n        \"🐱lookat_vmcfg\"                    \"===当前武器模型选项===\"\r\n        \"🐱lookat_vmcfg_reset\"              \"清除所有设置\"\r\n        \"🐱lookat_vmcfg_itempickup_onlyloop\"        \"允许/禁止 ItemPickup_Extend/Retract动画\"\r\n        \"🐱lookat_vmcfg_helpinghand_onlyloop\"       \"允许/禁止 HelpingHand_Extend/Retract动画\"\r\n        \"🐱lookat_vmcfg_itempickup\"         \"允许/禁止 ItemPickup动画\"\r\n        \"🐱lookat_vmcfg_helpinghand\"        \"允许/禁止 HelpingHand动画\"\r\n        \"🐱lookat_vmcfg_fidget\"             \"允许/禁止 Fidget动画\"\r\n        \"🐱l4n_menu\"                        \"l4n菜单\"\r\n        \"🐱custom_command_menu\"             \"自定义命令菜单\"\r\n        \"🐱vm_addon_fix\"                    \"强制手臂匹配玩家模型\"\r\n        \"🐱vm_inspect_save\"                 \"已保存参数\"\r\n        \"🐱update_request\"                  \"你已订阅L4N更新，是否准备安装更新？\"\r\n        \"🐱update_success\"                  \"重启游戏以完成更新\"\r\n        \"🐱update_failed\"                   \"更新失败\"\r\n        \"🐱key_bind_acts_empty\"             \"此列表为可编辑项，config.vdf内没有对应配置所以是空的\"\r\n        \"🐱survivor_random_scale\"           \"幸存者随机身高差异\"\r\n        \"🐱specialinfected_random_scale\"    \"特感随机身高差异\"\r\n        \"🐱commoninfected_random_scale\"     \"普感随机身高差异\"\r\n        \"🐱scope_fov_adjust\"                \"开镜倍率调整\"\r\n        \"🐱vm_dual_quaternion_skinning\"     \"第一人称手臂使用对偶四元数蒙皮\"\r\n        \"🐱host_setting\"                    \"主机设置\"\r\n        \"🐱steam_auth_bypass\"               \"绕过Steam登录状态检查(Yes Steam Logon)\"\r\n        \"🐱display_settings\"                \"显示设置\"\r\n        \"🐱l4n_plugins\"                     \"插件\"\r\n        \"🐱installed_l4n_plugins\"           \"已安装\"\r\n        \"🐱analyze_dumps\"                   \"查看崩溃转储\"\r\n        \"🐱file\"                            \"文件\"\r\n    }\r\n}\r\n"
+    },
+    "left4dead2/neko/localize_overrides_template.vdf": {
+      "sha256": "ad4fd136f2f8b7f1ad2905404bb726cde02ebccb31da748f5338a6d157e479d4",
+      "text": "// 修改后需要将本文件保存为localize_overrides.vdf\r\n// 本地化文本翻译的覆盖\r\n\"localize_overrides\" {\r\n    // 示例键值\r\n    \"L4D360UI_NamVet\"               \"Bill_test\"\r\n    \"L4D360UI_Loading_As_Bill\"      \"as Bill\"\r\n    \"L4D360UI_TeenGirl\"             \"Zoey_test\"\r\n    \"L4D360UI_Loading_As_Zoey\"      \"as Zoey\"\r\n    \"L4D360UI_Biker\"                \"Francis_test\"\r\n    \"L4D360UI_Loading_As_Francis\"   \"as Francis\"\r\n    \"L4D360UI_Manager\"              \"Louis_test\"\r\n    \"L4D360UI_Loading_As_Louis\"     \"as Louis\"\r\n\r\n    \"L4D360UI_Mechanic\"             \"Ellis_test\"\r\n    \"L4D360UI_Loading_As_Ellis\"     \"as Ellis\"\r\n    \"L4D360UI_Coach\"                \"Coach_test\"\r\n    \"L4D360UI_Loading_As_Coach\"     \"as Coach\"\r\n    \"L4D360UI_Producer\"             \"Rochelle_test\"\r\n    \"L4D360UI_Loading_As_Rochelle\"  \"as Rochelle\"\r\n    \"L4D360UI_Gambler\"              \"Nick_test\"\r\n    \"L4D360UI_Loading_As_Nick\"      \"as Nick\"\r\n\r\n    // 更多键值自行解包游戏本地化翻译获取\r\n}"
+    },
+    "left4dead2/neko/scheme_overrides_template.vdf": {
+      "sha256": "08c028a0a8fe6f12c037e58d34dde8da03a0d76b36780d163ab7fd305716af07",
+      "text": "// 模版文件，防止更新时覆盖自定义配置，第一次使用需要将本文件另存为scheme_overrides.vdf\r\n\r\n// 修改后在控制台运行l4n_reload_vgui_schemes热重载VGUI\r\n\r\n// vgui主题参数覆盖\r\n\"scheme_overrides\"\r\n{\r\n    // 目标文件的路径\r\n    \"resource/ClientScheme.res\" \r\n    {\r\n        \"Fonts\" {\r\n            \"TargetID\" // 队友头上ID的字体样式\r\n            {\r\n                \"1\"\r\n                {\r\n                    \"tall\"\t\t\t\"33\"    // 字体大小\r\n                    \"weight\"\t\t\"100\"   // 字体粗细\r\n                }\r\n            }\r\n        }\r\n    }\r\n\r\n}"
+    },
+    "left4dead2/neko/sequence_event_template.vdf": {
+      "sha256": "03e5e1f374e999a48785119489f5d9e893c24c109d204abe0be698fdb5ca156f",
+      "text": "// 修改后需要将本文件保存为sequence_event.vdf\r\n// 动画事件设置，目前只支持第一人称武器v模\r\n\"sequence_event\" {\r\n\r\n    \"particle_map\" {\r\n        // 重定向(修改调用的粒子效果)\r\n        // \"old_name\" \"new_name\"\r\n\r\n        // 留空则忽略该粒子(不想要找不到粒子的错误污染控制台)(或者单纯不想要该粒子)\r\n        // \"name\" \"\" \r\n    }\r\n}"
+    },
+    "left4dead2/neko/server_name_filter_template.txt": {
+      "sha256": "ec7fe8436b6bf57a2593e5c50aff06bc6127244d0690388ee4f72bf342799b1e",
+      "text": "//服务器名黑名单，正则表达式，修改后需要保存为server_name_filter.txt\r\n.*RPG.*\r\n.*戮.*\r\n.*弑.*\r\n.*巅.*\r\n.*凡.*\r\n.*玄.*\r\n.*天下.*\r\n.*天域.*\r\n.*神域.*\r\n.*完美世界.*\r\n.*一念仙行.*\r\n.*窥仙之路.*\r\n.*风花雪月.*\r\n.*暗黑之魂.*\r\n.*午夜狂欢.*\r\n.*無人永生.*\r\n.*神之右手.*\r\n.*军魂.*\r\n.*星缘.*\r\n.*破晓.*\r\n.*腐尸之地.*\r\n.*猎人.*\r\n.*通天塔.*\r\n.*无法逃脱.*\r\n.*穷途末路.*\r\n.*众神传说.*\r\n.*上帝.*\r\n.*HTの.*\r\n.*仙行录.*\r\n//如果找不到server_name_filter.txt则会读取server_name_filter_template.txt"
+    },
+    "left4dead2/neko/user_config.vdf": {
+      "sha256": "d13ad83ee6fb576f027aca4e63d05c493955183198a71411e10aa40a679dfff8",
+      "text": "\"\"\r\n{\r\n\t\"lpsms\"\t\t\"1\"\r\n}\r\n"
+    }
+  },
+  "local_readme_evidence": [
+    {
+      "line": 18,
+      "text": "修改：改进崩溃处理，使用crashpad来生成崩溃转储，保存位置位于crash_dumps/reports"
+    },
+    {
+      "line": 19,
+      "text": "修改：崩溃时将游戏日志保存到crash_dumps/attachments文件夹内"
+    },
+    {
+      "line": 20,
+      "text": "修改：更新l4n插件接口到版本2，公开了hud菜单的访问"
+    },
+    {
+      "line": 21,
+      "text": ""
+    },
+    {
+      "line": 22,
+      "text": "[2.49.1]"
+    },
+    {
+      "line": 23,
+      "text": "修复：+l4n_lookat遇到没有loop动画的模型不会触发extend动画"
+    },
+    {
+      "line": 24,
+      "text": "修改：to_l4n_surrivor输出的文件使用更短的前缀\"[l4ns]\""
+    },
+    {
+      "line": 36,
+      "text": "    本工具使用了内存补丁技术，使用时风险自负，启动项加\"-insecure\"可以避免进入启用vac的服务器"
+    },
+    {
+      "line": 37,
+      "text": "    本工具的功能主要面向娱乐玩家与mod开发者，在禁用mod的服务器上会限制敏感功能，请勿用于影响他人游戏体验"
+    },
+    {
+      "line": 38,
+      "text": "    本工具能够加载用户提供的三方模块，该功能用来避免各种三方模块的加载点冲突问题，三方模块提供的内容和本工具无关"
+    },
+    {
+      "line": 39,
+      "text": "安装&更新："
+    },
+    {
+      "line": 40,
+      "text": "    将安装包内所有的文件复制覆盖到游戏根目录即可"
+    },
+    {
+      "line": 41,
+      "text": "    仅安装着色器则跳过复制left4dead.exe文件"
+    },
+    {
+      "line": 42,
+      "text": "卸载："
+    },
+    {
+      "line": 162,
+      "text": "        次选："
+    },
+    {
+      "line": 163,
+      "text": "            除非首选方法失败，否则不建议使用-vulkan启动项"
+    },
+    {
+      "line": 164,
+      "text": "            -vulkan启动项的DXVK dll位置在bin/dxvk_d3d9.dll，版本很老，可以手动替换成新版dxvk的dll"
+    },
+    {
+      "line": 165,
+      "text": "            steam可能会自动验证完整性导致dxvk_d3d9.dll被覆盖回去"
+    },
+    {
+      "line": 166,
+      "text": "        注意："
+    },
+    {
+      "line": 167,
+      "text": "            请不要将dxvk安装包里64位的dll给32位的程序用"
+    },
+    {
+      "line": 168,
+      "text": "            使用dxvk后，Reshade的安装要选择Vulkan"
+    },
+    {
+      "line": 169,
+      "text": "            如果dxvk不能正常使用，如全屏模式出现异常，无法识别独显等，尝试去修改dxvk的配置文件"
+    },
+    {
+      "line": 171,
+      "text": "        确定dxvk是否生效："
+    },
+    {
+      "line": 172,
+      "text": "            控制台运行l4n_env_report"
+    },
+    {
+      "line": 173,
+      "text": "            如果是-vulkan启动项，可以在任务管理器里看到游戏的标题里是否带了vulkan"
+    },
+    {
+      "line": 174,
+      "text": "            删除游戏根目录下的left4dead2_d3d9.log，启动游戏能否看到该文件的生成"
+    },
+    {
+      "line": 175,
+      "text": ""
+    },
+    {
+      "line": 176,
+      "text": "    着色器缓存："
+    },
+    {
+      "line": 177,
+      "text": "        不同版本的l4n着色器功能会有差别，安装/更新/切换版本后可能会触发着色器缓存编译"
+    },
+    {
+      "line": 790,
+      "text": "修复：某些天空盒材质过亮的bug"
+    },
+    {
+      "line": 791,
+      "text": "新增：l4n_magic_converter幸存者模型转换工具"
+    },
+    {
+      "line": 792,
+      "text": "新增：l4nplugin插件系统"
+    },
+    {
+      "line": 793,
+      "text": ""
+    },
+    {
+      "line": 794,
+      "text": "[2.33.3]"
+    },
+    {
+      "line": 795,
+      "text": "修复：模型选项里不显示StaticProp的模型"
+    },
+    {
+      "line": 796,
+      "text": ""
+    }
+  ],
+  "historical_logs_not_live_state": {
+    "left4dead2_d3d9.log": {
+      "bytes": 14537,
+      "matches": [
+        {
+          "line": 2,
+          "text": "info:  DXVK: v3.1.1"
+        },
+        {
+          "line": 7,
+          "text": "info:  Vulkan: Found vkGetInstanceProcAddr in vulkan-1.dll @ 0x5e081740"
+        },
+        {
+          "line": 165,
+          "text": "info:    vulkanMemoryModel              : 1"
+        },
+        {
+          "line": 337,
+          "text": "info:  Found cache file: C:\\Users\\stc52\\AppData\\Local\\dxvk\\04e0f8dd732775e0.dxvk.bin"
+        },
+        {
+          "line": 339,
+          "text": "info:  DXVK: Using 8 compiler threads"
+        }
+      ]
+    },
+    "logging_system.log": {
+      "bytes": 124074,
+      "matches": []
+    }
+  },
+  "installed_C": {
+    "path": "E:\\SteamLibrary\\steamapps\\common\\Left 4 Dead 2\\left4dead2\\addons\\【00】C_ESC_LED_血条和速度_TUMTaRA.vpk",
+    "local": {
+      "exists": true,
+      "bytes": 34591169,
+      "sha256": "97fa1e054d0676042b9da149b421e645aad493160db98b7f04668a2503e463da"
+    },
+    "project": {
+      "exists": true,
+      "bytes": 34591169,
+      "sha256": "97fa1e054d0676042b9da149b421e645aad493160db98b7f04668a2503e463da"
+    }
+  },
+  "x86_runtime_file_presence_only": {
+    "MSVCP140.dll": {
+      "exists": true,
+      "bytes": 447592,
+      "sha256": "0de49e72e5deb20e7a48d890659d9697d0d352c2e60ad984ef76f296e9cecc5b",
+      "pe_machine": "0x14c"
+    },
+    "VCRUNTIME140.dll": {
+      "exists": true,
+      "bytes": 91216,
+      "sha256": "18291f770fea36bf0b044df878bc69f3820d18757ef7c92c7d47b57885e79547",
+      "pe_machine": "0x14c"
+    },
+    "ucrtbase.dll": {
+      "exists": true,
+      "bytes": 1134192,
+      "sha256": "e4f8f92eef00ff6a0c6d418af756a59d5a4b818d0d1de0d96cc193b4d6759432",
+      "pe_machine": "0x14c"
+    }
+  },
+  "evolved_plugin_export_names": {
+    "bin/neko/plugins/L4D2Evolved.dll": [
+      "GetL4NPluginInstance",
+      "L4D2Evolved_IsStartupDisabled"
+    ],
+    "bin/neko/plugins/L4d2evomodel.dll": [
+      "GetL4NPluginInstance",
+      "MR_GetAPI",
+      "MR_RegisterClientModel",
+      "MR_ResetClientModels"
+    ]
+  },
+  "selected_bindings_and_addon_settings": {
+    "left4dead2/cfg/config.cfg": [
+      {
+        "line": 19,
+        "text": "bind \"m\" \"chooseteam\""
+      },
+      {
+        "line": 20,
+        "text": "bind \"p\" \"SM_LDW\""
+      },
+      {
+        "line": 44,
+        "text": "bind \"\\\" \"l4n_menu\""
+      },
+      {
+        "line": 51,
+        "text": "bind \"CTRL\" \"+duck\""
+      },
+      {
+        "line": 55,
+        "text": "bind \"F5\" \"jpeg\""
+      },
+      {
+        "line": 117,
+        "text": "cl_crosshair_alpha \"197.880005\""
+      },
+      {
+        "line": 118,
+        "text": "cl_crosshair_blue \"220\""
+      },
+      {
+        "line": 119,
+        "text": "cl_crosshair_dynamic \"0.000000\""
+      },
+      {
+        "line": 120,
+        "text": "cl_crosshair_green \"182\""
+      },
+      {
+        "line": 121,
+        "text": "cl_crosshair_red \"138\""
+      },
+      {
+        "line": 122,
+        "text": "cl_crosshair_thickness \"2.024000\""
+      },
+      {
+        "line": 135,
+        "text": "cl_observercrosshair \"1\""
+      },
+      {
+        "line": 150,
+        "text": "crosshair \"1.000000\""
+      },
+      {
+        "line": 206,
+        "text": "l4n_allow_consistency_check \"0\""
+      },
+      {
+        "line": 207,
+        "text": "l4n_allow_draw_sprite \"1\""
+      },
+      {
+        "line": 208,
+        "text": "l4n_allow_entity_dissolve \"1\""
+      },
+      {
+        "line": 209,
+        "text": "l4n_allow_flashlightmuzzleflash \"1\""
+      },
+      {
+        "line": 210,
+        "text": "l4n_allow_hud_team_player_display \"1\""
+      },
+      {
+        "line": 211,
+        "text": "l4n_ambient_darkness_limit \"0\""
+      },
+      {
+        "line": 212,
+        "text": "l4n_auto_flush_unused_models \"1\""
+      },
+      {
+        "line": 213,
+        "text": "l4n_commoninfected_noragdoll \"0\""
+      },
+      {
+        "line": 214,
+        "text": "l4n_commoninfected_random_scale \"0.0\""
+      },
+      {
+        "line": 215,
+        "text": "l4n_decal_allow_common_infected \"1\""
+      },
+      {
+        "line": 216,
+        "text": "l4n_decal_allow_entity \"1\""
+      },
+      {
+        "line": 217,
+        "text": "l4n_decal_allow_special_infected \"1\""
+      },
+      {
+        "line": 218,
+        "text": "l4n_decal_allow_staticprop \"1\""
+      },
+      {
+        "line": 219,
+        "text": "l4n_decal_allow_survivor \"1\""
+      },
+      {
+        "line": 220,
+        "text": "l4n_disable_survivor_bandage \"1\""
+      },
+      {
+        "line": 221,
+        "text": "l4n_dlight_muzzleflash \"0\""
+      },
+      {
+        "line": 222,
+        "text": "l4n_dlight_muzzleflash_brightness \"0\""
+      },
+      {
+        "line": 223,
+        "text": "l4n_dlight_muzzleflash_distance \"255.0\""
+      },
+      {
+        "line": 224,
+        "text": "l4n_dlight_muzzleflash_prevent_tonemapscale \"1\""
+      },
+      {
+        "line": 225,
+        "text": "l4n_engine_post_allow_local_contrast \"1\""
+      },
+      {
+        "line": 226,
+        "text": "l4n_engine_post_allow_vomit \"1\""
+      },
+      {
+        "line": 227,
+        "text": "l4n_enhanced_material_pxory \"0\""
+      },
+      {
+        "line": 228,
+        "text": "l4n_env_cubemap_redirect \"0\""
+      },
+      {
+        "line": 229,
+        "text": "l4n_fast_lightmap_and_ambient_darkness_limit \"0\""
+      },
+      {
+        "line": 230,
+        "text": "l4n_flashlight_b \"1.0\""
+      },
+      {
+        "line": 231,
+        "text": "l4n_flashlight_factor \"1.0\""
+      },
+      {
+        "line": 232,
+        "text": "l4n_flashlight_g \"1.0\""
+      },
+      {
+        "line": 233,
+        "text": "l4n_flashlight_r \"1.0\""
+      },
+      {
+        "line": 234,
+        "text": "l4n_game_usage \"0\""
+      },
+      {
+        "line": 235,
+        "text": "l4n_game_usage_padding \"24\""
+      },
+      {
+        "line": 236,
+        "text": "l4n_game_usage_pos \"32\""
+      },
+      {
+        "line": 237,
+        "text": "l4n_hudmenu_offset_x \"0\""
+      },
+      {
+        "line": 238,
+        "text": "l4n_hudmenu_offset_y \"0\""
+      },
+      {
+        "line": 239,
+        "text": "l4n_hudscope_draw \"1\""
+      },
+      {
+        "line": 240,
+        "text": "l4n_hudscope_draw_override \"0\""
+      },
+      {
+        "line": 241,
+        "text": "l4n_hudscope_draw_padding_block \"1\""
+      },
+      {
+        "line": 242,
+        "text": "l4n_lightmap_darkness_limit \"0\""
+      },
+      {
+        "line": 243,
+        "text": "l4n_mat_colorcorrection \"1\""
+      },
+      {
+        "line": 244,
+        "text": "l4n_max_background_bik \"5\""
+      },
+      {
+        "line": 245,
+        "text": "l4n_menu_font_size \"32\""
+      },
+      {
+        "line": 246,
+        "text": "l4n_menu_offset_x \"0\""
+      },
+      {
+        "line": 247,
+        "text": "l4n_menu_offset_y \"0\""
+      },
+      {
+        "line": 248,
+        "text": "l4n_model_setting_perfstats \"1\""
+      },
+      {
+        "line": 249,
+        "text": "l4n_patch_material \"1\""
+      },
+      {
+        "line": 250,
+        "text": "l4n_patch_team_player_display \"0\""
+      },
+      {
+        "line": 251,
+        "text": "l4n_player_identity_render_color \"0\""
+      },
+      {
+        "line": 252,
+        "text": "l4n_player_list_show_steam_avatar \"1\""
+      },
+      {
+        "line": 253,
+        "text": "l4n_player_list_vomitjar_icon_clip \"0\""
+      },
+      {
+        "line": 254,
+        "text": "l4n_prevent_varms_stretching \"0\""
+      },
+      {
+        "line": 255,
+        "text": "l4n_reshade_draw \"0\""
+      },
+      {
+        "line": 256,
+        "text": "l4n_scope_fov \"0\""
+      },
+      {
+        "line": 257,
+        "text": "l4n_scope_fov_adjust \"0\""
+      },
+      {
+        "line": 258,
+        "text": "l4n_screen_shake_scale \"1.0\""
+      },
+      {
+        "line": 259,
+        "text": "l4n_server_filter \"1\""
+      },
+      {
+        "line": 260,
+        "text": "l4n_specialinfected_random_scale \"0.0\""
+      },
+      {
+        "line": 261,
+        "text": "l4n_specialinfected_randommodel \"0\""
+      },
+      {
+        "line": 262,
+        "text": "l4n_survivor_random_scale \"0.0\""
+      },
+      {
+        "line": 263,
+        "text": "l4n_survivor_sequence_strip \"0\""
+      },
+      {
+        "line": 264,
+        "text": "l4n_survivor_stylized_amibentlight \"0\""
+      },
+      {
+        "line": 265,
+        "text": "l4n_thirdpersion_crosshair_alpha \"0\""
+      },
+      {
+        "line": 266,
+        "text": "l4n_thirdpersion_crosshair_iterp \"0.1\""
+      },
+      {
+        "line": 267,
+        "text": "l4n_thirdpersion_crosshair_scale \"1\""
+      },
+      {
+        "line": 268,
+        "text": "l4n_thirdperson_fire_sound_fix \"0\""
+      },
+      {
+        "line": 269,
+        "text": "l4n_use_nekosky \"1\""
+      },
+      {
+        "line": 270,
+        "text": "l4n_view_punch_scale \"1.0\""
+      },
+      {
+        "line": 271,
+        "text": "l4n_vm_addon_fix \"1\""
+      },
+      {
+        "line": 272,
+        "text": "l4n_vm_allow_camera_animation \"1\""
+      },
+      {
+        "line": 273,
+        "text": "l4n_vm_dual_quaternion_skinning \"0\""
+      },
+      {
+        "line": 274,
+        "text": "l4n_vm_offset_x \"0.0\""
+      },
+      {
+        "line": 275,
+        "text": "l4n_vm_offset_y \"0.0\""
+      },
+      {
+        "line": 276,
+        "text": "l4n_vm_offset_z \"0.0\""
+      },
+      {
+        "line": 277,
+        "text": "l4n_vm_sway \"1\""
+      },
+      {
+        "line": 278,
+        "text": "l4n_vm_sway_ignore_helpinghand \"1\""
+      },
+      {
+        "line": 279,
+        "text": "l4n_vm_sway_interp \"0.1\""
+      },
+      {
+        "line": 280,
+        "text": "l4n_vm_sway_scale \"1.6\""
+      },
+      {
+        "line": 281,
+        "text": "l4n_world_error_material \"1\""
+      },
+      {
+        "line": 336,
+        "text": "net_graph \"1\""
+      },
+      {
+        "line": 337,
+        "text": "net_graphheight \"620.000000\""
+      },
+      {
+        "line": 338,
+        "text": "net_graphmsecs \"400\""
+      },
+      {
+        "line": 339,
+        "text": "net_graphpos \"1.000000\""
+      },
+      {
+        "line": 340,
+        "text": "net_graphproportionalfont \"0.000000\""
+      },
+      {
+        "line": 341,
+        "text": "net_graphshowinterp \"1\""
+      },
+      {
+        "line": 342,
+        "text": "net_graphshowlatency \"1\""
+      },
+      {
+        "line": 343,
+        "text": "net_graphsolid \"1\""
+      },
+      {
+        "line": 344,
+        "text": "net_graphtext \"1\""
+      }
+    ],
+    "left4dead2/cfg/autoexec.cfg": [],
+    "left4dead2/addonlist.txt": [
+      {
+        "line": 23,
+        "text": "\t\"【00】C_esc菜单_LED_血条和速度.vpk\"\t\t\"1\""
+      }
+    ]
+  },
+  "local_addon_filenames_not_full_conflict_scan": [
+    "insurgencia_beta_test.vpk",
+    "myl4d2addons_map_defense_line.vpk",
+    "【00】A_连跳MOD（全模式通用）.vpk",
+    "【00】A_连跳前置.vpk",
+    "【00】C_ESC_LED_血条和速度_TUMTaRA.vpk",
+    "【Map】伏尔塔瓦河 Vltava.vpk",
+    "【Map】异度神召加强版 Divine Cybermancy Part 1.vpk",
+    "【Map】异度神召加强版 Divine Cybermancy Part 2.vpk",
+    "【Map】痛苦 El Sufrimiento.vpk",
+    "【Map】血战太平洋 Bloody Pacific.vpk",
+    "【Map】路至深渊 Road To Deep Part 1.vpk",
+    "【Map】路至深渊 Road To Deep Part 2.vpk",
+    "【Map】路至深渊 Road To Deep Part 3.vpk",
+    "【Map】路至深渊 Road To Deep Part 4.vpk",
+    "【Map】路至深渊 Road To Deep Part 5.vpk",
+    "【Map】路至深渊 Road To Deep Part 6.vpk",
+    "【Map】路至深渊 Road To Deep Part 7.vpk",
+    "【Map】颠倒世界 An Alternative Perspective.vpk",
+    "留在中国.vpk",
+    "绝望逃亡.vpk",
+    "迷雾重重.vpk"
+  ],
+  "selected_workshop_filenames": [
+    "469986973.jpg",
+    "469986973.vpk"
+  ],
+  "game_write_operations": 0,
+  "input_hashes_unchanged_at_end": true
+}

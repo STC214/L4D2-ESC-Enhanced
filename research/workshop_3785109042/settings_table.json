@@ -1,0 +1,234 @@
+{
+  "start": "0x103fea58",
+  "end": "0x103ff048",
+  "rows": [
+    {
+      "va": "0x103fea58",
+      "key": "NoHmdConfigMenuKey",
+      "type": 3,
+      "label": "设置菜单按键"
+    },
+    {
+      "va": "0x103fea80",
+      "key": "ModelPartManagerKey",
+      "type": 3,
+      "label": "部件 / 材质面板按键"
+    },
+    {
+      "va": "0x103feaa8",
+      "key": "ModManagerMenuKey",
+      "type": 3,
+      "label": "Mod 管理菜单按键"
+    },
+    {
+      "va": "0x103fead0",
+      "key": "ModManagerPreserveDroppedSources",
+      "type": 0,
+      "label": "拖入安装后保留原文件"
+    },
+    {
+      "va": "0x103feaf8",
+      "key": "SurvivorModelVariantsMenuKey",
+      "type": 3,
+      "label": "模型菜单按键"
+    },
+    {
+      "va": "0x103feb20",
+      "key": "EquipmentModelVariantsMenuKey",
+      "type": 3,
+      "label": "武器 / 物品模型菜单按键"
+    },
+    {
+      "va": "0x103feb48",
+      "key": "ThirdPersonCrosshairCorrection",
+      "type": 0,
+      "label": "准星修正"
+    },
+    {
+      "va": "0x103feb70",
+      "key": "DynamicSpreadCircleEnabled",
+      "type": 0,
+      "label": "动态散布准星"
+    },
+    {
+      "va": "0x103feb98",
+      "key": "DynamicSpreadCrosshairMinScale",
+      "type": 1,
+      "label": "动态准星最小缩放"
+    },
+    {
+      "va": "0x103febc0",
+      "key": "DynamicSpreadCrosshairMinSpacingPixels",
+      "type": 1,
+      "label": "动态准星最小收缩间距"
+    },
+    {
+      "va": "0x103febe8",
+      "key": "StaticItemCrosshairRadiusPixels",
+      "type": 1,
+      "label": "非枪械固定准星大小"
+    },
+    {
+      "va": "0x103fec10",
+      "key": "DynamicSpreadCrosshairCenterDotScale",
+      "type": 1,
+      "label": "准星中心点大小"
+    },
+    {
+      "va": "0x103fec38",
+      "key": "DynamicSpreadCrosshairOpacity",
+      "type": 1,
+      "label": "动态准星透明度"
+    },
+    {
+      "va": "0x103fec60",
+      "key": "HitSoundEnabled",
+      "type": 0,
+      "label": "命中音效"
+    },
+    {
+      "va": "0x103fec88",
+      "key": "KillSoundEnabled",
+      "type": 0,
+      "label": "击杀音效"
+    },
+    {
+      "va": "0x103fecb0",
+      "key": "HitIndicatorEnabled",
+      "type": 0,
+      "label": "命中提示"
+    },
+    {
+      "va": "0x103fecd8",
+      "key": "KillIndicatorEnabled",
+      "type": 0,
+      "label": "击杀提示"
+    },
+    {
+      "va": "0x103fed00",
+      "key": "DisableFlashlightSway",
+      "type": 0,
+      "label": "禁用手电晃动"
+    },
+    {
+      "va": "0x103fed28",
+      "key": "FirstPersonBodyEnabled",
+      "type": 0,
+      "label": "第一人称身体"
+    },
+    {
+      "va": "0x103fed50",
+      "key": "FirstPersonBodyNoHmdHideWhenIncapacitated",
+      "type": 0,
+      "label": "倒地隐藏身体"
+    },
+    {
+      "va": "0x103fed78",
+      "key": "FirstPersonBodyNoHmdHideOnLadder",
+      "type": 0,
+      "label": "爬梯隐藏身体"
+    },
+    {
+      "va": "0x103feda0",
+      "key": "FirstPersonBodyNoHmdLadderViewLock",
+      "type": 0,
+      "label": "NoHMD 爬梯视角锁定"
+    },
+    {
+      "va": "0x103fedc8",
+      "key": "FirstPersonBodyAnchorOffsetMeters",
+      "type": 2,
+      "label": "身体锚点偏移"
+    },
+    {
+      "va": "0x103fedf0",
+      "key": "NoHmdAltFreeLookKey",
+      "type": 3,
+      "label": "自由视角按键"
+    },
+    {
+      "va": "0x103fee18",
+      "key": "NoHmdAltFreeLookSensitivity",
+      "type": 1,
+      "label": "自由视角灵敏度"
+    },
+    {
+      "va": "0x103fee40",
+      "key": "KillIndicatorNoHmdSizePixels",
+      "type": 1,
+      "label": "命中/击杀图标大小"
+    },
+    {
+      "va": "0x103fee68",
+      "key": "KillIndicatorNoHmdOpacity",
+      "type": 1,
+      "label": "命中/击杀图标透明度"
+    },
+    {
+      "va": "0x103fee90",
+      "key": "NoHmdMinimapEnabled",
+      "type": 0,
+      "label": "小地图导航"
+    },
+    {
+      "va": "0x103feeb8",
+      "key": "NoHmdMinimapToggleKey",
+      "type": 3,
+      "label": "导航显示 / 隐藏快捷键"
+    },
+    {
+      "va": "0x103feee0",
+      "key": "NoHmdWorldNavigationEnabled",
+      "type": 0,
+      "label": "实景导航箭头"
+    },
+    {
+      "va": "0x103fef08",
+      "key": "NoHmdMinimapRadius",
+      "type": 1,
+      "label": "小地图前方显示距离"
+    },
+    {
+      "va": "0x103fef30",
+      "key": "NoHmdAdsEnabled",
+      "type": 0,
+      "label": "机械瞄准"
+    },
+    {
+      "va": "0x103fef58",
+      "key": "NoHmdAdsThirdPersonWalkZoomEnabled",
+      "type": 0,
+      "label": "第三人称慢走放大"
+    },
+    {
+      "va": "0x103fef80",
+      "key": "NoHmdAdsThirdPersonWalkFov",
+      "type": 1,
+      "label": "第三人称慢走视野 FOV"
+    },
+    {
+      "va": "0x103fefa8",
+      "key": "NoHmdAdsThirdPersonWalkZoomTime",
+      "type": 1,
+      "label": "慢走视野过渡时间"
+    },
+    {
+      "va": "0x103fefd0",
+      "key": "NoHmdAdsActivateKey",
+      "type": 3,
+      "label": "机瞄独立按键"
+    },
+    {
+      "va": "0x103feff8",
+      "key": "NoHmdAdsCombineKey",
+      "type": 3,
+      "label": "切换瞄具按键"
+    },
+    {
+      "va": "0x103ff020",
+      "key": "NoHmdAdsInspectKey",
+      "type": 3,
+      "label": "武器检视按键"
+    }
+  ]
+}

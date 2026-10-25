@@ -1,0 +1,86 @@
+{
+  "evidence_id": "ev_f987d47ea4455e14ad40c472ef4c1ddd68043774616e52d567d9836adf6709cb",
+  "procedure": "0x100fe040",
+  "pseudocode": "\r\nundefined ** FUN_100fe040(void)\r\n\r\n{\r\n  byte bVar1;\r\n  byte *pbVar2;\r\n  uint uVar3;\r\n  byte *in_ECX;\r\n  byte *pbVar4;\r\n  undefined **ppuVar5;\r\n  bool bVar6;\r\n  \r\n  if (in_ECX != (byte *)0x0) {\r\n    ppuVar5 = &PTR_s_NoHmdConfigMenuKey_103fea58;\r\n    do {\r\n      pbVar4 = *ppuVar5;\r\n      pbVar2 = in_ECX;\r\n      do {\r\n        bVar1 = *pbVar4;\r\n        bVar6 = bVar1 < *pbVar2;\r\n        if (bVar1 != *pbVar2) {\r\nLAB_100fe074:\r\n          uVar3 = -(uint)bVar6 | 1;\r\n          goto LAB_100fe079;\r\n        }\r\n        if (bVar1 == 0) break;\r\n        bVar1 = pbVar4[1];\r\n        bVar6 = bVar1 < pbVar2[1];\r\n        if (bVar1 != pbVar2[1]) goto LAB_100fe074;\r\n        pbVar4 = pbVar4 + 2;\r\n        pbVar2 = pbVar2 + 2;\r\n      } while (bVar1 != 0);\r\n      uVar3 = 0;\r\nLAB_100fe079:\r\n      if (uVar3 == 0) {\r\n        return ppuVar5;\r\n      }\r\n      ppuVar5 = ppuVar5 + 10;\r\n    } while (ppuVar5 != (undefined **)\"l4d2vr_pose_ack 2\\n\");\r\n  }\r\n  return (undefined **)0x0;\r\n}\r\n\r\n",
+  "assembly": [
+    "0x100fe040: PUSH ESI",
+    "0x100fe041: PUSH EDI",
+    "0x100fe042: MOV EDI, ECX",
+    "0x100fe044: TEST EDI, EDI",
+    "0x100fe046: JZ 0x100fe088",
+    "0x100fe048: MOV ESI, 0x103fea58",
+    "0x100fe04d: NOP dword ptr [EAX]",
+    "0x100fe050: MOV ECX, dword ptr [ESI]",
+    "0x100fe052: MOV EAX, EDI",
+    "0x100fe054: MOV DL, byte ptr [ECX]",
+    "0x100fe056: CMP DL, byte ptr [EAX]",
+    "0x100fe058: JNZ 0x100fe074",
+    "0x100fe05a: TEST DL, DL",
+    "0x100fe05c: JZ 0x100fe070",
+    "0x100fe05e: MOV DL, byte ptr [ECX + 0x1]",
+    "0x100fe061: CMP DL, byte ptr [EAX + 0x1]",
+    "0x100fe064: JNZ 0x100fe074",
+    "0x100fe066: ADD ECX, 0x2",
+    "0x100fe069: ADD EAX, 0x2",
+    "0x100fe06c: TEST DL, DL",
+    "0x100fe06e: JNZ 0x100fe054",
+    "0x100fe070: XOR EAX, EAX",
+    "0x100fe072: JMP 0x100fe079",
+    "0x100fe074: SBB EAX, EAX",
+    "0x100fe076: OR EAX, 0x1",
+    "0x100fe079: TEST EAX, EAX",
+    "0x100fe07b: JZ 0x100fe08d",
+    "0x100fe07d: ADD ESI, 0x28",
+    "0x100fe080: CMP ESI, 0x103ff818",
+    "0x100fe086: JNZ 0x100fe050",
+    "0x100fe088: POP EDI",
+    "0x100fe089: XOR EAX, EAX",
+    "0x100fe08b: POP ESI",
+    "0x100fe08c: RET",
+    "0x100fe08d: POP EDI",
+    "0x100fe08e: MOV EAX, ESI",
+    "0x100fe090: POP ESI",
+    "0x100fe091: RET"
+  ],
+  "strings": [
+    {
+      "address": "0x103ff818",
+      "value": "l4d2vr_pose_ack 2\n",
+      "source_address": "0x100fe080"
+    },
+    {
+      "address": "0x1040f544",
+      "value": "ModelPartManagerKey",
+      "source_address": "0x100fe054"
+    },
+    {
+      "address": "0x1040f544",
+      "value": "ModelPartManagerKey",
+      "source_address": "0x100fe05e"
+    },
+    {
+      "address": "0x1040f968",
+      "value": "NoHmdConfigMenuKey",
+      "source_address": "0x100fe054"
+    },
+    {
+      "address": "0x1040f968",
+      "value": "NoHmdConfigMenuKey",
+      "source_address": "0x100fe05e"
+    }
+  ],
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "References cover the complete Ghidra function-body AddressSet and exact entry. Dossier incoming edges omit sources owned by that function; procedure_references also retains those internal edges.",
+    "The dossier combines Ghidra FunctionManager, Listing, ReferenceManager, BasicBlockModel, and decompiler observations; provider-specific pseudocode and assembly are not cross-provider text invariants.",
+    "Resolved reference metadata identifies computed, indirect, external, call, jump, and data edges; unresolved targetless flows remain unknown, and function classifications distinguish thunks and externals.",
+    "Synthetic Ghidra entry-point references without actionable memory sources are omitted.",
+    "The Java bridge serializes one function request per Program and lets each decompilation run until it completes or the caller cancels.",
+    "Windows Ghidra P0 accepts approved native x86 and x86-64 PE applications and DLLs; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically."
+  ]
+}
