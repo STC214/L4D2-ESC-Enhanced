@@ -15,11 +15,13 @@ def main():
     parser.add_argument("--disasm", nargs=2)
     parser.add_argument("--strings", nargs=2)
     parser.add_argument("--find")
+    parser.add_argument("--path")
     parser.add_argument("--words", nargs=2)
     parser.add_argument("--wide", nargs=2)
     parser.add_argument("--settings-table", action="store_true")
     args = parser.parse_args()
-    path = ROOT / "research/workshop_3785109042/unpacked/bin/neko/plugins/L4D2Evolved.dll"
+    from pathlib import Path
+    path = Path(args.path) if args.path else ROOT / "research/workshop_3785109042/unpacked/bin/neko/plugins/L4D2Evolved.dll"
     data = path.read_bytes()
     u32 = lambda at: struct.unpack_from("<I", data, at)[0]
     pe = u32(0x3C)

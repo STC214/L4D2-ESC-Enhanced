@@ -23,6 +23,7 @@ from kv_audit import parse, scalars
 from audit_c import inspect as full_audit
 from tumtara_integration import BEFORE, BUTTONS, MAIN_FILES, merge as merge_tumtara
 from release_paths import OUTPUT
+from c_session_policy import apply as apply_session
 
 
 PATCH = ROOT / "reports/C_update_patch.zip"
@@ -85,7 +86,7 @@ def prepare(width, height):
     cfg = re.sub(r"(?m)^net_graphheight \d+$", "net_graphheight " + value, cfg)
     cfg = cfg.replace("Never reuse 620", "Never reuse this pixel value")
     files[CFG] = cfg.encode("utf-8")
-    return merge_tumtara(merge_hud(files))
+    return apply_session(merge_tumtara(merge_hud(files)))
 
 
 def make_patch(files, width, height):
@@ -209,7 +210,7 @@ def build(width, height, video=None):
         "scope": "Archive/resource checks and public SDK coordinate model, not L4D2 runtime tests",
         "artifacts": {str(path.relative_to(ROOT)): digest(path.read_bytes()) for path in artifacts},
         "records": records,
-        "runtime_checks_remaining": ["actual text/font bounds", "flashlight FOV 200 rendering", "ESC initialization/editability", "cvar acceptance", "health panels and PlayerSpeed HUD rendering/refresh", "TUMTaRA popup placement/clicks and installed map availability"],
+        "runtime_checks_remaining": ["actual text/font bounds", "native flashlight FOV 53 rendering", "L4N timer delivery and once-per-connection initialization", "cvar acceptance", "health panels and PlayerSpeed HUD rendering/refresh", "TUMTaRA popup placement/clicks and installed map availability"],
         "hud_integration": {"workshop_id": "3230782214", "crosshair": "excluded; existing C crosshair preserved", "speed_position": "donor-default; CItemPickupPanel y=180 and unchanged pickup resource", "diagnostic_cl_showpos": "not enabled"},
         "tumtara": {"buttons": "2256147202", "launcher_resource": "469986973", "maps_bundled": False,
                     "dependency": "Keep Workshop 469986973 installed; optional map launch buttons need their respective map packs"},

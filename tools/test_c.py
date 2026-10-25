@@ -123,8 +123,24 @@ class WholePackageTests(unittest.TestCase):
     def test_exact_latest_c_delta_and_toolbox_preserved(self):
         before = read(BEFORE)
         self.assertEqual(set(self.files) - set(before), {FLYOUT})
-        self.assertEqual({n for n in before if before[n] != self.files[n]}, {MAIN, LAYOUT, PICKUP})
+        self.assertEqual({n for n in before if before[n] != self.files[n]},
+                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG})
         self.assertEqual(self.files[EXTRAS], before[EXTRAS])
+
+    def test_esc_has_no_default_writers_and_accepts_native_fov(self):
+        menu = menu_controls(self.files["resource/ui/l4d360ui/ingamemainmenu.res"])
+        self.assertFalse(any(n.startswith("Init_") for n in menu))
+        for name in ("Flashlightfov", "GuangSheJiao"):
+            self.assertLessEqual(float(menu[name]["minvalue"]), 53)
+            self.assertGreaterEqual(float(menu[name]["maxvalue"]), 53)
+        self.assertIn(b"\nr_flashlightfov 53\n", self.files[CFG])
+
+    def test_old_esc_initializer_regression_rejected(self):
+        from c_session_policy import BASE as session_base, MENU
+        bad = dict(self.files)
+        bad[MENU] = read(session_base)[MENU]
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
 
     def test_donor_speed_default_layout(self):
         donor = read(HUD)

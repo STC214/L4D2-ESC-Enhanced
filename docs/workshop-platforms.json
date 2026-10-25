@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "snapshot_utc": "2026-10-25T15:30:22.662818Z",
+  "consumer_app_id": 550,
+  "evidence_directory": "reports/platform_comparison/20261025T153022662818Z",
+  "metadata_api": {
+    "method": "POST",
+    "url": "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/",
+    "form": {
+      "itemcount": "3",
+      "publishedfileids[0]": "3787239937",
+      "publishedfileids[1]": "3558049615",
+      "publishedfileids[2]": "3785109042"
+    },
+    "identity_fields": ["publishedfileid", "result", "consumer_app_id", "hcontent_file", "time_updated", "file_size", "file_url"],
+    "direct_url_policy": "snapshot only; refresh API before a future download",
+    "fallback": "Steam subscription/client download or explicit offline archive when file_url is absent"
+  },
+  "platforms": [
+    {
+      "id": "3787239937",
+      "name": "Skeeto",
+      "role": "optional enhancement platform",
+      "version": "2.2.3",
+      "page": "https://steamcommunity.com/sharedfiles/filedetails/?id=3787239937",
+      "subscription_file": "left4dead2/addons/workshop/3787239937.vpk",
+      "file_size": 1675426,
+      "hcontent_file": "12141219936649654308",
+      "time_updated": 1792763386,
+      "snapshot_file_url": "https://cdn.steamusercontent.com/ugc/12141219936649654308/9626198E3B75F126EBB40BE7F474F7DAD8E8D7F7/",
+      "sha256": "645c727d9f3df5632a72b3f57c2076eca2699a2f3868068d147a28ee381d12e4",
+      "actual_format": "ZIP",
+      "regular_files": 27,
+      "main_files": ["skeeto.dll", "bin/wininet.dll", "Skeeto/Manifest.json"],
+      "menu": "skeeto_menu",
+      "default_menu_key": "[",
+      "page_capture": "HTTP 429; author description preserved through official API"
+    },
+    {
+      "id": "3558049615",
+      "name": "NekoShaders & L4N",
+      "role": "base platform; preserve existing settings",
+      "version": "2.51.0",
+      "page": "https://steamcommunity.com/sharedfiles/filedetails/?id=3558049615",
+      "subscription_file": "left4dead2/addons/workshop/3558049615.vpk",
+      "file_size": 23245152,
+      "hcontent_file": "16068050382074527913",
+      "time_updated": 1791462722,
+      "snapshot_file_url": "https://cdn.steamusercontent.com/ugc/16068050382074527913/C385418FA63E2256CDEE31EC71FF75C5AFC4B1A3/",
+      "sha256": "9adf35391cbb0ef88dc5b060d6e0dabf8bf4b48aa2280349dbdfde73bd55d652",
+      "actual_format": "ZIP",
+      "regular_files": 76,
+      "main_files": ["left4dead2.exe", "bin/left4neko.dll", "left4dead2/neko/config_template.vdf"],
+      "menu": "l4n_menu",
+      "page_capture": "local HTTP 429; web reader succeeded; author description preserved through official API"
+    },
+    {
+      "id": "3785109042",
+      "name": "L4D2Evolved",
+      "role": "optional enhancement platform",
+      "version": "1.2.5",
+      "page": "https://steamcommunity.com/sharedfiles/filedetails/?id=3785109042",
+      "subscription_file": "left4dead2/addons/workshop/3785109042.vpk",
+      "file_size": 6180529,
+      "hcontent_file": "16788804601380964734",
+      "time_updated": 1792823804,
+      "snapshot_file_url": "https://cdn.steamusercontent.com/ugc/16788804601380964734/0FFFBD21B8DAF5B66224941254480915ADE44AD1/",
+      "sha256": "0d79e10915130f52d00657c43b04a0a6a5eee01a49955d0acbdc09b8a47d788b",
+      "actual_format": "ZIP",
+      "regular_files": 15,
+      "main_files": ["bin/neko/plugins/L4D2Evolved.dll", "bin/neko/plugins/L4d2evomodel.dll", "Evolved/config.sample"],
+      "menu": "evo_config",
+      "default_menu_key": "F8",
+      "page_capture": "HTTP 429; author description preserved through official API",
+      "acquisition": "reused existing archive only after content ID, size and update time matched fresh metadata"
+    }
+  ],
+  "comparison": {
+    "pair": ["3787239937", "3785109042"],
+    "same_install_path_collisions": 0,
+    "runtime_status": "NOT_TESTED",
+    "functional_overlap_is_not_proven_runtime_failure": true,
+    "matrix_document": "docs/平台来源与功能冲突清单.md"
+  }
+}

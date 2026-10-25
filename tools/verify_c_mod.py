@@ -10,6 +10,7 @@ from vpk import read
 from hud_integration import PRE_HUD, donor_files
 from verify_hud_integration import validate as validate_hud
 from tumtara_integration import MAIN, FLYOUT, validate as validate_tumtara
+from c_session_policy import validate as validate_session
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +29,7 @@ def defaults(height):
     return {
         "fog_enable": "0", "cl_ragdoll_maxcount": "0",
         "sv_disable_glow_survivors": "0", "sv_disable_glow_faritems": "0",
-        "r_flashlightconstant": "1", "r_flashlightfar": "3000", "r_flashlightfov": "200",
+        "r_flashlightconstant": "1", "r_flashlightfar": "3000", "r_flashlightfov": "53",
         "net_graph": "1", "net_graphpos": "1", "net_graphheight": str(height - 100),
         "net_graphproportionalfont": "0", "net_graphtext": "1",
     }
@@ -43,6 +44,8 @@ def validate_menu(text, height):
     new = controls(text)
     old = controls(read(BASE)[MENU].decode("utf-8-sig"))
     for name, original in old.items():
+        if name.startswith("Init_"):
+            continue
         assert name in new, name
         current = new[name]
         for key, value in original.items():
@@ -50,18 +53,16 @@ def validate_menu(text, height):
                 assert current[key] == "c_thirdpersonshoulderheight-"
             elif name == "Flashlightfov" and key == "maxvalue":
                 assert current[key] == "200"
+            elif name == "Flashlightfov" and key == "minvalue":
+                assert current[key] == "50"
             elif name == "Expanded_SldHeight" and key == "maxvalue":
                 assert current[key] == str(height - 100)
             elif name == "Init_r_flashlightfov" and key in ("minvalue", "maxvalue"):
                 assert current[key] == "200"
             else:
                 assert current.get(key) == value, (name, key, value, current.get(key))
-    for command, value in defaults(height).items():
-        init = new["Init_" + command]
-        assert init["concommand"] == command
-        assert init["minvalue"] == init["maxvalue"] == value
-        assert init["ypos"] == "9999" and init["visible"] == init["enabled"] == "1"
-    assert len(new) - len(old) == len(defaults(height)) - 7
+    assert not any(name.startswith("Init_") for name in new)
+    assert len(new) == len(old) - 7
     # Existing layout is unchanged; independently check visible controls' bounds.
     for width in (640, 768, 480 * 16 / 9, 1120):
         boxes = []
@@ -75,11 +76,12 @@ def validate_menu(text, height):
                 assert not (x < ox + ow and ox < x + w and y < oy + oh and oy < y + h)
             boxes.append((x, y, w, h))
     print("PASS existing C menu geometry/actions/unrelated parameters preserved")
-    print("PASS black-block repair and shared flashlight FOV initializer = 200; visible FOV max = 200")
-    print(f"PASS {len(defaults(height))} initializers; net_graph=1, net_graphpos=1, net_graphheight={height - 100}")
+    print("PASS shared flashlight FOV native default = 53; both sliders accept 53")
+    print(f"PASS no ESC initializers; session CFG has {len(defaults(height))} defaults; graph height={height - 100}")
 
 
 def validate_files(files, width, height):
+    validate_session(files, width, height)
     baseline, dependency = read(BASE), read(LED)
     assert hashlib.sha256(BASE.read_bytes()).hexdigest() == BASE_HASH
     assert hashlib.sha256(LED.read_bytes()).hexdigest() == LED_HASH

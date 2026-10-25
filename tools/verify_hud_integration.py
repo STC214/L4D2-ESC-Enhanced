@@ -41,6 +41,8 @@ def validate(files, width=1280, height=720):
     if has_tumtara:
         validate_tumtara(files)
     for name in before:
+        if name in ("resource/ui/l4d360ui/ingamemainmenu.res", "cfg/l4d2esc_defaults.cfg"):
+            continue  # Strict session delta is checked by c_session_policy/verify_c_mod.
         if has_tumtara and name == MAIN:
             continue  # Exact old control-block preservation checked above.
         if height == 720 or name not in (

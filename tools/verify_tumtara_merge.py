@@ -32,7 +32,7 @@ def main():
     assert set(files) - set(before) == {FLYOUT}
     assert set(before) <= set(files)
     changed = {n for n in before if before[n] != files[n]}
-    required = {MAIN, LAYOUT, PICKUP}
+    required = {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", "cfg/l4d2esc_defaults.cfg"}
     if (args.width, args.height) == (1280, 720):
         assert changed == required, changed
     else:

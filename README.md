@@ -1,5 +1,11 @@
 # B 全屏 ESC 菜单修改版
 
+> **本机状态：Evolved 已按要求从游戏目录清理，L4N 与 C 保留。** 30 个文件的备份、核验和恢复入口见 [Evolved 清理记录](docs/Evolved清理记录.md)。旧 Evolved 部署说明仅为历史记录，不表示当前仍安装。
+
+> **平台来源与共存检查：** [三个工坊页面、VPK 下载逻辑及 Skeeto/Evolved 功能冲突清单](docs/平台来源与功能冲突清单.md)。以 L4N 为基底，保留现有设置；机器可读来源为 `docs/workshop-platforms.json`。本轮仅静态检查，没有安装 Skeeto 或更新 L4N。
+
+> **最新 C 会话默认项修正：** 移除每次 ESC 的初始化控件，黑块修复/光射角恢复原生默认 53；自动入房初始化改由配套 L4N 组件承担。安装两件套、回滚与游戏内待验证项见 [C_SESSION_DEFAULTS.md](C_SESSION_DEFAULTS.md)。EXE 更新检测、下载和选项接口规范已补充至设计文档第 12 节；EXE 本体尚未实现。
+
 > **最新 C：已合并 TUMTaRA 主菜单入口与真实地图菜单，速度数字/仪表盘恢复来源默认位置。** 安装、地图依赖、补丁和本轮回滚见 [C_TUMTARA_INTEGRATION.md](C_TUMTARA_INTEGRATION.md)。最新包为 222 个成员；下文及旧说明中的左上角速度布局与旧回滚属于历史版本。
 
 > **C 的成品文件名今后固定为 `dist/【00】C_ESC_LED_血条和速度_TUMTaRA.vpk`。** 构建、审核和验证统一读取 `tools/release_paths.py`，不再发布旧文件名；旧包保留在 `dist/history/`，不要与新包一起安装。
