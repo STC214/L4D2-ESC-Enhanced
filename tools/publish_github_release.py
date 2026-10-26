@@ -95,11 +95,17 @@ def release_for_tag(api):
     return next((r for r in rows if r["tag_name"] == TAG), None)
 
 
+def asset_name(path):
+    # GitHub strips Chinese/full-width characters from uploaded filenames.
+    # The install ZIP keeps the original fixed VPK name inside the archive.
+    return "C_ESC_LED_Health_Speed_TUMTaRA.vpk" if path == OUTPUT else path.name
+
+
 def verify_assets(release, paths):
     by_name = {a["name"]: a for a in release["assets"]}
-    assert set(by_name) == {p.name for p in paths}, "Unexpected/missing release assets"
+    assert set(by_name) == {asset_name(p) for p in paths}, "Unexpected/missing release assets"
     for path in paths:
-        asset = by_name[path.name]
+        asset = by_name[asset_name(path)]
         assert asset["state"] == "uploaded" and asset["size"] == path.stat().st_size
         assert asset.get("digest") == "sha256:" + sha(path), "Remote asset SHA256 mismatch: " + path.name
 
@@ -121,8 +127,10 @@ def main():
         assert api.request(API + "/git/ref/tags/" + TAG, missing=True) is None, "Tag already exists"
         print("PASS GitHub authenticated push permission; release/tag available: " + TAG)
         return
-    commit = git("rev-parse", "HEAD")
-    assert git("rev-parse", TAG + "^{commit}") == commit, "Local tag does not match release source"
+    commit = git("rev-parse", TAG + "^{commit}")
+    for path in paths:
+        relative = path.relative_to(ROOT).as_posix()
+        assert git("hash-object", "--", relative) == git("rev-parse", TAG + ":" + relative), "Artifact differs from tagged release"
     ref = api.request(API + "/git/ref/tags/" + TAG)["object"]
     if ref["type"] == "tag":
         ref = api.request(API + "/git/tags/" + ref["sha"])["object"]
@@ -138,18 +146,29 @@ def main():
         upload = release["upload_url"].split("{", 1)[0]
         assets = {a["name"]: a for a in release["assets"]}
         for path in paths:
-            if path.name in assets:
-                assert assets[path.name].get("digest") == "sha256:" + sha(path), "Existing asset differs; no overwrite"
+            name = asset_name(path)
+            if name not in assets and release["draft"]:
+                matches = [a for a in assets.values() if a.get("digest") == "sha256:" + sha(path)]
+                if len(matches) == 1:
+                    original = matches[0]
+                    renamed = api.request(API + "/releases/assets/" + str(original["id"]), "PATCH",
+                                          {"name": name, "label": path.name})
+                    del assets[original["name"]]
+                    assets[renamed["name"]] = renamed
+                    print("RENAMED " + name, flush=True)
+            if name in assets:
+                assert assets[name].get("digest") == "sha256:" + sha(path), "Existing asset differs; no overwrite"
                 continue
             assert release["draft"], "Do not append to an already published release"
             print("UPLOAD " + path.name, flush=True)
-            asset = api.request(upload + "?" + urllib.parse.urlencode({"name": path.name}),
+            asset = api.request(upload + "?" + urllib.parse.urlencode({"name": name, "label": path.name}),
                                 "POST", path.read_bytes(), binary=True)
-            assert asset["name"] == path.name and asset.get("digest") == "sha256:" + sha(path)
+            assert asset["name"] == name and asset.get("digest") == "sha256:" + sha(path)
         release = api.request(API + "/releases/" + str(release["id"]))
         verify_assets(release, paths)
         if release["draft"]:
-            api.request(API + "/releases/" + str(release["id"]), "PATCH", {"draft": False, "prerelease": True})
+            api.request(API + "/releases/" + str(release["id"]), "PATCH",
+                        {"draft": False, "prerelease": True, "body": NOTES.read_text(encoding="utf-8")})
     assert release is not None
     release = api.request(API + "/releases/" + str(release["id"]))
     assert not release["draft"]
