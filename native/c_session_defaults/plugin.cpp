@@ -1,6 +1,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <bcrypt.h>
+#include <d3d9.h>
 #include <array>
 #include <atomic>
 #include <cstdio>
@@ -17,7 +18,7 @@ public:
     virtual ~IL4NPluginV1() = default;
     virtual unsigned int GetInterfaceVersion() { return 1; }
     virtual const char* GetName() { return "C session defaults"; }
-    virtual const char* GetVersion() { return "1.2.0"; }
+    virtual const char* GetVersion() { return "1.2.3"; }
     virtual void OnModuleLoaded(const char*, std::uintptr_t) {}
     virtual void OnGameLaunch() {}
     virtual void OnD3DCreated(void*) {}
@@ -28,18 +29,14 @@ static HMODULE self_module = nullptr;
 static void* engine_client = nullptr;
 static UINT_PTR timer_id = 0;
 static SessionState session;
-static FirstEscState first_escape;
 static FirstEscState map_defaults;
 static void* cvar_interface = nullptr;
 static bool cvar_identity_checked = false;
 static bool cvar_disabled = false;
-static HHOOK keyboard_hook = nullptr;
-static DWORD keyboard_thread = 0;
-static std::atomic<bool> accept_escape{false};
-static std::atomic<bool> escape_requested{false};
 static std::atomic<bool> disabled{false};
 static bool timer_observed = false;
 static std::atomic<bool> bootstrap_started{false};
+static std::atomic<bool> timer_ready{false};
 static std::atomic<HHOOK> bootstrap_hook{nullptr};
 static bool engine_identity_checked = false;
 
@@ -58,35 +55,6 @@ static void Log(const char* message) {
     if (_wfopen_s(&file, (root / L"CSessionDefaults.log").c_str(), L"ab") != 0 || !file) return;
     std::fprintf(file, "[%llu] %s\r\n", static_cast<unsigned long long>(GetTickCount64()), message);
     std::fclose(file);
-}
-
-static LRESULT CALLBACK Keyboard(int code, WPARAM key, LPARAM details) {
-    // Only fresh ESC key-downs on a game window. Never consume/remap input or
-    // execute engine functions from the keyboard callback's window thread.
-    if (code == HC_ACTION && key == VK_ESCAPE &&
-        (static_cast<ULONG_PTR>(details) & 0xC0000000u) == 0 && accept_escape.load()) {
-        DWORD process = 0;
-        GetWindowThreadProcessId(GetForegroundWindow(), &process);
-        if (process == GetCurrentProcessId()) escape_requested.store(true);
-    }
-    return CallNextHookEx(nullptr, code, key, details);
-}
-
-static void EnsureKeyboardHook() {
-    DWORD process = 0;
-    const DWORD thread = GetWindowThreadProcessId(GetForegroundWindow(), &process);
-    if (!thread || process != GetCurrentProcessId() ||
-        (keyboard_hook && keyboard_thread == thread)) return;
-    if (keyboard_hook) UnhookWindowsHookEx(keyboard_hook);
-    keyboard_hook = SetWindowsHookExW(WH_KEYBOARD, Keyboard, self_module, thread);
-    keyboard_thread = keyboard_hook ? thread : 0;
-    static bool failure_logged = false;
-    if (keyboard_hook) {
-        Log("INPUT_READY: thread-local game keyboard hook; no input remap or global keyboard hook");
-    } else if (!failure_logged) {
-        failure_logged = true;
-        Log("INPUT_ERROR: first-ESC input hook unavailable; connection defaults remain separate");
-    }
 }
 
 static bool ModuleIdentityMatches(HMODULE module, const char* expected) {
@@ -243,8 +211,6 @@ static bool SetLocalInteger(const char* name, int value) {
 
 static void Poll() {
     if (disabled || (!engine_client && !EnsureEngine())) return;
-    EnsureKeyboardHook();
-    const bool escape = escape_requested.exchange(false);
     using Bool = bool(__thiscall*)(void*);
     using Pointer = void*(__thiscall*)(void*);
     using String = const char*(__thiscall*)(void*);
@@ -252,15 +218,12 @@ static void Poll() {
     using Command = void(__thiscall*)(void*, const char*);
     const bool connected = Method<Bool>(engine_client, 27)(engine_client);
     if (!connected) {
-        accept_escape.store(false);
-        first_escape.Update(false, false, 0, -1, "", false);
         map_defaults.Update(false, false, 0, -1, "", false);
         session.Update(false, false, 0, -1);
         return;
     }
     void* channel = Method<Pointer>(engine_client, 74)(engine_client);
     if (!channel) {
-        accept_escape.store(false);
         return;
     }
     const bool active = Method<Bool>(engine_client, 26)(engine_client);
@@ -269,8 +232,6 @@ static void Poll() {
     const float age = Method<Float>(channel, 3)(channel);
     const bool playback = Method<Bool>(channel, 8)(channel);
     const bool background = BackgroundMap(level);
-    accept_escape.store(active && !background && !playback &&
-                        std::isfinite(age) && age >= 0);
     if (session.Update(connected, active, reinterpret_cast<std::uintptr_t>(channel), age,
                        background, playback)) {
         // Same path as user console execution; no server/cheat-policy changes.
@@ -283,16 +244,10 @@ static void Poll() {
         // touch replicated server variables. Apply once per map, not a lock.
         for (const char* name : {"r_RainParticleDensity", "r_SnowParticles", "fog_override",
                                  "fog_enable", "cl_ragdoll_maxcount"}) SetLocalInteger(name, 0);
-        Log("MAP_DEFAULTS: local weather/corpse defaults attempted once; see per-value readback");
-    }
-    if (first_escape.Update(connected, active, reinterpret_cast<std::uintptr_t>(channel), age,
-                            level, escape, background, playback)) {
-        if (SetLocalInteger("r_flashlightfov", 150)) {
-            Log("FIRST_ESC: flashlight 150 readback verified once; no subsequent enforcement");
-        } else {
-            Method<Command>(engine_client, 107)(engine_client, "r_flashlightfov 150\n");
-            Log("FIRST_ESC: console fallback queued; value NOT verified");
-        }
+        SetLocalInteger("r_flashlightconstant", 1);
+        SetLocalInteger("r_flashlightfar", 3000);
+        SetLocalInteger("r_flashlightfov", 165);
+        Log("MAP_DEFAULTS: local weather/corpse/light defaults attempted once; see per-value readback");
     }
 }
 
@@ -313,25 +268,27 @@ static void CALLBACK Timer(HWND, UINT, UINT_PTR, DWORD) {
         }
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         disabled = true;
-        accept_escape.store(false);
-        if (keyboard_hook) UnhookWindowsHookEx(keyboard_hook);
-        keyboard_hook = nullptr;
         KillTimer(nullptr, timer_id);
         timer_id = 0;
         Log("DISABLED: engine/connection query exception; no retry or offset fallback");
     }
 }
 
-static LRESULT CALLBACK StartOnWindowThread(int code, WPARAM key, LPARAM data) {
-    if (code >= 0 && !timer_id && !disabled) {
+static void StartTimerOnWindowThread() {
+    if (!timer_ready.load() && !disabled) {
         timer_id = SetTimer(nullptr, 0, 100, Timer);
         if (!timer_id) {
             disabled = true;
             Log("DISABLED: game-window timer creation failed");
         } else {
+            timer_ready.store(true);
             Log("READY: timer installed on game-window thread; waiting for engine/interface");
         }
     }
+}
+
+static LRESULT CALLBACK StartOnWindowThread(int code, WPARAM key, LPARAM data) {
+    if (code >= 0) StartTimerOnWindowThread();
     return CallNextHookEx(nullptr, code, key, data);
 }
 
@@ -340,7 +297,7 @@ static BOOL CALLBACK FindGameWindow(HWND window, LPARAM result) {
     GetWindowThreadProcessId(window, &process);
     RECT rect{};
     if (process == GetCurrentProcessId() && IsWindowVisible(window) &&
-        !GetWindow(window, GW_OWNER) && GetClientRect(window, &rect) &&
+        GetClientRect(window, &rect) &&
         rect.right - rect.left >= 320 && rect.bottom - rect.top >= 200) {
         *reinterpret_cast<HWND*>(result) = window;
         return FALSE;
@@ -349,17 +306,27 @@ static BOOL CALLBACK FindGameWindow(HWND window, LPARAM result) {
 }
 
 static DWORD WINAPI Bootstrap(void*) {
+    Log("BOOTSTRAP_STARTED: locating game window, including owned windows");
     for (int attempt = 0; attempt < 1200; ++attempt) {
+        if (timer_ready.load() || disabled.load()) return 0;
         HWND window = nullptr;
         EnumWindows(FindGameWindow, reinterpret_cast<LPARAM>(&window));
         if (window) {
             DWORD thread = GetWindowThreadProcessId(window, nullptr);
+            char message[180]{};
+            std::snprintf(message, sizeof(message), "WINDOW_FOUND: thread=%lu owned=%d", thread,
+                          GetWindow(window, GW_OWNER) ? 1 : 0);
+            Log(message);
+            if (timer_ready.load()) return 0;
             HHOOK hook = SetWindowsHookExW(WH_GETMESSAGE, StartOnWindowThread, self_module, thread);
             if (hook) {
                 bootstrap_hook.store(hook);
+                Log("HOOK_READY: game-window message hook installed");
                 PostMessageW(window, WM_NULL, 0, 0);
                 return 0;
             }
+            std::snprintf(message, sizeof(message), "HOOK_FAILED: Win32 error=%lu", GetLastError());
+            Log(message);
         }
         Sleep(100);
     }
@@ -369,6 +336,31 @@ static DWORD WINAPI Bootstrap(void*) {
 
 class Plugin final : public IL4NPluginV1 {
 public:
+    void OnD3DDeviceCreated(void* object, bool) override {
+        if (!object || disabled.load()) return;
+        OnGameLaunch(); // Idempotent pin/bootstrap, even if callback order differs.
+        D3DDEVICE_CREATION_PARAMETERS parameters{};
+        auto device = static_cast<IDirect3DDevice9*>(object);
+        if (FAILED(device->GetCreationParameters(&parameters)) || !IsWindow(parameters.hFocusWindow)) {
+            Log("D3D_WINDOW_FAILED: no valid device focus window");
+            return;
+        }
+        DWORD process = 0;
+        DWORD thread = GetWindowThreadProcessId(parameters.hFocusWindow, &process);
+        if (process != GetCurrentProcessId()) return;
+        if (thread == GetCurrentThreadId()) {
+            Log("D3D_WINDOW_READY: creation callback is on the game-window thread");
+            StartTimerOnWindowThread();
+        } else if (!timer_ready.load() && !bootstrap_hook.load()) {
+            HHOOK hook = SetWindowsHookExW(WH_GETMESSAGE, StartOnWindowThread, self_module, thread);
+            if (hook) {
+                bootstrap_hook.store(hook);
+                PostMessageW(parameters.hFocusWindow, WM_NULL, 0, 0);
+                Log("D3D_HOOK_READY: device focus-window thread selected directly");
+            }
+        }
+    }
+
     void OnGameLaunch() override {
         if (bootstrap_started.exchange(true) || disabled) return;
         HMODULE pinned = nullptr;
