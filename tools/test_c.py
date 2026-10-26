@@ -15,6 +15,7 @@ from pathlib import Path
 from audit_c import inspect
 from build_c_mod import OUTPUT, adapt_resource, prepare, validate_resolution, video_resolution
 from c_menu_consolidation import PATCH, SUBMENUS, bindings, transform, baseline
+from c_chat_layout import CHAT
 from hud_integration import HUD, ROOT, LAYOUT, PICKUP, SPEED
 from tumtara_integration import (
     MAIN, EXTRAS, FLYOUT, BEFORE, BUTTONS, MAIN_FILES, controls as menu_controls,
@@ -125,7 +126,7 @@ class WholePackageTests(unittest.TestCase):
         before = read(BEFORE)
         self.assertEqual(set(self.files) - set(before), {FLYOUT})
         self.assertEqual({n for n in before if before[n] != self.files[n]},
-                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG, *SUBMENUS})
+                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG, CHAT, *SUBMENUS})
         self.assertEqual(self.files[EXTRAS], before[EXTRAS])
 
     def test_esc_has_no_default_writers_and_accepts_native_fov(self):
@@ -140,6 +141,23 @@ class WholePackageTests(unittest.TestCase):
     def test_all_duplicate_menu_bindings_merged(self):
         self.assertTrue(all(len(refs) == 1 for refs in bindings(self.files).values()))
         self.assertEqual(set(bindings(self.files)), set(bindings(baseline())))
+
+    def test_chat_only_changes_two_resources(self):
+        from c_chat_layout import baseline as chat_baseline
+        before = chat_baseline()
+        self.assertEqual({p for p in before if before[p] != self.files[p]}, {CHAT, LAYOUT})
+
+    def test_chat_bottom_right_and_input_containment(self):
+        from c_chat_layout import validate as validate_chat
+        with contextlib.redirect_stdout(io.StringIO()):
+            validate_chat(self.files)
+
+    def test_chat_old_position_regression_rejected(self):
+        from c_chat_layout import baseline as chat_baseline
+        bad = dict(self.files)
+        bad[CHAT] = chat_baseline()[CHAT]
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
 
     def test_all_weather_defaults_are_zero(self):
         for command in (b"r_RainParticleDensity", b"r_SnowParticles", b"fog_override", b"fog_enable"):

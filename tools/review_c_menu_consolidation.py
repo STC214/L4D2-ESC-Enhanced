@@ -7,9 +7,10 @@ import subprocess
 import sys
 
 from c_menu_consolidation import BASE, OLD_DLL, DLL, PATCH, DIFF, BUNDLE
+from c_chat_layout import BASE as CHAT_BASE
 from release_paths import ROOT, OUTPUT, C_FILENAME
 
-RECORD = ROOT / "reports/c_menu_consolidation/verification.json"
+RECORD = ROOT / "reports/c_chat_bottom_right/verification.json"
 
 
 def sha(path):
@@ -38,12 +39,13 @@ def run(arguments):
 def main():
     RECORD.parent.mkdir(parents=True, exist_ok=True)
     report = {"scope": "Complete packaged-member static audit, native unit/real DLL ABI test, regression and file-transaction fixtures; NOT live L4D2",
-              "baseline_inputs": {str(p.relative_to(ROOT)): sha(p) for p in (BASE, OLD_DLL)},
+              "baseline_inputs": {str(p.relative_to(ROOT)): sha(p) for p in (BASE, OLD_DLL, CHAT_BASE)},
               "source_hashes": sources(), "game_before": game_snapshot(),
               "baseline_records": [], "rounds": [], "clean_rounds": 0}
     try:
         for command in (["tools/c_menu_consolidation.py", "baseline"],
-                        ["tools/audit_c.py", str(BASE), "--report", "reports/c_menu_consolidation/baseline_audit.json"]):
+                        ["tools/c_chat_layout.py", "baseline"],
+                        ["tools/audit_c.py", str(CHAT_BASE), "--report", "reports/c_chat_bottom_right/baseline_audit.json"]):
             entry = run(command)
             report["baseline_records"].append(entry)
             assert entry["exit_status"] == 0, entry
@@ -53,9 +55,10 @@ def main():
             commands = [
                 ["tools/build_c_session_plugin.py"],
                 ["tools/build_c_mod.py", "--width", "1280", "--height", "720"],
+                ["tools/c_chat_layout.py", "verify"],
                 ["tools/test_c.py"],
-                ["tools/test_c_session_deploy.py", "--report", f"reports/c_menu_consolidation/deploy_{number}.json"],
-                ["tools/audit_c.py", str(OUTPUT), "--report", f"reports/c_menu_consolidation/audit_{number}.json"],
+                ["tools/test_c_session_deploy.py", "--report", f"reports/c_chat_bottom_right/deploy_{number}.json"],
+                ["tools/audit_c.py", str(OUTPUT), "--report", f"reports/c_chat_bottom_right/audit_{number}.json"],
                 ["tools/verify_c_mod.py", str(OUTPUT)],
                 ["tools/verify_hud_integration.py", str(OUTPUT)],
                 ["tools/verify_tumtara_merge.py"],
@@ -63,6 +66,7 @@ def main():
                 ["tools/c_session_release.py", "package"],
                 ["tools/build_c_mod.py", "--apply-patch"],
                 ["tools/c_menu_consolidation.py", "rollback-copy"],
+                ["tools/c_chat_layout.py", "rollback-copy"],
             ]
             for command in commands:
                 entry = run(command)
@@ -70,7 +74,7 @@ def main():
                 if entry["exit_status"]:
                     print(entry["stdout"] + entry["stderr"])
                     raise RuntimeError("Audit failed; see exact record")
-            audit = json.loads((ROOT / f"reports/c_menu_consolidation/audit_{number}.json").read_text(encoding="utf-8"))
+            audit = json.loads((ROOT / f"reports/c_chat_bottom_right/audit_{number}.json").read_text(encoding="utf-8"))
             assert not audit["errors"] and audit["sha256"] == sha(OUTPUT)
             round_.update(vpk_sha256=sha(OUTPUT), helper_sha256=sha(DLL), bundle_sha256=sha(BUNDLE), errors=0)
             report["clean_rounds"] += 1
@@ -83,7 +87,9 @@ def main():
         restored = ROOT / "dist/rollback_menu_consolidation"
         artifacts = (OUTPUT, DLL, BUNDLE, PATCH, DIFF, BASE, OLD_DLL,
                      ROOT / "reports/c_menu_consolidation/replayed.vpk",
-                     restored / C_FILENAME, restored / "CSessionDefaults.dll")
+                     restored / C_FILENAME, restored / "CSessionDefaults.dll", CHAT_BASE,
+                     ROOT / "reports/c_chat_bottom_right/chat.patch",
+                     ROOT / "dist/rollback_chat_bottom_right" / C_FILENAME)
         report["artifacts"] = {str(p.relative_to(ROOT)): sha(p) for p in artifacts}
         diff = subprocess.run(["git", "diff", "--", "native/c_session_defaults", "tools", "README.md", "C_README.md", "C_SESSION_DEFAULTS.md"],
                               cwd=ROOT, capture_output=True, check=True)
@@ -93,6 +99,7 @@ def main():
             "L4N launch-thread message pump and thread-local keyboard-hook delivery in the real game",
             "First ESC each chapter/reload queues 150; subsequent manual values below 150 persist",
             "Actual server acceptance of weather/light CVars and real UI text/rendering",
+            "Chat history/input real engine layout and HUD clearance; default Evo-map separation in-game",
         ]
     except BaseException as exc:
         report["status"] = "FAILED"

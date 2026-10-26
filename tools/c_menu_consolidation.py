@@ -17,6 +17,7 @@ import shutil
 import zipfile
 
 from audit_c import inspect
+from c_chat_layout import CHAT, LAYOUT, apply as apply_chat, validate as validate_chat
 from inspect_menu import blocks, fields
 from kv_audit import parse, scalars, walk
 from prepare_menu_patch import set_fields
@@ -35,7 +36,7 @@ CFG = "cfg/l4d2esc_defaults.cfg"
 AUDIO = "resource/ui/l4d360ui/audio.res"
 SUBMENUS = tuple("resource/ui/l4d360ui/" + n for n in (
     "dropdowncrosshair.res", "dropdownnetgraph.res", "dropdownweathercontrol.res"))
-CHANGED = {MENU, CFG, *SUBMENUS}
+CHANGED = {MENU, CFG, CHAT, LAYOUT, *SUBMENUS}
 PATCH = ROOT / "reports/c_menu_consolidation/patch.zip"
 DIFF = ROOT / "reports/c_menu_consolidation/menus.patch"
 BUNDLE = ROOT / "dist/C_session_release.zip"
@@ -135,7 +136,7 @@ def transform(files, width=1280, height=720):
     cfg += "\n// Weather defaults; apply once on a new connection, never every ESC.\n"
     cfg += "r_RainParticleDensity 0\nr_SnowParticles 0\nfog_override 0\n"
     result[CFG] = cfg.encode("utf-8")
-    return result
+    return apply_chat(result)
 
 
 def validate(files, width=None, height=None):
@@ -151,6 +152,7 @@ def validate(files, width=None, height=None):
     validate_resolution(actual_width, actual_height)
     expected = transform(before, actual_width, actual_height)
     assert files == expected, "Unexpected payload or missing consolidation change"
+    validate_chat(files)
     duplicates = {c: refs for c, refs in bindings(files).items() if len(refs) > 1}
     assert not duplicates, duplicates
     assert set(bindings(before)) == set(bindings(files)), "A distinct setting was lost"
@@ -203,6 +205,7 @@ def package():
     payload = {"left4dead2/addons/" + C_FILENAME: OUTPUT.read_bytes(),
                "bin/neko/plugins/CSessionDefaults.dll": DLL.read_bytes()}
     manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.1.0",
+                "chat_layout": "bottom-right; right margin 17 and bottom HUD clearance 80 VGUI units",
                 "engine_sha256": build["engine_profile_sha256"],
                 "first_escape": "once per playable map; FOV 150, not enforced afterwards",
                 "files": {p: sha(b) for p, b in payload.items()}}

@@ -35,7 +35,9 @@ def main():
     required = {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", "cfg/l4d2esc_defaults.cfg"}
     if "手电光圈".encode() in files["resource/ui/l4d360ui/ingamemainmenu.res"]:
         from c_menu_consolidation import SUBMENUS, validate as validate_latest
+        from c_chat_layout import CHAT
         required.update(SUBMENUS)
+        required.add(CHAT)
         validate_latest(files, args.width, args.height)
     if (args.width, args.height) == (1280, 720):
         assert changed == required, changed
