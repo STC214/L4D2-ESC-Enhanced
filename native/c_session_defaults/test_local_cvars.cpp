@@ -86,6 +86,16 @@ int main() {
     assert(fov_per_map.Update(true, true, 1, 102, "map2", true));
     assert(SetCheckedLocalInt(cone_raw, cone.name, 165));
     assert(cone.int_value == 165);
+    cone.SetValue(80);
+    assert(!fov_per_map.Update(true, true, 0, -1, "", true));
+    assert(!fov_per_map.Update(true, true, 1, 103, "map2", true));
+    assert(cone.int_value == 80); // Active metadata gap is not a map reload.
+    assert(!fov_per_map.Update(true, false, 0, -1, "", true));
+    assert(fov_per_map.Update(true, true, 1, 104, "map2", true));
+    assert(SetCheckedLocalInt(cone_raw, cone.name, 165));
+    assert(cone.int_value == 165);
+    assert(!fov_per_map.Update(true, true, 1, 105, "map2", true));
+    std::puts("PASS inactive/null-channel reload resets same map once; active metadata gap preserves manual value");
     std::puts("PASS map entry FOV 165 without ESC; manual 80 preserved for 100 ticks; next map resets 165");
     std::puts("PASS pinned x86 ConVar prefix, named local setter/readback, unchanged flags, replicated/name/null rejection");
     return 0;

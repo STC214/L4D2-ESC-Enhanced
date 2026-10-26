@@ -18,7 +18,7 @@ public:
     virtual ~IL4NPluginV1() = default;
     virtual unsigned int GetInterfaceVersion() { return 1; }
     virtual const char* GetName() { return "C session defaults"; }
-    virtual const char* GetVersion() { return "1.2.3"; }
+    virtual const char* GetVersion() { return "1.2.4"; }
     virtual void OnModuleLoaded(const char*, std::uintptr_t) {}
     virtual void OnGameLaunch() {}
     virtual void OnD3DCreated(void*) {}
@@ -222,11 +222,12 @@ static void Poll() {
         session.Update(false, false, 0, -1);
         return;
     }
+    const bool active = Method<Bool>(engine_client, 26)(engine_client);
     void* channel = Method<Pointer>(engine_client, 74)(engine_client);
     if (!channel) {
+        map_defaults.Update(connected, active, 0, -1, "", true);
         return;
     }
-    const bool active = Method<Bool>(engine_client, 26)(engine_client);
     const char* level = Method<String>(engine_client, 52)(engine_client);
     // INetChannelInfo's first methods match its documented x86 interface.
     const float age = Method<Float>(channel, 3)(channel);

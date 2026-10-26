@@ -48,7 +48,7 @@ def main():
     assert struct.unpack_from('<H', raw, pe + 4)[0] == 0x14c
     assert b'GetL4NPluginInstance\0' in raw
     report = {'scope': 'x86 build + standalone state model, not live game validation',
-              'helper_version': '1.2.3',
+              'helper_version': '1.2.4',
               'client_profile_sha256': 'c0a8e1e88f7312db11bcfd4b0ec574d224a34b2d9a615d6088b28335eeb4af1f',
               'vstdlib_profile_sha256': '37d0c98ddfe7fa199d741dfc24526eb435f71f66d2d0e3d0500c4c1be33cb6c5',
               'records': records, 'dll_sha256': hashlib.sha256(raw).hexdigest(),

@@ -64,12 +64,12 @@ def main():
         assert sha(target) == sha(source_path)
     assert read(rollback / OUTPUT.name) == before
     build = json.loads((ROOT / "reports/c_session_plugin_build.json").read_text(encoding="utf-8"))
-    assert build["helper_version"] == "1.2.3" and build["dll_sha256"] == sha(DLL)
+    assert build["helper_version"] == "1.2.4" and build["dll_sha256"] == sha(DLL)
     assert all(record["exit_status"] == 0 for record in build["records"])
     with zipfile.ZipFile(BUNDLE) as archive:
         assert archive.testzip() is None
         manifest = json.loads(archive.read("manifest.json"))
-        assert manifest["helper_version"] == "1.2.3"
+        assert manifest["helper_version"] == "1.2.4"
         assert "first_escape" not in manifest
     sums = ROOT / "dist/SHA256SUMS.txt"
     sums.write_text("".join(f"{sha(path)}  {path.name}\n" for path in (BUNDLE, OUTPUT)), encoding="utf-8", newline="\n")

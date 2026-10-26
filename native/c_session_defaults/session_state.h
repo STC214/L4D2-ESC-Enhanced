@@ -47,6 +47,12 @@ public:
             level_.clear();
             return false;
         }
+        // Loading must be observed even while channel/level data is absent.
+        // An active frame with missing metadata must NOT re-arm user defaults.
+        if (!active) {
+            active_ = false;
+            return false;
+        }
         if (!channel || !std::isfinite(age) || age < 0 || !level || !*level) return false;
         if (channel != channel_ || (age_ >= 0.0f && age + 0.1f < age_)) {
             active_ = false;
@@ -54,7 +60,7 @@ public:
         }
         channel_ = channel;
         age_ = age;
-        if (!active || background || playback) {
+        if (background || playback) {
             active_ = false;
             return false;
         }

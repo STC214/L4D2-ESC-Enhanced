@@ -136,16 +136,27 @@ class WholePackageTests(unittest.TestCase):
         for name in ("Flashlightfov",):
             self.assertLessEqual(float(menu[name]["minvalue"]), 53)
             self.assertGreaterEqual(float(menu[name]["maxvalue"]), 53)
-        self.assertIn(b"\nr_flashlightfov 53\n", self.files[CFG])
+        self.assertIn(b"\nr_flashlightfov 165\n", self.files[CFG])
 
     def test_all_duplicate_menu_bindings_merged(self):
         self.assertTrue(all(len(refs) == 1 for refs in bindings(self.files).values()))
         self.assertEqual(set(bindings(self.files)), set(bindings(baseline())))
 
     def test_chat_only_changes_two_resources(self):
-        from c_chat_layout import baseline as chat_baseline
+        from c_chat_layout import apply as apply_chat, baseline as chat_baseline
         before = chat_baseline()
-        self.assertEqual({p for p in before if before[p] != self.files[p]}, {CHAT, LAYOUT})
+        chat_only = apply_chat(before)
+        self.assertEqual({p for p in before if before[p] != chat_only[p]}, {CHAT, LAYOUT})
+        for path in (CHAT, LAYOUT):
+            self.assertEqual(chat_only[path], self.files[path])
+
+    def test_fullscreen_background_uses_uniform_fill(self):
+        menu = menu_controls(self.files["resource/ui/l4d360ui/ingamemainmenu.res"])
+        panel = menu["PnlBackground_tweaks1"]
+        for key, value in {"xpos": "0", "ypos": "0", "wide": "f0", "tall": "f0",
+                           "paintbackground": "1", "paintbackgroundtype": "0",
+                           "bgcolor_override": "0 0 0 232"}.items():
+            self.assertEqual(panel[key], value)
 
     def test_chat_bottom_right_and_input_containment(self):
         from c_chat_layout import validate as validate_chat

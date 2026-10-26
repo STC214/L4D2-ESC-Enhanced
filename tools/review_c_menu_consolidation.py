@@ -10,7 +10,7 @@ from c_menu_consolidation import BASE, OLD_DLL, DLL, PATCH, DIFF, BUNDLE
 from c_chat_layout import BASE as CHAT_BASE
 from release_paths import ROOT, OUTPUT, C_FILENAME
 
-RECORD = ROOT / "reports/c_chat_bottom_right/verification.json"
+RECORD = ROOT / "reports/c_current_review/verification.json"
 
 
 def sha(path):
@@ -55,6 +55,7 @@ def main():
             commands = [
                 ["tools/build_c_session_plugin.py"],
                 ["tools/build_c_mod.py", "--width", "1280", "--height", "720"],
+                ["tools/verify_fov165.py"],
                 ["tools/c_chat_layout.py", "verify"],
                 ["tools/test_c.py"],
                 ["tools/test_c_session_deploy.py", "--report", f"reports/c_chat_bottom_right/deploy_{number}.json"],
@@ -96,8 +97,8 @@ def main():
         (RECORD.parent / "tracked_source_changes.patch").write_bytes(diff.stdout)
         report["status"] = "TWO_CLEAN_STATIC_REGRESSION_ROUNDS"
         report["runtime_pending"] = [
-            "L4N launch-thread message pump and thread-local keyboard-hook delivery in the real game",
-            "First ESC each chapter/reload queues 150; subsequent manual values below 150 persist",
+            "L4N game-window message pump and D3D bootstrap in the real game",
+            "Map entry/reload initializes FOV 165; manual values persist without ESC-triggered reset",
             "Actual server acceptance of weather/light CVars and real UI text/rendering",
             "Chat history/input real engine layout and HUD clearance; default Evo-map separation in-game",
         ]

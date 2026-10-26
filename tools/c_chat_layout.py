@@ -94,7 +94,13 @@ def validate(files):
 def verify():
     before, current = baseline(), read(OUTPUT)
     assert set(before) == set(current)
-    assert {p for p in before if before[p] != current[p]} == {CHAT, LAYOUT}
+    isolated = apply(before)
+    assert {p for p in before if before[p] != isolated[p]} == {CHAT, LAYOUT}
+    assert all(current[p] == isolated[p] for p in (CHAT, LAYOUT))
+    # The current release also includes independently approved background/CFG
+    # changes. Validate those exactly rather than widening an allowlist here.
+    from c_menu_consolidation import validate as validate_current
+    validate_current(current)
     validate(current)
     directory = ROOT / "reports/c_chat_bottom_right"
     directory.mkdir(parents=True, exist_ok=True)
@@ -105,7 +111,7 @@ def verify():
     target = directory / "chat.patch"
     target.write_text(patch, encoding="utf-8", newline="\n")
     assert target.read_text(encoding="utf-8") == patch.replace("\r\n", "\n")
-    print("PASS exact task delta: two chat resources; all other 220 members byte-identical")
+    print("PASS isolated chat delta: two resources; current full-release delta independently validated")
     print("PATCH " + str(target))
 
 
