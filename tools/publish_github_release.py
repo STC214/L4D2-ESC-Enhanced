@@ -18,12 +18,12 @@ import zipfile
 from release_paths import ROOT, OUTPUT
 
 REPO = "STC214/L4D2-ESC-Enhanced"
-TAG = "v1.2.0"
+TAG = "v1.2.4"
 API = "https://api.github.com/repos/" + REPO
-NOTES = ROOT / "docs/releases/v1.2.0.md"
+NOTES = ROOT / "docs/releases/v1.2.4.md"
 ZIP = ROOT / "dist/C_session_release.zip"
 SUMS = ROOT / "dist/SHA256SUMS.txt"
-REPORT = ROOT / "reports/release_v1.2.0"
+REPORT = ROOT / "reports/release_v1.2.4"
 
 
 def git(*args):
@@ -38,12 +38,16 @@ def sha(path):
 
 
 def check():
-    evidence = json.loads((ROOT / "reports/weather_layout/verification.json").read_text(encoding="utf-8"))
-    assert sha(OUTPUT) == evidence["after_sha256"]
+    evidence = json.loads((ROOT / "reports/c_current_review/verification.json").read_text(encoding="utf-8"))
+    assert evidence["status"] == "TWO_CLEAN_STATIC_REGRESSION_ROUNDS" and evidence["clean_rounds"] == 2
+    for round_ in evidence["rounds"]:
+        assert round_["vpk_sha256"] == sha(OUTPUT)
+        assert round_["bundle_sha256"] == sha(ZIP)
+        assert all(record["exit_status"] == 0 for record in round_["records"])
     with zipfile.ZipFile(ZIP) as archive:
         assert archive.testzip() is None
         manifest = json.loads(archive.read("manifest.json"))
-        assert manifest["helper_version"] == "1.2.0"
+        assert manifest["helper_version"] == "1.2.4"
         for name, digest in manifest["files"].items():
             assert hashlib.sha256(archive.read(name)).hexdigest() == digest
     assert NOTES.is_file()
@@ -140,7 +144,7 @@ def main():
         if release is None:
             release = api.request(API + "/releases", "POST", {
                 "tag_name": TAG, "target_commitish": commit,
-                "name": "C v1.2.0 — 天气／尸体默认项修复与聊天布局对齐",
+                "name": "C v1.2.4 — 手电光圈进图 165 与同图重载修复",
                 "body": NOTES.read_text(encoding="utf-8"), "draft": True, "prerelease": True})
             print("DRAFT created", flush=True)
         upload = release["upload_url"].split("{", 1)[0]
