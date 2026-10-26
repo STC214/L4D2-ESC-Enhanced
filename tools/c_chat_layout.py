@@ -1,4 +1,4 @@
-"""Bottom-right C chat overlay; keep unrelated HUD payloads byte-identical."""
+"""Center chat in the speed/weapon gap and align input with player health."""
 
 import argparse
 import difflib
@@ -16,7 +16,7 @@ CHAT = "resource/ui/basechat.res"
 LAYOUT = "scripts/hudlayout.res"
 BASE = ROOT / "originals/C_before_chat_bottom_right.vpk"
 BASE_HASH = "b220c062478606ce1f0d7e5a27490ec7f604ec78a7b2c1e2495ddf331ada44ab"
-ROOT_FIELDS = {"xpos": "r297", "ypos": "r200", "wide": "280", "tall": "120"}
+ROOT_FIELDS = {"xpos": "c-30", "ypos": "r133", "wide": "280", "tall": "120"}
 CHANGES = {
     "HudChat": ROOT_FIELDS,
     "KeyStateLabel": {"wide": "260"},
@@ -55,6 +55,13 @@ def validate(files):
         assert files[path] == expected[path], "Unexpected chat/HUD modification: " + path
     nodes = {n: fields(b) for n, _, _, b in blocks(files[CHAT].decode("utf-8-sig"))}
     root = nodes["HudChat"]
+    layout = {n: fields(b) for n, _, _, b in blocks(files[LAYOUT].decode("utf-8-sig"))}
+    pickup = {n: fields(b) for n, _, _, b in blocks(files["resource/ui/hud/itempickup.res"].decode("utf-8-sig"))}
+    player = {n: fields(b) for n, _, _, b in blocks(files["resource/ui/hud/localplayerpanel.res"].decode("utf-8-sig"))}
+    assert max(float(pickup[n]["xpos"]) + float(pickup[n]["wide"]) for n in ("speedmeter", "arrow")) == 310
+    assert layout["HudWeaponSelection"]["xpos"] == "r90"
+    assert layout["CHudLocalPlayerDisplay"]["ypos"] == "r90"
+    assert float(player["HealthBorder"]["ypos"]) + float(player["HealthBorder"]["tall"]) == 72
     assert all(root[k] == v for k, v in ROOT_FIELDS.items())
     w, h = float(root["wide"]), float(root["tall"])
     for name in ("KeyStateLabel", "ChatInputLine", "HudChatHistory", "ChatFiltersButton"):
@@ -68,13 +75,20 @@ def validate(files):
         logical_width = width * 480 / height
         x, y = coordinate(root["xpos"], logical_width, w), coordinate(root["ypos"], 480, h)
         assert x >= 0 and y >= 0 and x + w <= logical_width and y + h <= 480
-        assert abs(logical_width - x - w - 17) < 0.001
-        assert 480 - y - h == 80
+        # Speed/needle union right edge = 310. Weapon HUD begins at r90.
+        # The center of the intervening gap is W/2 + 110, not screen center.
+        gap_center = (310 + logical_width - 90) / 2
+        assert abs(x + w / 2 - gap_center) < 0.001
+        # Local-player display y=r90 + LocalPlayer y=0 + HealthBorder 55+17.
+        health_bottom = 480 - 90 + 55 + 17
+        assert y + float(entry["ypos"]) + float(entry["tall"]) == health_bottom
+        if logical_width - 90 - 310 >= w:
+            assert x >= 310 and x + w <= logical_width - 90
         # Finite default-Evo model: the map is at the top, while chat begins
         # at 280/480 of the rendering height. Not a live UI/capture assertion.
         assert y * height / 480 > 0.236111075 * height + 18 * max(0.65, min(width / 1920, height / 1080, 4))
-    print("PASS chat right/bottom anchors; history/input/key label inside parent; six viewport models")
-    print("PASS right margin 17, bottom HUD clearance 80 logical units; default-Evo finite layout separated")
+    print("PASS chat centered between speed right edge 310 and weapon left r90")
+    print("PASS input bottom equals local-player HealthBorder bottom 462; unrelated HUD unchanged")
 
 
 def verify():

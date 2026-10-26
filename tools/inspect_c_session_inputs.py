@@ -53,7 +53,9 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     report = {'native': [], 'events': []}
     for relative, needles in (
-        ('left4dead2/bin/client.dll', ['r_flashlightfov', 'r_farz']),
+        ('left4dead2/bin/client.dll', ['r_flashlightfov', 'r_farz', 'fog_enable', 'fog_override',
+                                    'r_RainParticleDensity', 'r_SnowParticles', 'r_drawrain',
+                                    'cl_ragdoll_maxcount']),
         ('bin/engine.dll', ['VEngineClient013', 'GAMEEVENTSMANAGER002', 'client_beginconnect', 'client_connected', 'client_disconnect']),
     ):
         path = GAME / relative

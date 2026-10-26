@@ -204,8 +204,9 @@ def package():
     assert sha(DLL.read_bytes()) == build["dll_sha256"]
     payload = {"left4dead2/addons/" + C_FILENAME: OUTPUT.read_bytes(),
                "bin/neko/plugins/CSessionDefaults.dll": DLL.read_bytes()}
-    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.1.0",
-                "chat_layout": "bottom-right; right margin 17 and bottom HUD clearance 80 VGUI units",
+    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.2.0",
+                "chat_layout": "center of speed/weapon gap; input bottom aligned to player HealthBorder",
+                "local_defaults": "weather and client ragdoll count 0 once per map, named setter/readback, flags unchanged",
                 "engine_sha256": build["engine_profile_sha256"],
                 "first_escape": "once per playable map; FOV 150, not enforced afterwards",
                 "files": {p: sha(b) for p, b in payload.items()}}
