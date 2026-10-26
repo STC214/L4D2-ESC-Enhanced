@@ -5,6 +5,7 @@
 
 # Downloaded archives/backups and cached Workshop pages; retain JSON metadata.
 /originals/*.vpk
+/originals/*.dll
 /originals/*.html
 
 # Python bytecode, test/tool caches, and local virtual environments.

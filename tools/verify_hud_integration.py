@@ -31,6 +31,13 @@ def validate_baseline():
 
 
 def validate(files, width=1280, height=720):
+    if "手电光圈".encode() in files.get("resource/ui/l4d360ui/ingamemainmenu.res", b""):
+        from c_menu_consolidation import baseline, validate as validate_latest
+        validate_latest(files, width, height)
+        # The current layer checks that every HUD/material byte is unchanged.
+        # Re-run the independent original HUD checks on that pinned snapshot.
+        validate(baseline())
+        return
     before = read(PRE_HUD)
     assert hashlib.sha256(PRE_HUD.read_bytes()).hexdigest() == PRE_HUD_HASH
     assert hashlib.sha256(HUD.read_bytes()).hexdigest() == HUD_HASH

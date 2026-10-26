@@ -33,7 +33,7 @@ def run(args, expected=0):
     return entry
 
 
-def main():
+def legacy_review():
     report = {
         "scope": "Full packaged-member static audit + regression/negative tests; NOT in-game validation",
         "baseline": {"path": "originals/C_before_full_audit.vpk", "sha256": sha(ROOT / "originals/C_before_full_audit.vpk")},
@@ -114,6 +114,11 @@ def main():
             raise RuntimeError("Review record re-open mismatch")
     print("PASS two complete clean rounds; deterministic VPK; patch replay and rollback verified")
     print("RECORD " + str(RECORD))
+
+
+def main():
+    from review_c_menu_consolidation import main as review_latest
+    review_latest()
 
 
 if __name__ == "__main__":

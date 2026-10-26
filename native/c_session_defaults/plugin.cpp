@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <bcrypt.h>
 #include <array>
+#include <atomic>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -15,7 +16,7 @@ public:
     virtual ~IL4NPluginV1() = default;
     virtual unsigned int GetInterfaceVersion() { return 1; }
     virtual const char* GetName() { return "C session defaults"; }
-    virtual const char* GetVersion() { return "1.0.1"; }
+    virtual const char* GetVersion() { return "1.1.0"; }
     virtual void OnModuleLoaded(const char*, std::uintptr_t) {}
     virtual void OnGameLaunch() {}
     virtual void OnD3DCreated(void*) {}
@@ -26,6 +27,11 @@ static HMODULE self_module = nullptr;
 static void* engine_client = nullptr;
 static UINT_PTR timer_id = 0;
 static SessionState session;
+static FirstEscState first_escape;
+static HHOOK keyboard_hook = nullptr;
+static DWORD keyboard_thread = 0;
+static std::atomic<bool> accept_escape{false};
+static std::atomic<bool> escape_requested{false};
 static bool disabled = false;
 static bool timer_observed = false;
 
@@ -42,6 +48,35 @@ static void Log(const char* message) {
     if (_wfopen_s(&file, (root / L"CSessionDefaults.log").c_str(), L"ab") != 0 || !file) return;
     std::fprintf(file, "[%llu] %s\r\n", static_cast<unsigned long long>(GetTickCount64()), message);
     std::fclose(file);
+}
+
+static LRESULT CALLBACK Keyboard(int code, WPARAM key, LPARAM details) {
+    // Only fresh ESC key-downs on a game window. Never consume/remap input or
+    // execute engine functions from the keyboard callback's window thread.
+    if (code == HC_ACTION && key == VK_ESCAPE &&
+        (static_cast<ULONG_PTR>(details) & 0xC0000000u) == 0 && accept_escape.load()) {
+        DWORD process = 0;
+        GetWindowThreadProcessId(GetForegroundWindow(), &process);
+        if (process == GetCurrentProcessId()) escape_requested.store(true);
+    }
+    return CallNextHookEx(nullptr, code, key, details);
+}
+
+static void EnsureKeyboardHook() {
+    DWORD process = 0;
+    const DWORD thread = GetWindowThreadProcessId(GetForegroundWindow(), &process);
+    if (!thread || process != GetCurrentProcessId() ||
+        (keyboard_hook && keyboard_thread == thread)) return;
+    if (keyboard_hook) UnhookWindowsHookEx(keyboard_hook);
+    keyboard_hook = SetWindowsHookExW(WH_KEYBOARD, Keyboard, self_module, thread);
+    keyboard_thread = keyboard_hook ? thread : 0;
+    static bool failure_logged = false;
+    if (keyboard_hook) {
+        Log("INPUT_READY: thread-local game keyboard hook; no input remap or global keyboard hook");
+    } else if (!failure_logged) {
+        failure_logged = true;
+        Log("INPUT_ERROR: first-ESC input hook unavailable; connection defaults remain separate");
+    }
 }
 
 static bool EngineIdentityMatches(HMODULE module) {
@@ -110,6 +145,8 @@ static bool BackgroundMap(const char* level) {
 
 static void Poll() {
     if (!engine_client || disabled) return;
+    EnsureKeyboardHook();
+    const bool escape = escape_requested.exchange(false);
     using Bool = bool(__thiscall*)(void*);
     using Pointer = void*(__thiscall*)(void*);
     using String = const char*(__thiscall*)(void*);
@@ -117,21 +154,34 @@ static void Poll() {
     using Command = void(__thiscall*)(void*, const char*);
     const bool connected = Method<Bool>(engine_client, 27)(engine_client);
     if (!connected) {
+        accept_escape.store(false);
+        first_escape.Update(false, false, 0, -1, "", false);
         session.Update(false, false, 0, -1);
         return;
     }
     void* channel = Method<Pointer>(engine_client, 74)(engine_client);
-    if (!channel) return;
+    if (!channel) {
+        accept_escape.store(false);
+        return;
+    }
     const bool active = Method<Bool>(engine_client, 26)(engine_client);
     const char* level = Method<String>(engine_client, 52)(engine_client);
     // INetChannelInfo's first methods match its documented x86 interface.
     const float age = Method<Float>(channel, 3)(channel);
     const bool playback = Method<Bool>(channel, 8)(channel);
+    const bool background = BackgroundMap(level);
+    accept_escape.store(active && !background && !playback &&
+                        std::isfinite(age) && age >= 0);
     if (session.Update(connected, active, reinterpret_cast<std::uintptr_t>(channel), age,
-                       BackgroundMap(level), playback)) {
+                       background, playback)) {
         // Same path as user console execution; no server/cheat-policy changes.
         Method<Command>(engine_client, 107)(engine_client, "exec l4d2esc_defaults\n");
         Log("NEW_CONNECTION: queued exec l4d2esc_defaults once; ESC and same-channel map loads do not reset");
+    }
+    if (first_escape.Update(connected, active, reinterpret_cast<std::uintptr_t>(channel), age,
+                            level, escape, background, playback)) {
+        Method<Command>(engine_client, 107)(engine_client, "r_flashlightfov 150\n");
+        Log("FIRST_ESC: queued r_flashlightfov 150 once for this map; manual changes remain untouched afterwards");
     }
 }
 
@@ -146,6 +196,9 @@ static void CALLBACK Timer(HWND, UINT, UINT_PTR, DWORD) {
         Poll();
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         disabled = true;
+        accept_escape.store(false);
+        if (keyboard_hook) UnhookWindowsHookEx(keyboard_hook);
+        keyboard_hook = nullptr;
         KillTimer(nullptr, timer_id);
         timer_id = 0;
         Log("DISABLED: engine/connection query exception; no retry or offset fallback");

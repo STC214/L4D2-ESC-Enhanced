@@ -1,5 +1,7 @@
 # B 全屏 ESC 菜单修改版
 
+> **当前 C：重复选项已合并，天气默认关闭，每张地图首次 ESC 将“手电光圈”设为 150，之后不锁定。** 使用 1.1.0 配套 DLL；成品、构建、审查与回滚见 [本轮说明](C_MENU_CONSOLIDATION.md)。下方旧版默认值与审核记录保留作历史参考。
+
 > **本机状态：Evolved 已按要求从游戏目录清理，L4N 与 C 保留。** 30 个文件的备份、核验和恢复入口见 [Evolved 清理记录](docs/Evolved清理记录.md)。旧 Evolved 部署说明仅为历史记录，不表示当前仍安装。
 
 > **平台来源与共存检查：** [三个工坊页面、VPK 下载逻辑及 Skeeto/Evolved 功能冲突清单](docs/平台来源与功能冲突清单.md)。以 L4N 为基底，保留现有设置；机器可读来源为 `docs/workshop-platforms.json`。本轮仅静态检查，没有安装 Skeeto 或更新 L4N。
@@ -14,6 +16,8 @@
 > 全量审核修复记录：[FULL_AUDIT_REPORT.md](FULL_AUDIT_REPORT.md)。本轮文件名变更回滚工具为 `tools/rollback_release_name.py`；`tools/rollback_tumtara.py` 仍用于回退上次 TUMTaRA 合并。
 
 ## 文件
+
+- Evo 小地图位置、比例尺寸、四角示例与恢复步骤：[小地图位置与尺寸设置](docs/L4D2Evolved_小地图位置与尺寸设置.md)。
 
 - 后续自动化 EXE 的检查、适配与恢复逻辑：[实现规范](docs/L4D2Evolved_自动适配流程与EXE实现规范.md)；配套[版本化规则数据](docs/evolved-adaptation-rules.v1.json)。当前为设计资料，尚未实现安装器。
 

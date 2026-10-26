@@ -99,6 +99,10 @@ def stopped():
 
 
 def package():
+    if "手电光圈".encode() in read(OUTPUT).get(MENU, b""):
+        from c_menu_consolidation import package as package_latest
+        package_latest()
+        return
     validate(read(OUTPUT))
     build = json.loads((ROOT / 'reports/c_session_plugin_build.json').read_text(encoding='utf-8'))
     assert sha(DLL) == build['dll_sha256']

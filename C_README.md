@@ -1,5 +1,7 @@
 # C 更新版：右上角网络信息 + LED 手电集成
 
+> **最新规则已更新：** 重复选项合并，天气默认 0，首次 ESC 手电光圈 150 且不锁定；必须搭配 1.1.0 DLL。详情及当前回滚入口见 [C_MENU_CONSOLIDATION.md](C_MENU_CONSOLIDATION.md)。下文旧版双滑条与初始化描述仅作历史参考。
+
 > **最新初始化逻辑见 [C_SESSION_DEFAULTS.md](C_SESSION_DEFAULTS.md)。** ESC 不再带固定范围初始化控件，入房默认项由配套 DLL 执行；必须同时安装 VPK 与会话组件。下文旧版成员计数、回滚和初始化机制仅作历史说明。
 
 > **当前版另已合并 TUMTaRA，速度数字和仪表盘恢复来源默认位置，共 222 个成员。** 当前安装、地图依赖和本轮回滚见 [C_TUMTARA_INTEGRATION.md](C_TUMTARA_INTEGRATION.md)。下文 221/76 成员、左上角速度表及旧回滚均属于历史阶段。

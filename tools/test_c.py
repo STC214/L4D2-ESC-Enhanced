@@ -13,7 +13,8 @@ import zipfile
 from pathlib import Path
 
 from audit_c import inspect
-from build_c_mod import OUTPUT, PATCH, adapt_resource, prepare, validate_resolution, video_resolution
+from build_c_mod import OUTPUT, adapt_resource, prepare, validate_resolution, video_resolution
+from c_menu_consolidation import PATCH, SUBMENUS, bindings, transform, baseline
 from hud_integration import HUD, ROOT, LAYOUT, PICKUP, SPEED
 from tumtara_integration import (
     MAIN, EXTRAS, FLYOUT, BEFORE, BUTTONS, MAIN_FILES, controls as menu_controls,
@@ -106,7 +107,7 @@ class ArchiveTests(unittest.TestCase):
             self.assertIsNone(archive.testzip())
             manifest = json.loads(archive.read("manifest.json"))
             self.assertEqual(manifest["result_sha256"], hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
-            expected = {"manifest.json", "C_update.patch"} | {"payload/" + n for n in manifest["changes"]}
+            expected = {"manifest.json", "menus.patch", "CSessionDefaults.dll"} | {"payload/" + n for n in manifest["changes"]}
             self.assertEqual(set(archive.namelist()), expected)
             for name, hashes in manifest["changes"].items():
                 self.assertEqual(hashlib.sha256(archive.read("payload/" + name)).hexdigest(), hashes["after"])
@@ -124,16 +125,65 @@ class WholePackageTests(unittest.TestCase):
         before = read(BEFORE)
         self.assertEqual(set(self.files) - set(before), {FLYOUT})
         self.assertEqual({n for n in before if before[n] != self.files[n]},
-                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG})
+                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG, *SUBMENUS})
         self.assertEqual(self.files[EXTRAS], before[EXTRAS])
 
     def test_esc_has_no_default_writers_and_accepts_native_fov(self):
         menu = menu_controls(self.files["resource/ui/l4d360ui/ingamemainmenu.res"])
         self.assertFalse(any(n.startswith("Init_") for n in menu))
-        for name in ("Flashlightfov", "GuangSheJiao"):
+        self.assertNotIn("GuangSheJiao", menu)
+        for name in ("Flashlightfov",):
             self.assertLessEqual(float(menu[name]["minvalue"]), 53)
             self.assertGreaterEqual(float(menu[name]["maxvalue"]), 53)
         self.assertIn(b"\nr_flashlightfov 53\n", self.files[CFG])
+
+    def test_all_duplicate_menu_bindings_merged(self):
+        self.assertTrue(all(len(refs) == 1 for refs in bindings(self.files).values()))
+        self.assertEqual(set(bindings(self.files)), set(bindings(baseline())))
+
+    def test_all_weather_defaults_are_zero(self):
+        for command in (b"r_RainParticleDensity", b"r_SnowParticles", b"fog_override", b"fog_enable"):
+            self.assertIn(b"\n" + command + b" 0\n", self.files[CFG])
+
+    def test_consolidated_resolution_profiles(self):
+        for width, height in ((640, 480), (1280, 720), (1920, 1080), (2560, 1440), (3840, 2160)):
+            with self.subTest(width=width, height=height), contextlib.redirect_stdout(io.StringIO()):
+                validate_files(transform(baseline(), width, height), width, height)
+
+    def test_first_escape_does_not_lock_slider_range(self):
+        from c_menu_consolidation import MENU
+        menu = menu_controls(self.files[MENU])
+        self.assertEqual((menu["Flashlightfov"]["minvalue"], menu["Flashlightfov"]["maxvalue"]), ("50", "200"))
+        self.assertIn("手电光圈".encode(), self.files[MENU])
+        self.assertEqual((menu["c_thirdpersonshoulderheight-"]["minvalue"],
+                          menu["c_thirdpersonshoulderheight-"]["maxvalue"]), ("-1000", "1000"))
+
+    def test_duplicate_submenu_regression_rejected(self):
+        bad = dict(self.files)
+        bad[SUBMENUS[0]] = baseline()[SUBMENUS[0]]
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
+
+    def test_weather_enabled_regression_rejected(self):
+        for command in (b"r_RainParticleDensity", b"r_SnowParticles", b"fog_override", b"fog_enable"):
+            bad = dict(self.files)
+            bad[CFG] = bad[CFG].replace(command + b" 0", command + b" 1")
+            with self.subTest(command=command), self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+                validate_files(bad, 1280, 720)
+
+    def test_flashlight_bound_lock_regression_rejected(self):
+        from c_menu_consolidation import MENU
+        bad = dict(self.files)
+        bad[MENU] = adapt_resource(bad[MENU].decode(), {"Flashlightfov": {"minvalue": "150"}}).encode()
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
+
+    def test_removed_navigation_target_regression_rejected(self):
+        from c_menu_consolidation import MENU
+        bad = dict(self.files)
+        bad[MENU] = adapt_resource(bad[MENU].decode(), {"QuickKickPlayer": {"navright": "GuangSheJiao"}}).encode()
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
 
     def test_old_esc_initializer_regression_rejected(self):
         from c_session_policy import BASE as session_base, MENU

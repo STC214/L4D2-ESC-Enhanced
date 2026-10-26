@@ -21,10 +21,10 @@ def main():
         return
     assert C_FILENAME == "【00】C_ESC_LED_血条和速度_TUMTaRA.vpk"
     assert OUTPUT.parent == ROOT / "dist" and OUTPUT.name == C_FILENAME
-    from c_session_policy import validate
-    validate(read(OUTPUT))
+    from verify_c_mod import validate_files
+    validate_files(read(OUTPUT), 1280, 720)
     print("PASS permanent release path: " + str(OUTPUT))
-    print("PASS 222 members; current session-default delta validated")
+    print("PASS 222 members; current C delta validated")
     print("RESULT SHA256 " + hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
 
 

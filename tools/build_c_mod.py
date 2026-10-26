@@ -233,9 +233,14 @@ def main():
     parser.add_argument("--video", type=Path, help="Read resolution from L4D2 video.txt; read-only")
     parser.add_argument("--apply-patch", action="store_true")
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--legacy-session", action="store_true", help="Reproduce the historical pre-consolidation release")
     args = parser.parse_args()
     if args.apply_patch:
-        apply_patch_bundle()
+        if args.legacy_session:
+            apply_patch_bundle()
+        else:
+            from c_menu_consolidation import replay
+            replay()
     elif args.self_test:
         self_test()
     else:
@@ -247,7 +252,11 @@ def main():
             if (args.width is None) != (args.height is None):
                 parser.error("Provide both --width and --height")
             width, height = (args.width, args.height) if args.width is not None else (1280, 720)
-        build(width, height, args.video)
+        if args.legacy_session:
+            build(width, height, args.video)
+        else:
+            from c_menu_consolidation import build as build_latest
+            build_latest(width, height)
 
 
 if __name__ == "__main__":

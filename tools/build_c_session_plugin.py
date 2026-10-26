@@ -26,6 +26,8 @@ def main():
         common + [str(source / 'test_session_state.cpp'), '/Fo' + str(out / 'test.obj'), '/Fe' + str(out / 'session_state_test.exe'), '/link', '/Brepro', '/MACHINE:X86'],
         [str(out / 'session_state_test.exe')],
         common + ['/LD', str(source / 'plugin.cpp'), '/Fo' + str(out / 'plugin.obj'), '/Fe' + str(out / 'CSessionDefaults.dll'), '/link', '/Brepro', '/MACHINE:X86', 'user32.lib', 'bcrypt.lib'],
+        common + [str(source / 'test_plugin_contract.cpp'), '/Fo' + str(out / 'contract.obj'), '/Fe' + str(out / 'plugin_contract_test.exe'), '/link', '/Brepro', '/MACHINE:X86'],
+        [str(out / 'plugin_contract_test.exe'), str(out / 'CSessionDefaults.dll')],
     ]
     records = []
     for command in commands:

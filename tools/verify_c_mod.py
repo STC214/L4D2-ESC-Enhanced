@@ -81,6 +81,10 @@ def validate_menu(text, height):
 
 
 def validate_files(files, width, height):
+    if "手电光圈".encode() in files.get(MENU, b""):
+        from c_menu_consolidation import validate
+        validate(files, width, height)
+        return
     validate_session(files, width, height)
     baseline, dependency = read(BASE), read(LED)
     assert hashlib.sha256(BASE.read_bytes()).hexdigest() == BASE_HASH
