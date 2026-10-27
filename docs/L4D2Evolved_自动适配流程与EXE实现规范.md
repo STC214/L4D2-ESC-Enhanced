@@ -4,7 +4,7 @@
 
 **当前交付是设计文档及规则数据，不是安装器或已验证的自动配置引擎。** 后续 EXE 应实现本文的状态与验收条件，不应把现有审查脚本直接打包后就称为自动安装器。
 
-配套规则：[evolved-adaptation-rules.v1.json](evolved-adaptation-rules.v1.json)。本机依据：[适配检查](../research/workshop_3785109042/本机游戏适配方案.md)、[原始检查报告](../research/workshop_3785109042/local_game_assessment.json)。
+配套规则：[evolved-adaptation-rules.v1.json](evolved-adaptation-rules.v1.json)。本机依据：[适配检查](archive/evolved/本机游戏适配方案.md)、[原始检查报告](../research/workshop_3785109042/local_game_assessment.json)。
 
 ## 1. 目标、范围和不变量
 
