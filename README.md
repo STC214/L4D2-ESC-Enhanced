@@ -40,7 +40,7 @@
 | `sv_disable_glow_survivors`、`sv_disable_glow_faritems` | 0 |
 | 光亮度 `r_flashlightconstant` | 1 |
 | 光射程 `r_flashlightfar` | 3000 |
-| 手电光圈 `r_flashlightfov` | 165（菜单范围 50～200） |
+| 手电光圈 `r_flashlightfov` | 114（菜单范围 50～200） |
 
 两个轮廓参数是“**禁用轮廓**”：默认 0，即“关闭角色轮廓 / 关闭远处物品轮廓”**不勾选**。服务器可能覆盖这些值；0 不保证任意实体都能隔墙显示。默认项不是持续锁定。
 

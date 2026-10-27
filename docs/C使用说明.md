@@ -70,7 +70,7 @@ Left 4 Dead 2/
 | 关闭远处物品轮廓 | 0／不勾选 | `sv_disable_glow_faritems`，即不禁用远处物品轮廓 |
 | 光亮度 | 1 | 当前菜单最大值 |
 | 光射程 | 3000 | 当前菜单最大值 |
-| 手电光圈 | **165** | `r_flashlightfov`，菜单范围 **50～200**，步进 1 |
+| 手电光圈 | **114** | `r_flashlightfov`，菜单范围 **50～200**，步进 1 |
 
 这些值是初始化值，不是持续锁定。手电光圈不再使用“首次 ESC 设为 150”的旧逻辑，也不再以 53 作为连接默认值。
 
@@ -100,14 +100,14 @@ Left 4 Dead 2/
 进入地图后，在游戏根目录查看 `CSessionDefaults.log`。检查**本次启动对应的最新记录**，不要把旧会话中的 `FIRST_ESC` 日志当作新版行为。
 
 ```text
-DEFAULT_VERIFIED: r_flashlightfov requested=165 actual=165; flags unchanged
+DEFAULT_VERIFIED: r_flashlightfov requested=114 actual=114; flags unchanged
 DEFAULT_VERIFIED: r_flashlightconstant requested=1 actual=1; flags unchanged
 DEFAULT_VERIFIED: r_flashlightfar requested=3000 actual=3000; flags unchanged
 ```
 
 天气和尸体项应有对应的 `requested=0 actual=0`。`READY` 只表示定时器已创建，`TIMER_ACTIVE` 表示回调已经触发，实际变量结果以 `DEFAULT_VERIFIED` 读回为准。
 
-建议检查：进图为 165 → 手动改成 80 → 反复 ESC 仍为 80 → 下一关或同图重载恢复 165。游戏主菜单、加载画面和录像播放不应触发可游玩地图初始化。
+建议检查：进图为 114 → 手动改成 80 → 反复 ESC 仍为 80 → 下一关或同图重载恢复 114。游戏主菜单、加载画面和录像播放不应触发可游玩地图初始化。
 
 ## 六、常见问题
 

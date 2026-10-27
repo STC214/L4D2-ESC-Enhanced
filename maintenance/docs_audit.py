@@ -162,7 +162,7 @@ def facts():
             settings[values[0].lower()] = values[1]
     expected = {"r_rainparticledensity": "0", "r_snowparticles": "0", "fog_override": "0", "fog_enable": "0",
                 "cl_ragdoll_maxcount": "0", "sv_disable_glow_survivors": "0", "sv_disable_glow_faritems": "0",
-                "r_flashlightconstant": "1", "r_flashlightfar": "3000", "r_flashlightfov": "165",
+                "r_flashlightconstant": "1", "r_flashlightfar": "3000", "r_flashlightfov": "114",
                 "net_graphheight": "620", "net_graphpos": "1"}
     assert all(settings.get(name) == value for name, value in expected.items())
     nodes = [fields(block) for _, _, _, block in blocks(files["resource/ui/l4d360ui/ingamemainmenu.res"].decode("utf-8-sig"))]
@@ -178,7 +178,7 @@ def facts():
         assert archive.read("left4dead2/addons/" + C_FILENAME) == OUTPUT.read_bytes()
         assert archive.read("bin/neko/plugins/CSessionDefaults.dll") == (ROOT / "dist/c_session_helper/CSessionDefaults.dll").read_bytes()
     current = (ROOT / "README.md").read_text(encoding="utf-8")
-    for required in ("1.3.1", C_FILENAME, "CSessionDefaults.dll", "165", "620", "1280×720", "L4N", "docs/INDEX.md"):
+    for required in ("1.3.1", C_FILENAME, "CSessionDefaults.dll", "114", "620", "1280×720", "L4N", "docs/INDEX.md"):
         assert required in current, required
     for obsolete in ("# B 全屏 ESC 菜单修改版", "dist/B_fullscreen_esc.vpk", "## 历史更新与开发记录"):
         assert obsolete not in current, obsolete

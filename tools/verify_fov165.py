@@ -1,4 +1,4 @@
-"""Verify and record the transition from first-ESC 150 to map-entry 165."""
+"""Verify and record the transition from first-ESC 150 to map-entry 114."""
 
 import difflib
 import json
@@ -28,7 +28,7 @@ def main():
     changed = {key for key in before if before[key] != after[key]}
     assert changed == {cfg, menu, *TEXTURES}
     validate_flashlight(after)
-    assert before[cfg].replace(b"r_flashlightfov 53", b"r_flashlightfov 165") == after[cfg]
+    assert before[cfg].replace(b"r_flashlightfov 53", b"r_flashlightfov 114") == after[cfg]
     expected_menu = before[menu].replace(b"first ESC is handled", b"map-entry default is handled").decode("utf-8-sig")
     nodes = {name: fields(block) for name, _, _, block in blocks(expected_menu)}
     original_settings = [name for name, props in nodes.items() if props.get("controlname") == "SliderControl"]
@@ -46,7 +46,7 @@ def main():
         expected_menu.splitlines(True), after[menu].decode("utf-8-sig").splitlines(True),
         fromfile="expected", tofile="actual"))
     source = (ROOT / "native/c_session_defaults/plugin.cpp").read_text(encoding="utf-8")
-    assert 'SetLocalInteger("r_flashlightfov", 165);' in source
+    assert 'SetLocalInteger("r_flashlightfov", 114);' in source
     assert "FIRST_ESC" not in source and "WH_KEYBOARD" not in source and "first_escape" not in source
     assert b"FIRST_ESC" in old_dll.read_bytes() and b"FIRST_ESC" not in DLL.read_bytes()
     diff = directory / "defaults.patch"
@@ -101,7 +101,7 @@ def main():
         "unchanged_members": len(after) - len(changed), "rollback_copy": str(rollback),
         "rollback_command": "python -X utf8 tools/c_session_release.py rollback-game",
         "runtime_status": "PENDING_GAME_RESTART"})
-    print("PASS map-entry 165, no first-ESC handler; integrated flashlight payload pinned; bundle and rollback copies reopened")
+    print("PASS map-entry 114, no first-ESC handler; integrated flashlight payload pinned; bundle and rollback copies reopened")
 
 
 if __name__ == "__main__":

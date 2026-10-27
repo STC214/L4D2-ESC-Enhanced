@@ -276,7 +276,7 @@ static void Poll() {
                                  "fog_enable", "cl_ragdoll_maxcount"}) SetLocalInteger(name, 0);
         SetLocalInteger("r_flashlightconstant", 1);
         SetLocalInteger("r_flashlightfar", 3000);
-        SetLocalInteger("r_flashlightfov", 165);
+        SetLocalInteger("r_flashlightfov", 114);
         SetLocalInteger("sv_disable_glow_survivors", 0, true);
         SetLocalInteger("sv_disable_glow_faritems", 0, true);
         Log("OUTLINE_DEFAULTS: attempted zero once; server replication may override, no flag changes");

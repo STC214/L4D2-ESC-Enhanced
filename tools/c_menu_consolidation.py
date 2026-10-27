@@ -130,9 +130,9 @@ def transform(files, width=1280, height=720):
                 text = text[:start] + text[end:]
         result[path] = text.encode("utf-8")
     # Match the native map-entry value so queued connection CFG execution
-    # cannot overwrite 165 with the historical 53. ESC never writes defaults.
+    # cannot overwrite 114 with the historical 53. ESC never writes defaults.
     cfg = files[CFG].decode("utf-8")
-    cfg = re.sub(r"(?m)^r_flashlightfov \d+$", "r_flashlightfov 165", cfg)
+    cfg = re.sub(r"(?m)^r_flashlightfov \d+$", "r_flashlightfov 114", cfg)
     cfg = cfg.replace("1280x720", f"{width}x{height}")
     cfg = re.sub(r"(?m)^net_graphheight \d+$", "net_graphheight " + str(height - 100), cfg)
     cfg += "\n// Weather defaults; apply once on a new connection, never every ESC.\n"
@@ -170,7 +170,7 @@ def validate(files, width=None, height=None):
     assert (offset["minvalue"], offset["maxvalue"]) == ("-1000", "1000")
     cfg = dict(line.split() for line in files[CFG].decode("utf-8").splitlines()
                if line.strip() and not line.lstrip().startswith("//"))
-    assert cfg["r_flashlightfov"] == "165"
+    assert cfg["r_flashlightfov"] == "114"
     for command in ("r_RainParticleDensity", "r_SnowParticles", "fog_override", "fog_enable"):
         assert cfg[command] == "0"
     for command in ("r_rainparticledensity", "r_snowparticles", "fog_override", "fog_enable"):
@@ -215,7 +215,7 @@ def package():
                 "chat_layout": "center of speed/weapon gap; input bottom aligned to player HealthBorder",
                 "local_defaults": "weather and client ragdoll count 0 once per map, named setter/readback, flags unchanged",
                 "engine_sha256": build["engine_profile_sha256"],
-                "flashlight_cone": "165 once per playable map entry, no ESC dependency or subsequent enforcement",
+                "flashlight_cone": "114 once per playable map entry, no ESC dependency or subsequent enforcement",
                 "flashlight_rendering": "integrated DXT5 mean190 and no-end-fade/RGB2x PS30",
                 "outline_defaults": "two named replicated outline controls -> 0 once per map; server may override",
                 "files": {p: sha(b) for p, b in payload.items()}}

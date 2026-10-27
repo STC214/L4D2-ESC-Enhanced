@@ -138,7 +138,7 @@ class WholePackageTests(unittest.TestCase):
         for name in ("Flashlightfov",):
             self.assertLessEqual(float(menu[name]["minvalue"]), 53)
             self.assertGreaterEqual(float(menu[name]["maxvalue"]), 53)
-        self.assertIn(b"\nr_flashlightfov 165\n", self.files[CFG])
+        self.assertIn(b"\nr_flashlightfov 114\n", self.files[CFG])
 
     def test_all_duplicate_menu_bindings_merged(self):
         self.assertTrue(all(len(refs) == 1 for refs in bindings(self.files).values()))

@@ -103,7 +103,7 @@ def main():
         report["status"] = "TWO_CLEAN_STATIC_REGRESSION_ROUNDS"
         report["runtime_pending"] = [
             "L4N game-window message pump and D3D bootstrap in the real game",
-            "Map entry/reload initializes FOV 165; manual values persist without ESC-triggered reset",
+            "Map entry/reload initializes FOV 114; manual values persist without ESC-triggered reset",
             "Actual server acceptance of weather/light CVars and real UI text/rendering",
             "Outline zero defaults may be overwritten by server replication; checkbox native ApplyChanges/readback and grouping in-game",
             "Chat history/input real engine layout and HUD clearance; default Evo-map separation in-game",

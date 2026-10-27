@@ -99,28 +99,28 @@ int main() {
     auto cone_raw = reinterpret_cast<CvarPrefix*>(&cone);
     assert(!fov_per_map.Update(true, false, 1, 0, "map1", true));
     assert(fov_per_map.Update(true, true, 1, 1, "map1", true));
-    assert(SetCheckedLocalInt(cone_raw, cone.name, 165));
-    assert(cone.int_value == 165); // No ESC event required for map defaults.
+    assert(SetCheckedLocalInt(cone_raw, cone.name, 114));
+    assert(cone.int_value == 114); // No ESC event required for map defaults.
     cone.SetValue(80);
     for (int tick = 2; tick <= 101; ++tick) {
         if (fov_per_map.Update(true, true, 1, static_cast<float>(tick), "map1", true))
-            SetCheckedLocalInt(cone_raw, cone.name, 165);
+            SetCheckedLocalInt(cone_raw, cone.name, 114);
     }
     assert(cone.int_value == 80);
     assert(fov_per_map.Update(true, true, 1, 102, "map2", true));
-    assert(SetCheckedLocalInt(cone_raw, cone.name, 165));
-    assert(cone.int_value == 165);
+    assert(SetCheckedLocalInt(cone_raw, cone.name, 114));
+    assert(cone.int_value == 114);
     cone.SetValue(80);
     assert(!fov_per_map.Update(true, true, 0, -1, "", true));
     assert(!fov_per_map.Update(true, true, 1, 103, "map2", true));
     assert(cone.int_value == 80); // Active metadata gap is not a map reload.
     assert(!fov_per_map.Update(true, false, 0, -1, "", true));
     assert(fov_per_map.Update(true, true, 1, 104, "map2", true));
-    assert(SetCheckedLocalInt(cone_raw, cone.name, 165));
-    assert(cone.int_value == 165);
+    assert(SetCheckedLocalInt(cone_raw, cone.name, 114));
+    assert(cone.int_value == 114);
     assert(!fov_per_map.Update(true, true, 1, 105, "map2", true));
     std::puts("PASS inactive/null-channel reload resets same map once; active metadata gap preserves manual value");
-    std::puts("PASS map entry FOV 165 without ESC; manual 80 preserved for 100 ticks; next map resets 165");
+    std::puts("PASS map entry FOV 114 without ESC; manual 80 preserved for 100 ticks; next map resets 114");
     std::puts("PASS pinned x86 ConVar prefix, named local setter/readback, unchanged flags, replicated/name/null rejection");
     return 0;
 }
