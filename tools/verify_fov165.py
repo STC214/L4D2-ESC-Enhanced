@@ -9,6 +9,9 @@ import zipfile
 
 from c_session_release import BUNDLE, DLL, OUTPUT, ROOT, save, sha
 from vpk import read
+from c_flashlight_assets import TEXTURES, SHADER, validate as validate_flashlight
+from c_binary_switches import convert as convert_switch
+from inspect_menu import blocks
 
 
 def main():
@@ -20,11 +23,15 @@ def main():
     assert sha(old_dll) == "76b5ba43b582cc9322fb006176e37e8f352ba6b6c2fc4624ba634b6e9fc89bab"
     before, after = read(old), read(OUTPUT)
     cfg, menu = "cfg/l4d2esc_defaults.cfg", "resource/ui/l4d360ui/ingamemainmenu.res"
-    assert before.keys() == after.keys()
-    changed = {key for key in after if before[key] != after[key]}
-    assert changed == {cfg, menu}
+    assert set(after) == set(before) | {SHADER}
+    changed = {key for key in before if before[key] != after[key]}
+    assert changed == {cfg, menu, *TEXTURES}
+    validate_flashlight(after)
     assert before[cfg].replace(b"r_flashlightfov 53", b"r_flashlightfov 165") == after[cfg]
-    assert before[menu].replace(b"first ESC is handled", b"map-entry default is handled") == after[menu]
+    expected_menu = before[menu].replace(b"first ESC is handled", b"map-entry default is handled").decode("utf-8-sig")
+    for name, start, end, block in reversed(blocks(expected_menu)):
+        expected_menu = expected_menu[:start] + convert_switch(name, block) + expected_menu[end:]
+    assert expected_menu == after[menu].decode("utf-8-sig")
     source = (ROOT / "native/c_session_defaults/plugin.cpp").read_text(encoding="utf-8")
     assert 'SetLocalInteger("r_flashlightfov", 165);' in source
     assert "FIRST_ESC" not in source and "WH_KEYBOARD" not in source and "first_escape" not in source
@@ -32,7 +39,7 @@ def main():
     diff = directory / "defaults.patch"
     diff.write_text("".join("".join(difflib.unified_diff(
         before[key].decode("utf-8-sig").splitlines(True), after[key].decode("utf-8-sig").splitlines(True),
-        fromfile="before/" + key, tofile="after/" + key)) for key in sorted(changed)), encoding="utf-8")
+        fromfile="before/" + key, tofile="after/" + key)) for key in sorted(changed) if key.endswith((".res", ".cfg"))), encoding="utf-8")
     assert diff.read_text(encoding="utf-8")
     probe = ("import sys; from pathlib import Path; sys.path.insert(0,'tools'); from vpk import read; "
              "t=read(sys.argv[1])['cfg/l4d2esc_defaults.cfg'].decode('utf-8'); "
@@ -64,12 +71,12 @@ def main():
         assert sha(target) == sha(source_path)
     assert read(rollback / OUTPUT.name) == before
     build = json.loads((ROOT / "reports/c_session_plugin_build.json").read_text(encoding="utf-8"))
-    assert build["helper_version"] == "1.2.4" and build["dll_sha256"] == sha(DLL)
+    assert build["helper_version"] == "1.3.0" and build["dll_sha256"] == sha(DLL)
     assert all(record["exit_status"] == 0 for record in build["records"])
     with zipfile.ZipFile(BUNDLE) as archive:
         assert archive.testzip() is None
         manifest = json.loads(archive.read("manifest.json"))
-        assert manifest["helper_version"] == "1.2.4"
+        assert manifest["helper_version"] == "1.3.0"
         assert "first_escape" not in manifest
     sums = ROOT / "dist/SHA256SUMS.txt"
     sums.write_text("".join(f"{sha(path)}  {path.name}\n" for path in (BUNDLE, OUTPUT)), encoding="utf-8", newline="\n")
@@ -81,7 +88,7 @@ def main():
         "unchanged_members": len(after) - len(changed), "rollback_copy": str(rollback),
         "rollback_command": "python -X utf8 tools/c_session_release.py rollback-game",
         "runtime_status": "PENDING_GAME_RESTART"})
-    print("PASS map-entry 165, no first-ESC handler; exact two-member delta; bundle and rollback copies reopened")
+    print("PASS map-entry 165, no first-ESC handler; integrated flashlight payload pinned; bundle and rollback copies reopened")
 
 
 if __name__ == "__main__":

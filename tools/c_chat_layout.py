@@ -93,7 +93,8 @@ def validate(files):
 
 def verify():
     before, current = baseline(), read(OUTPUT)
-    assert set(before) == set(current)
+    from c_flashlight_assets import ADDED
+    assert set(current) == set(before) | ADDED
     isolated = apply(before)
     assert {p for p in before if before[p] != isolated[p]} == {CHAT, LAYOUT}
     assert all(current[p] == isolated[p] for p in (CHAT, LAYOUT))

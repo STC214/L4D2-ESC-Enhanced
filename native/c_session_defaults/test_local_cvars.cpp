@@ -45,6 +45,30 @@ int main() {
     assert(!SetCheckedLocalInt(raw, "fog_enable", 1));
     assert(fog.int_value == 0);
     assert(!SetCheckedLocalInt(nullptr, "fog_enable", 0));
+    for (const auto name : {"sv_disable_glow_survivors", "sv_disable_glow_faritems"}) {
+        Fake outline;
+        outline.name = name;
+        outline.flags = 1 << 13;
+        auto object = reinterpret_cast<CvarPrefix*>(&outline);
+        assert(!SetCheckedLocalInt(object, name, 0));
+        assert(SetCheckedLocalInt(object, name, 0, true));
+        assert(outline.int_value == 0 && outline.flags == (1 << 13));
+        assert(!SetCheckedLocalInt(object, name, 1, true));
+        FirstEscState outline_map;
+        assert(outline_map.Update(true, true, 1, 0, "map1", true));
+        assert(SetCheckedLocalInt(object, name, 0, true));
+        outline.SetValue(1);
+        for (int tick = 1; tick <= 100; ++tick) {
+            if (outline_map.Update(true, true, 1, static_cast<float>(tick), "map1", true))
+                SetCheckedLocalInt(object, name, 0, true);
+        }
+        assert(outline.int_value == 1);
+        assert(outline_map.Update(true, true, 1, 101, "map2", true));
+        assert(SetCheckedLocalInt(object, name, 0, true));
+        outline.name = "unrelated_replicated";
+        assert(!SetCheckedLocalInt(object, outline.name, 0, true));
+    }
+    std::puts("PASS replicated outline allowlist: only two exact names and value 0; flags unchanged");
     for (const auto name : {"r_flashlightconstant", "r_flashlightfar"}) {
         Fake light;
         light.name = name;

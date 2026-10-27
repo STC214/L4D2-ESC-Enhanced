@@ -56,9 +56,11 @@ def main():
                 ["tools/build_c_session_plugin.py"],
                 ["tools/build_c_mod.py", "--width", "1280", "--height", "720"],
                 ["tools/verify_fov165.py"],
+                ["tools/c_flashlight_assets.py", "deep"],
                 ["tools/c_chat_layout.py", "verify"],
                 ["tools/test_c.py"],
                 ["tools/test_c_session_deploy.py", "--report", f"reports/c_chat_bottom_right/deploy_{number}.json"],
+                ["tools/test_c_integrated_deploy.py", "--report", f"reports/c_current_review/integration_deploy_{number}.json"],
                 ["tools/audit_c.py", str(OUTPUT), "--report", f"reports/c_chat_bottom_right/audit_{number}.json"],
                 ["tools/verify_c_mod.py", str(OUTPUT)],
                 ["tools/verify_hud_integration.py", str(OUTPUT)],
@@ -100,6 +102,7 @@ def main():
             "L4N game-window message pump and D3D bootstrap in the real game",
             "Map entry/reload initializes FOV 165; manual values persist without ESC-triggered reset",
             "Actual server acceptance of weather/light CVars and real UI text/rendering",
+            "Outline zero defaults may be overwritten by server replication; native checkbox interaction and text layout in-game",
             "Chat history/input real engine layout and HUD clearance; default Evo-map separation in-game",
         ]
     except BaseException as exc:

@@ -38,10 +38,14 @@ public:
     virtual int GetSplitScreenPlayerSlot() const = 0;
 };
 
-inline bool SetCheckedLocalInt(CvarPrefix* var, const char* name, int value) {
+inline bool SetCheckedLocalInt(CvarPrefix* var, const char* name, int value, bool outline_default = false) {
     if (!var || !var->parent || var->parent->parent != var->parent) return false;
-    // Never use this helper for a replicated/server-owned setting.
-    if ((var->base.flags | var->parent->base.flags) & (1 << 13)) return false;
+    // Explicit one-shot outline defaults only. No flag removal or enforcement;
+    // a remote server may subsequently overwrite these replicated values.
+    const bool outline_zero = outline_default && value == 0 && name &&
+        (!std::strcmp(name, "sv_disable_glow_survivors") || !std::strcmp(name, "sv_disable_glow_faritems"));
+    if (outline_default && !outline_zero) return false;
+    if (((var->base.flags | var->parent->base.flags) & (1 << 13)) && !outline_zero) return false;
     auto iface = reinterpret_cast<LocalIConVar*>(reinterpret_cast<char*>(var) + sizeof(CommandPrefix));
     const char* actual = iface->GetName();
     if (!actual || std::strcmp(actual, name)) return false;

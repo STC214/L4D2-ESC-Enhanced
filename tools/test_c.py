@@ -16,6 +16,7 @@ from audit_c import inspect
 from build_c_mod import OUTPUT, adapt_resource, prepare, validate_resolution, video_resolution
 from c_menu_consolidation import PATCH, SUBMENUS, bindings, transform, baseline
 from c_chat_layout import CHAT
+from c_flashlight_assets import TEXTURES, SHADER, validate as validate_flashlight
 from hud_integration import HUD, ROOT, LAYOUT, PICKUP, SPEED
 from tumtara_integration import (
     MAIN, EXTRAS, FLYOUT, BEFORE, BUTTONS, MAIN_FILES, controls as menu_controls,
@@ -124,9 +125,9 @@ class WholePackageTests(unittest.TestCase):
 
     def test_exact_latest_c_delta_and_toolbox_preserved(self):
         before = read(BEFORE)
-        self.assertEqual(set(self.files) - set(before), {FLYOUT})
+        self.assertEqual(set(self.files) - set(before), {FLYOUT, SHADER})
         self.assertEqual({n for n in before if before[n] != self.files[n]},
-                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG, CHAT, *SUBMENUS})
+                         {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", CFG, CHAT, *SUBMENUS, *TEXTURES})
         self.assertEqual(self.files[EXTRAS], before[EXTRAS])
 
     def test_esc_has_no_default_writers_and_accepts_native_fov(self):
@@ -141,6 +142,33 @@ class WholePackageTests(unittest.TestCase):
     def test_all_duplicate_menu_bindings_merged(self):
         self.assertTrue(all(len(refs) == 1 for refs in bindings(self.files).values()))
         self.assertEqual(set(bindings(self.files)), set(bindings(baseline())))
+
+    def test_integrated_flashlight_assets_and_outline_minima(self):
+        validate_flashlight(self.files)
+        refs = bindings(self.files)
+        for name in ("sv_disable_glow_survivors", "sv_disable_glow_faritems"):
+            self.assertEqual(refs[name][0][2]["minvalue"], "0")
+            self.assertIn((name + " 0\n").encode(), self.files[CFG])
+
+    def test_integrated_shader_and_texture_mutations_rejected(self):
+        for path in (*sorted(TEXTURES), SHADER):
+            bad = dict(self.files)
+            bad[path] = bad[path][:-1]
+            with self.subTest(path=path), self.assertRaises(AssertionError):
+                validate_files(bad, 1280, 720)
+
+    def test_boolean_switches_use_effect_labels_and_numeric_settings_stay_sliders(self):
+        from c_binary_switches import SWITCHES, validate as validate_switches
+        from inspect_menu import blocks, fields
+        text = self.files["resource/ui/l4d360ui/ingamemainmenu.res"].decode("utf-8-sig")
+        validate_switches(text)
+        nodes = {fields(b).get("concommand", "").lower(): fields(b) for _, _, _, b in blocks(text)}
+        for command in SWITCHES:
+            self.assertEqual(nodes[command]["controlname"], "CvarToggleCheckButton")
+        for command in ("r_flashlightconstant", "r_rainparticledensity", "r_snowparticles", "cl_ragdoll_maxcount", "r_flashlightfov"):
+            self.assertEqual(nodes[command]["controlname"], "SliderControl")
+        self.assertEqual(nodes["sv_disable_glow_survivors"]["labeltext"], "关闭角色轮廓")
+        self.assertEqual(nodes["sv_disable_glow_faritems"]["labeltext"], "关闭远处物品轮廓")
 
     def test_chat_only_changes_two_resources(self):
         from c_chat_layout import apply as apply_chat, baseline as chat_baseline

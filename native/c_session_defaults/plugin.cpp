@@ -18,7 +18,7 @@ public:
     virtual ~IL4NPluginV1() = default;
     virtual unsigned int GetInterfaceVersion() { return 1; }
     virtual const char* GetName() { return "C session defaults"; }
-    virtual const char* GetVersion() { return "1.2.4"; }
+    virtual const char* GetVersion() { return "1.3.0"; }
     virtual void OnModuleLoaded(const char*, std::uintptr_t) {}
     virtual void OnGameLaunch() {}
     virtual void OnD3DCreated(void*) {}
@@ -181,7 +181,7 @@ static bool EnsureLocalCvars() {
     return true;
 }
 
-static bool SetLocalInteger(const char* name, int value) {
+static bool SetLocalInteger(const char* name, int value, bool outline_default = false) {
     if (!EnsureLocalCvars()) return false;
     using Find = CvarPrefix*(__thiscall*)(void*, const char*);
     CvarPrefix* var = Method<Find>(cvar_interface, 12)(cvar_interface, name);
@@ -200,7 +200,7 @@ static bool SetLocalInteger(const char* name, int value) {
             (owner != GetModuleHandleW(L"client.dll") && owner != GetModuleHandleW(L"vstdlib.dll") &&
              owner != GetModuleHandleW(L"engine.dll"))) return false;
     }
-    const bool ok = SetCheckedLocalInt(var, name, value);
+    const bool ok = SetCheckedLocalInt(var, name, value, outline_default);
     char message[180]{};
     std::snprintf(message, sizeof(message), "%s: %s requested=%d actual=%d; flags unchanged",
                   ok ? "DEFAULT_VERIFIED" : "DEFAULT_FAILED", name, value,
@@ -248,6 +248,9 @@ static void Poll() {
         SetLocalInteger("r_flashlightconstant", 1);
         SetLocalInteger("r_flashlightfar", 3000);
         SetLocalInteger("r_flashlightfov", 165);
+        SetLocalInteger("sv_disable_glow_survivors", 0, true);
+        SetLocalInteger("sv_disable_glow_faritems", 0, true);
+        Log("OUTLINE_DEFAULTS: attempted zero once; server replication may override, no flag changes");
         Log("MAP_DEFAULTS: local weather/corpse/light defaults attempted once; see per-value readback");
     }
 }

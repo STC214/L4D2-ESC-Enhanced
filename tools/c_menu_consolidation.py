@@ -25,6 +25,8 @@ from release_paths import ROOT, OUTPUT, C_FILENAME
 from tumtara_integration import validate as validate_tumtara
 from verify_menu import coordinate
 from vpk import read, write
+from c_flashlight_assets import TEXTURES, SHADER, ADDED, payload as flashlight_payload, validate as validate_flashlight
+from c_binary_switches import convert as convert_switch, validate as validate_switches
 
 BASE = ROOT / "originals/C_before_menu_consolidation.vpk"
 BASE_HASH = "b6b4819c711728d5a647ca341f1c93aef480294171bc55b824e3f0bcb58dc650"
@@ -36,7 +38,7 @@ CFG = "cfg/l4d2esc_defaults.cfg"
 AUDIO = "resource/ui/l4d360ui/audio.res"
 SUBMENUS = tuple("resource/ui/l4d360ui/" + n for n in (
     "dropdowncrosshair.res", "dropdownnetgraph.res", "dropdownweathercontrol.res"))
-CHANGED = {MENU, CFG, CHAT, LAYOUT, *SUBMENUS}
+CHANGED = {MENU, CFG, CHAT, LAYOUT, *SUBMENUS, *TEXTURES}
 PATCH = ROOT / "reports/c_menu_consolidation/patch.zip"
 DIFF = ROOT / "reports/c_menu_consolidation/menus.patch"
 BUNDLE = ROOT / "dist/C_session_release.zip"
@@ -123,6 +125,7 @@ def transform(files, width=1280, height=720):
             changes.update(bgcolor_override="0 0 0 232", paintbackground="1", paintbackgroundtype="0")
         if changes:
             block = set_fields(block, changes)
+        block = convert_switch(name, block)
         text = text[:start] + block + text[end:]
     result[MENU] = text.encode("utf-8")
     for path in SUBMENUS:
@@ -140,12 +143,13 @@ def transform(files, width=1280, height=720):
     cfg += "\n// Weather defaults; apply once on a new connection, never every ESC.\n"
     cfg += "r_RainParticleDensity 0\nr_SnowParticles 0\nfog_override 0\n"
     result[CFG] = cfg.encode("utf-8")
+    result.update(flashlight_payload())
     return apply_chat(result)
 
 
 def validate(files, width=None, height=None):
     before = baseline()
-    assert set(files) == set(before), "HUD/LED/TUMTaRA inventory changed"
+    assert set(files) == set(before) | ADDED, "Unexpected integrated inventory"
     assert {p for p in before if before[p] != files[p]} == CHANGED
     profile = re.search(r"Profile: (\d+)x(\d+)\.", files[CFG].decode("utf-8"))
     assert profile, "Missing resolution profile"
@@ -156,6 +160,8 @@ def validate(files, width=None, height=None):
     validate_resolution(actual_width, actual_height)
     expected = transform(before, actual_width, actual_height)
     assert files == expected, "Unexpected payload or missing consolidation change"
+    validate_flashlight(files)
+    validate_switches(files[MENU].decode("utf-8-sig"))
     validate_chat(files)
     duplicates = {c: refs for c, refs in bindings(files).items() if len(refs) > 1}
     assert not duplicates, duplicates
@@ -179,7 +185,7 @@ def validate(files, width=None, height=None):
     for width in (640, 768, 480 * 16 / 9, 1120):
         rectangles = []
         for name, (props, _) in nodes.items():
-            if props.get("controlname") not in ("SliderControl", "L4D360HybridButton", "DropDownMenu"):
+            if props.get("controlname") not in ("SliderControl", "CvarToggleCheckButton", "L4D360HybridButton", "DropDownMenu"):
                 continue
             w, h = float(props["wide"]), float(props["tall"])
             x, y = coordinate(props["xpos"], width, w), float(props["ypos"])
@@ -199,7 +205,7 @@ def validate(files, width=None, height=None):
     assert not audit["errors"], audit["errors"]
     print(f"PASS {len(files)} CRC members; {len(bindings(files))} distinct bindings; zero duplicate writers")
     print("PASS unified FOV 50..200; camera offset -1000..1000; weather minima/defaults all 0")
-    print("PASS audio settings retained; layout/navigation checked; unrelated HUD/LED/TUMTaRA bytes unchanged")
+    print("PASS pinned mean-190 LED + no-fade/RGB2x shader integrated; unrelated HUD/TUMTaRA unchanged")
     return audit
 
 
@@ -209,11 +215,13 @@ def package():
     assert sha(DLL.read_bytes()) == build["dll_sha256"]
     payload = {"left4dead2/addons/" + C_FILENAME: OUTPUT.read_bytes(),
                "bin/neko/plugins/CSessionDefaults.dll": DLL.read_bytes()}
-    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.2.4",
+    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.3.0",
                 "chat_layout": "center of speed/weapon gap; input bottom aligned to player HealthBorder",
                 "local_defaults": "weather and client ragdoll count 0 once per map, named setter/readback, flags unchanged",
                 "engine_sha256": build["engine_profile_sha256"],
                 "flashlight_cone": "165 once per playable map entry, no ESC dependency or subsequent enforcement",
+                "flashlight_rendering": "integrated DXT5 mean190 and no-end-fade/RGB2x PS30",
+                "outline_defaults": "two named replicated outline controls -> 0 once per map; server may override",
                 "files": {p: sha(b) for p, b in payload.items()}}
     payload["manifest.json"] = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode()
     with zipfile.ZipFile(BUNDLE, "w", compression=zipfile.ZIP_DEFLATED) as archive:
@@ -239,17 +247,17 @@ def build(width=1280, height=720):
     diff = "".join("".join(difflib.unified_diff(
         before[p].decode("utf-8-sig").splitlines(keepends=True),
         files[p].decode("utf-8-sig").splitlines(keepends=True),
-        fromfile="a/" + p, tofile="b/" + p)) for p in sorted(CHANGED))
+        fromfile="a/" + p, tofile="b/" + p)) for p in sorted(CHANGED) if p.endswith((".res", ".cfg")))
     DIFF.write_text(diff, encoding="utf-8", newline="\n")
     manifest = {"base_sha256": BASE_HASH, "result_sha256": sha(OUTPUT.read_bytes()),
                 "width": width, "height": height,
                 "helper_before": OLD_DLL_HASH, "helper_after": sha(DLL.read_bytes()),
-                "changes": {p: {"before": sha(before[p]), "after": sha(files[p])} for p in sorted(CHANGED)}}
+                "changes": {p: {"before": sha(before[p]) if p in before else None, "after": sha(files[p])} for p in sorted(CHANGED | ADDED)}}
     with zipfile.ZipFile(PATCH, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
         archive.writestr("menus.patch", DIFF.read_bytes())
         archive.writestr("CSessionDefaults.dll", DLL.read_bytes())
-        for path in sorted(CHANGED):
+        for path in sorted(CHANGED | ADDED):
             archive.writestr("payload/" + path, files[path])
     package()
     print("RESULT SHA256 " + sha(OUTPUT.read_bytes()))
@@ -264,7 +272,10 @@ def replay():
         assert sha(archive.read("CSessionDefaults.dll")) == meta["helper_after"] == sha(DLL.read_bytes())
         assert archive.read("menus.patch") == DIFF.read_bytes()
         for path, hashes in meta["changes"].items():
-            assert sha(files[path]) == hashes["before"]
+            if hashes["before"] is None:
+                assert path not in files
+            else:
+                assert sha(files[path]) == hashes["before"]
             files[path] = archive.read("payload/" + path)
             assert sha(files[path]) == hashes["after"]
     validate(files)

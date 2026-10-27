@@ -24,7 +24,7 @@ def main():
     from verify_c_mod import validate_files
     validate_files(read(OUTPUT), 1280, 720)
     print("PASS permanent release path: " + str(OUTPUT))
-    print("PASS 222 members; current C delta validated")
+    print("PASS current C inventory/delta validated, including integrated flashlight shader")
     print("RESULT SHA256 " + hashlib.sha256(OUTPUT.read_bytes()).hexdigest())
 
 

@@ -10,6 +10,7 @@ from tumtara_integration import (
 )
 from vpk import read
 from release_paths import OUTPUT
+from c_flashlight_assets import SHADER, TEXTURES
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
         return
     target = OUTPUT
     files = read(target)
-    assert set(files) - set(before) == {FLYOUT}
+    assert set(files) - set(before) == {FLYOUT, SHADER}
     assert set(before) <= set(files)
     changed = {n for n in before if before[n] != files[n]}
     required = {MAIN, LAYOUT, PICKUP, "resource/ui/l4d360ui/ingamemainmenu.res", "cfg/l4d2esc_defaults.cfg"}
@@ -38,6 +39,7 @@ def main():
         from c_chat_layout import CHAT
         required.update(SUBMENUS)
         required.add(CHAT)
+        required.update(TEXTURES)
         validate_latest(files, args.width, args.height)
     if (args.width, args.height) == (1280, 720):
         assert changed == required, changed
@@ -52,6 +54,8 @@ def main():
     validate(files)
     diff = []
     for name in sorted(changed | {FLYOUT}):
+        if not name.endswith((".res", ".cfg", ".txt")):
+            continue
         diff.extend(difflib.unified_diff(
             before.get(name, b"").decode("utf-8-sig").splitlines(keepends=True),
             files[name].decode("utf-8-sig").splitlines(keepends=True),
@@ -60,7 +64,7 @@ def main():
     patch = ROOT / "reports/C_tumtara_merge.patch"
     patch.write_text("".join(diff), encoding="utf-8", newline="\n")
     assert patch.read_text(encoding="utf-8") == "".join(diff).replace("\r\n", "\n")
-    print(f"PASS exact delta: {len(changed)} existing text resources changed + 1 launcher added; all other {len(before) - len(changed)} members byte-identical")
+    print(f"PASS exact delta: {len(changed)} existing resources changed + launcher and shader added; all other {len(before) - len(changed)} members byte-identical")
     print("PASS donor default speedometer/number positions restored, repaired speed materials unchanged")
     print("PATCH " + str(patch))
     print("RESULT SHA256 " + hashlib.sha256(target.read_bytes()).hexdigest())
