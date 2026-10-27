@@ -11,6 +11,7 @@
 #include <vector>
 #include "session_state.h"
 #include "local_cvars.h"
+#include "checkbox_bridge.h"
 
 // Deliberately version 1, matching the already installed Evolved core contract.
 class IL4NPluginV1 {
@@ -18,7 +19,7 @@ public:
     virtual ~IL4NPluginV1() = default;
     virtual unsigned int GetInterfaceVersion() { return 1; }
     virtual const char* GetName() { return "C session defaults"; }
-    virtual const char* GetVersion() { return "1.3.0"; }
+    virtual const char* GetVersion() { return "1.3.1"; }
     virtual void OnModuleLoaded(const char*, std::uintptr_t) {}
     virtual void OnGameLaunch() {}
     virtual void OnD3DCreated(void*) {}
@@ -39,6 +40,7 @@ static std::atomic<bool> bootstrap_started{false};
 static std::atomic<bool> timer_ready{false};
 static std::atomic<HHOOK> bootstrap_hook{nullptr};
 static bool engine_identity_checked = false;
+static bool checkbox_disabled = false;
 
 static void CALLBACK Timer(HWND, UINT, UINT_PTR, DWORD);
 
@@ -209,8 +211,35 @@ static bool SetLocalInteger(const char* name, int value, bool outline_default = 
     return ok;
 }
 
+static void EnsureCheckboxBridge() {
+    if (checkbox_disabled || CheckboxBridge::trampoline) return;
+    HMODULE image = GetModuleHandleW(L"gameui.dll");
+    if (!image) return;
+    auto base = reinterpret_cast<unsigned char*>(image);
+    const unsigned char apply_prefix[] = {0x56, 0x8b, 0xf1, 0x57, 0x8d};
+    auto table = reinterpret_cast<void**>(base + 0x15f674);
+    if (!ModuleIdentityMatches(image, "321ec9b5865582330af61e81eb347da31cc213cc6c95b80d6d98170b8a5fbb40") ||
+        std::memcmp(base + 0x4500, apply_prefix, sizeof(apply_prefix)) ||
+        std::memcmp(base + 0x4320, apply_prefix, sizeof(apply_prefix)) ||
+        table[0x400 / 4] != base + 0xe5f40 || table[0x3fc / 4] != base + 0x42e0) {
+        checkbox_disabled = true;
+        Log("CHECKBOX_DISABLED: GameUI identity/native ApplyChanges ABI mismatch; no fallback");
+        return;
+    }
+    HMODULE pinned = nullptr;
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                           reinterpret_cast<LPCWSTR>(base), &pinned) || !CheckboxBridge::Install(image, Log)) {
+        checkbox_disabled = true;
+        Log("CHECKBOX_DISABLED: scoped UI event bridge installation failed");
+        return;
+    }
+    Log("CHECKBOX_READY: scoped C_ESC_BOOL controls commit through native ApplyChanges with readback; game files unchanged");
+}
+
 static void Poll() {
     if (disabled || (!engine_client && !EnsureEngine())) return;
+    EnsureCheckboxBridge();
+    CheckboxBridge::PollPending();
     using Bool = bool(__thiscall*)(void*);
     using Pointer = void*(__thiscall*)(void*);
     using String = const char*(__thiscall*)(void*);

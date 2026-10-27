@@ -26,7 +26,7 @@ from tumtara_integration import validate as validate_tumtara
 from verify_menu import coordinate
 from vpk import read, write
 from c_flashlight_assets import TEXTURES, SHADER, ADDED, payload as flashlight_payload, validate as validate_flashlight
-from c_binary_switches import convert as convert_switch, validate as validate_switches
+from c_binary_switches import convert as convert_switch, validate as validate_switches, ordered_settings, layout_changes, bridge_navigation, CONTROL
 
 BASE = ROOT / "originals/C_before_menu_consolidation.vpk"
 BASE_HASH = "b6b4819c711728d5a647ca341f1c93aef480294171bc55b824e3f0bcb58dc650"
@@ -85,6 +85,7 @@ def transform(files, width=1280, height=720):
     assert removed <= old.keys()
     sliders = [n for n, _, _, b in blocks(text)
                if fields(b).get("controlname") == "SliderControl" and n not in removed]
+    sliders = ordered_settings(sliders, old)
     rows = math.ceil(len(sliders) / 2)
     assert rows <= 24
 
@@ -103,13 +104,7 @@ def transform(files, width=1280, height=720):
         changes = {k: target(v, k) for k, v in props.items()
                    if k.startswith("nav") and v and (v in removed or v not in old)}
         if name in sliders:
-            index = sliders.index(name)
-            column, row = divmod(index, rows)
-            column_names = sliders[column * rows:(column + 1) * rows]
-            changes.update(xpos="c-92" if column == 0 else "r196",
-                           ypos=str(14 + row * 19),
-                           navup=column_names[(row - 1) % len(column_names)],
-                           navdown=column_names[(row + 1) % len(column_names)])
+            changes.update(layout_changes(name, sliders))
         if name == "Flashlightfov":
             changes.update(minvalue="50", maxvalue="200", stepsize="1")
             block = labels(block, "手电光圈")
@@ -127,7 +122,7 @@ def transform(files, width=1280, height=720):
             block = set_fields(block, changes)
         block = convert_switch(name, block)
         text = text[:start] + block + text[end:]
-    result[MENU] = text.encode("utf-8")
+    result[MENU] = bridge_navigation(text, old).encode("utf-8")
     for path in SUBMENUS:
         text = files[path].decode("utf-8-sig")
         for _, start, end, block in reversed(blocks(text)):
@@ -185,7 +180,7 @@ def validate(files, width=None, height=None):
     for width in (640, 768, 480 * 16 / 9, 1120):
         rectangles = []
         for name, (props, _) in nodes.items():
-            if props.get("controlname") not in ("SliderControl", "CvarToggleCheckButton", "L4D360HybridButton", "DropDownMenu"):
+            if props.get("controlname") not in ("SliderControl", CONTROL, "L4D360HybridButton", "DropDownMenu"):
                 continue
             w, h = float(props["wide"]), float(props["tall"])
             x, y = coordinate(props["xpos"], width, w), float(props["ypos"])
@@ -215,7 +210,8 @@ def package():
     assert sha(DLL.read_bytes()) == build["dll_sha256"]
     payload = {"left4dead2/addons/" + C_FILENAME: OUTPUT.read_bytes(),
                "bin/neko/plugins/CSessionDefaults.dll": DLL.read_bytes()}
-    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.3.0",
+    manifest = {"runtime_status": "NOT_TESTED", "helper_version": "1.3.1",
+                "checkbox_commit": "10 C_ESC_BOOL controls; native ApplyChanges; deferred render readback, timeout without retry or retained UI pointer; pinned GameUI runtime bridge",
                 "chat_layout": "center of speed/weapon gap; input bottom aligned to player HealthBorder",
                 "local_defaults": "weather and client ragdoll count 0 once per map, named setter/readback, flags unchanged",
                 "engine_sha256": build["engine_profile_sha256"],

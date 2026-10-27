@@ -27,7 +27,11 @@ static HRESULT WINAPI CreationParameters(void* object, D3DDEVICE_CREATION_PARAME
 
 int wmain(int argc, wchar_t** argv) {
     if (argc != 3) return 2;
-    const auto root = std::filesystem::path(argv[2]) / ("run_" + std::to_string(GetCurrentProcessId()));
+    // Windows reuses PIDs: a PID-only directory can contain an old TIMER_ACTIVE
+    // log and make this test pass without observing the current callback.
+    const auto root = std::filesystem::path(argv[2]) / ("run_" + std::to_string(GetCurrentProcessId()) +
+                                                     "_" + std::to_string(GetTickCount64()));
+    if (std::filesystem::exists(root)) return 7;
     const auto target = root / "bin/neko/plugins/CSessionDefaults.dll";
     std::filesystem::create_directories(target.parent_path());
     std::filesystem::copy_file(argv[1], target, std::filesystem::copy_options::overwrite_existing);

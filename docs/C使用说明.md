@@ -1,10 +1,12 @@
-# C 使用说明（1.3.0）
+# C 使用说明（1.3.1）
 
-适用于 `【00】C_ESC_LED_血条和速度_TUMTaRA.vpk` 和配套 `CSessionDefaults.dll` **1.3.0**。
+> 1.3.1 修复旧勾选框缺少提交的问题，并支持“地图全亮”等参数的延迟确认；必须同时更新 VPK 与 DLL，见 [勾选与提交说明](C勾选与提交.md)。旧版 Release 附件保留，不应与本版混装。
+
+适用于 `【00】C_ESC_LED_血条和速度_TUMTaRA.vpk` 和配套 `CSessionDefaults.dll` **1.3.1**。
 
 ## 一、下载哪个文件
 
-进入 [v1.3.0 发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.3.0)，下载 **`C_session_release.zip`**。
+进入 [v1.3.1 发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.3.1)，下载 **`C_session_release.zip`**。
 
 | 发布文件 | 用途 |
 |---|---|
@@ -12,7 +14,7 @@
 | `C_ESC_LED_Health_Speed_TUMTaRA.vpk` | 单独的菜单/HUD 包，不含自动默认项 DLL；安装时使用下文固定中文文件名 |
 | `SHA256SUMS.txt` | 用于核对下载文件是否完整 |
 
-**首次安装和升级均推荐使用 ZIP，不要只替换 VPK。** 本版同时更新菜单、手电资源和轮廓初始化 DLL。
+**首次安装和升级均推荐使用 ZIP，不要只替换 VPK。** 本版包含勾选提交所需的 DLL；手电资源和轮廓初始化功能继续保留。
 
 ## 二、安装前准备
 
@@ -52,6 +54,7 @@ Left 4 Dead 2/
 1. 重新启动游戏并进入可游玩的地图，默认项会自动初始化，**不需要按 ESC，也不需要输入命令**。
 2. 按 **ESC** 打开全屏选项菜单。背景采用整屏约 **91% 不透明**黑色填充，游戏画面仅隐约透出。
 3. 使用菜单开关或滑条调整设置；10 个真正二值项目使用原生勾选框，连续数值仍用滑条。修改后反复开关 ESC 不会重置。
+   二值项集中排在前面，勾选/取消即提交；“地图全亮”可能到后续渲染帧才应用，组件会延迟确认，不会因为第一次读回旧值就立即反转勾选。
 4. 下一关、同图重载或重新连接房间/服务器后，天气、尸体和手电默认项重新初始化一次。
 
 ### 当前默认项
@@ -129,15 +132,15 @@ DEFAULT_VERIFIED: r_flashlightfar requested=3000 actual=3000; flags unchanged
 由本项目部署脚本安装、且本机保留事务记录和备份的情况下，可在项目目录执行：
 
 ```text
-python -X utf8 tools/deploy_c_integrated.py rollback-preview
-python -X utf8 tools/deploy_c_integrated.py rollback
+python -X utf8 tools/c_session_release.py rollback-preview
+python -X utf8 tools/c_session_release.py rollback-game
 ```
 
-本轮整合部署使用上述三文件回退入口：恢复部署前的 C、DLL 和独立测试包；预览不会写入游戏。不是任意选择历史版本；从 GitHub 只下载 ZIP 的用户请使用自己的手动备份。
+以上恢复最近一次成套部署前的 C 与 DLL，预览不写入游戏；不会重新启用旧独立手电测试包。旧三文件整合事务属于历史记录，不用于回退当前菜单更新。从 GitHub 只下载 ZIP 的用户请使用自己的手动备份。
 
 ## 八、版本与验证说明
 
-- [1.3.0 修复与审查说明](releases/v1.3.0.md)
+- [1.3.1 修复与审查说明](releases/v1.3.1.md)
 - [项目首页](../README.md)
 - 发布要求连续两轮完整静态/自动化审查通过；当前标记为预发布。新轮廓默认项的服务器接受情况、原生开关交互/文字排版和整合后实机效果仍需验证。
 - README 下方的旧版布局、首次 ESC 150、原生光圈 53 和早期 B 安装步骤均是历史记录，**当前安装与使用以本说明为准**。

@@ -18,12 +18,12 @@ import zipfile
 from release_paths import ROOT, OUTPUT
 
 REPO = "STC214/L4D2-ESC-Enhanced"
-TAG = "v1.3.0"
+TAG = "v1.3.1"
 API = "https://api.github.com/repos/" + REPO
-NOTES = ROOT / "docs/releases/v1.3.0.md"
+NOTES = ROOT / "docs/releases/v1.3.1.md"
 ZIP = ROOT / "dist/C_session_release.zip"
 SUMS = ROOT / "dist/SHA256SUMS.txt"
-REPORT = ROOT / "reports/release_v1.3.0"
+REPORT = ROOT / "reports/release_v1.3.1"
 
 
 def git(*args):
@@ -40,14 +40,23 @@ def sha(path):
 def check():
     evidence = json.loads((ROOT / "reports/c_current_review/verification.json").read_text(encoding="utf-8"))
     assert evidence["status"] == "TWO_CLEAN_STATIC_REGRESSION_ROUNDS" and evidence["clean_rounds"] == 2
+    assert len(evidence["rounds"]) == 2
+    # A source edit after an audit invalidates that audit, even when an older
+    # binary happens to have the same name. Include untracked reviewed sources.
+    from review_c_menu_consolidation import sources
+    assert evidence["source_hashes"] == sources(), "Sources changed after clean audit rounds"
     for round_ in evidence["rounds"]:
+        assert round_["records"], "Missing audit command evidence"
         assert round_["vpk_sha256"] == sha(OUTPUT)
         assert round_["bundle_sha256"] == sha(ZIP)
         assert all(record["exit_status"] == 0 for record in round_["records"])
     with zipfile.ZipFile(ZIP) as archive:
         assert archive.testzip() is None
         manifest = json.loads(archive.read("manifest.json"))
-        assert manifest["helper_version"] == "1.3.0"
+        assert manifest["helper_version"] == "1.3.1"
+        helper_name = "bin/neko/plugins/CSessionDefaults.dll"
+        helper_hash = hashlib.sha256(archive.read(helper_name)).hexdigest()
+        assert all(round_["helper_sha256"] == helper_hash for round_ in evidence["rounds"])
         for name, digest in manifest["files"].items():
             assert hashlib.sha256(archive.read(name)).hexdigest() == digest
     assert NOTES.is_file()
@@ -144,7 +153,7 @@ def main():
         if release is None:
             release = api.request(API + "/releases", "POST", {
                 "tag_name": TAG, "target_commitish": commit,
-                "name": "C v1.3.0 — 轮廓默认项、原生开关与手电着色器整合",
+                "name": "C v1.3.1 — 勾选即时提交、延迟确认与二值项前置",
                 "body": NOTES.read_text(encoding="utf-8"), "draft": True, "prerelease": True})
             print("DRAFT created", flush=True)
         upload = release["upload_url"].split("{", 1)[0]

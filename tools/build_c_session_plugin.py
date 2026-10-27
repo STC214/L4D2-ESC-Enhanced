@@ -27,6 +27,8 @@ def main():
         [str(out / 'session_state_test.exe')],
         common + [str(source / 'test_local_cvars.cpp'), '/Fo' + str(out / 'local_cvars.obj'), '/Fe' + str(out / 'local_cvars_test.exe'), '/link', '/Brepro', '/MACHINE:X86'],
         [str(out / 'local_cvars_test.exe')],
+        common + [str(source / 'test_checkbox_bridge.cpp'), '/Fo' + str(out / 'checkbox.obj'), '/Fe' + str(out / 'checkbox_bridge_test.exe'), '/link', '/Brepro', '/MACHINE:X86', 'user32.lib'],
+        [str(out / 'checkbox_bridge_test.exe')],
         common + ['/LD', str(source / 'plugin.cpp'), '/Fo' + str(out / 'plugin.obj'), '/Fe' + str(out / 'CSessionDefaults.dll'), '/link', '/Brepro', '/MACHINE:X86', 'user32.lib', 'bcrypt.lib'],
         common + [str(source / 'test_plugin_contract.cpp'), '/Fo' + str(out / 'contract.obj'), '/Fe' + str(out / 'plugin_contract_test.exe'), '/link', '/Brepro', '/MACHINE:X86'],
         [str(out / 'plugin_contract_test.exe'), str(out / 'CSessionDefaults.dll')],
@@ -48,7 +50,8 @@ def main():
     assert struct.unpack_from('<H', raw, pe + 4)[0] == 0x14c
     assert b'GetL4NPluginInstance\0' in raw
     report = {'scope': 'x86 build + standalone state model, not live game validation',
-              'helper_version': '1.3.0',
+              'helper_version': '1.3.1',
+              'gameui_profile_sha256': '321ec9b5865582330af61e81eb347da31cc213cc6c95b80d6d98170b8a5fbb40',
               'client_profile_sha256': 'c0a8e1e88f7312db11bcfd4b0ec574d224a34b2d9a615d6088b28335eeb4af1f',
               'vstdlib_profile_sha256': '37d0c98ddfe7fa199d741dfc24526eb435f71f66d2d0e3d0500c4c1be33cb6c5',
               'records': records, 'dll_sha256': hashlib.sha256(raw).hexdigest(),

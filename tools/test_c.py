@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import io
 import json
+import re
 import struct
 import subprocess
 import sys
@@ -157,18 +158,40 @@ class WholePackageTests(unittest.TestCase):
             with self.subTest(path=path), self.assertRaises(AssertionError):
                 validate_files(bad, 1280, 720)
 
-    def test_boolean_switches_use_effect_labels_and_numeric_settings_stay_sliders(self):
-        from c_binary_switches import SWITCHES, validate as validate_switches
+    def test_binary_options_have_scoped_checkbox_commit_binding_and_effect_labels(self):
+        from c_binary_switches import SWITCHES, CONTROL, validate as validate_switches
         from inspect_menu import blocks, fields
         text = self.files["resource/ui/l4d360ui/ingamemainmenu.res"].decode("utf-8-sig")
         validate_switches(text)
         nodes = {fields(b).get("concommand", "").lower(): fields(b) for _, _, _, b in blocks(text)}
+        texts = {fields(b).get("concommand", "").lower(): b for _, _, _, b in blocks(text)}
         for command in SWITCHES:
-            self.assertEqual(nodes[command]["controlname"], "CvarToggleCheckButton")
+            self.assertEqual(nodes[command]["controlname"], CONTROL)
+            self.assertEqual(nodes[command]["fieldname"], "C_ESC_BOOL_" + command)
+            self.assertEqual(nodes[command]["cvar_name"].lower(), command)
+            self.assertNotIn('"BtnDropButton"', texts[command])
+            self.assertEqual(re.findall(r'"labeltext"\s+"([^"\n]+)"', texts[command], re.I), [SWITCHES[command]])
         for command in ("r_flashlightconstant", "r_rainparticledensity", "r_snowparticles", "cl_ragdoll_maxcount", "r_flashlightfov"):
             self.assertEqual(nodes[command]["controlname"], "SliderControl")
-        self.assertEqual(nodes["sv_disable_glow_survivors"]["labeltext"], "关闭角色轮廓")
-        self.assertEqual(nodes["sv_disable_glow_faritems"]["labeltext"], "关闭远处物品轮廓")
+        header = (ROOT / "native/c_session_defaults/checkbox_bridge.h").read_text(encoding="utf-8")
+        for command in SWITCHES:
+            self.assertIn('"' + command + '"', header)
+
+    def test_binary_options_first_and_remaining_relative_order_unchanged(self):
+        from c_binary_switches import SWITCHES, CONTROL
+        from inspect_menu import blocks, fields
+        menu = "resource/ui/l4d360ui/ingamemainmenu.res"
+        nodes = {fields(b)["concommand"].lower(): fields(b) for _, _, _, b in blocks(self.files[menu].decode("utf-8-sig"))
+                 if fields(b).get("controlname") in ("SliderControl", CONTROL)}
+        live_names = {props["fieldname"] for props in nodes.values()}
+        original = [fields(b)["concommand"].lower() for name, _, _, b in blocks(baseline()[menu].decode("utf-8-sig"))
+                    if fields(b).get("concommand", "").lower() in nodes and
+                    (name in live_names or fields(b)["concommand"].lower() in SWITCHES)]
+        binary = [name for name in original if name in SWITCHES]
+        other = [name for name in original if name not in binary]
+        visual = sorted(nodes, key=lambda name: (nodes[name]["xpos"] == "r196", int(nodes[name]["ypos"])))
+        self.assertEqual(len(binary), 10)
+        self.assertEqual(visual, binary + other)
 
     def test_chat_only_changes_two_resources(self):
         from c_chat_layout import apply as apply_chat, baseline as chat_baseline

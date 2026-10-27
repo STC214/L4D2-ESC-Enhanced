@@ -24,8 +24,8 @@ int wmain(int argc, wchar_t** argv) {
     assert(plugin && plugin == factory());
     assert(plugin->GetInterfaceVersion() == 1);
     assert(std::strcmp(plugin->GetName(), "C session defaults") == 0);
-    assert(std::strcmp(plugin->GetVersion(), "1.3.0") == 0);
+    assert(std::strcmp(plugin->GetVersion(), "1.3.1") == 0);
     FreeLibrary(module);
-    std::puts("PASS real x86 DLL loaded; L4N v1 export/singleton/version 1.3.0; no game launch side effects");
+    std::puts("PASS real x86 DLL loaded; L4N v1 export/singleton/version 1.3.1; no game launch side effects");
     return 0;
 }
