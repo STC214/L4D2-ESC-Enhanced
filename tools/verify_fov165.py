@@ -13,6 +13,7 @@ from c_flashlight_assets import TEXTURES, SHADER, validate as validate_flashligh
 from c_binary_switches import convert as convert_switch, ordered_settings, layout_changes, bridge_navigation
 from inspect_menu import blocks, fields
 from prepare_menu_patch import set_fields
+from c_menu_consolidation import order_left_column
 
 
 def main():
@@ -41,7 +42,7 @@ def main():
             block = set_fields(block, {key: settings[0] for key, value in nodes[name].items()
                                        if key.startswith("nav") and value == original_settings[0]})
         expected_menu = expected_menu[:start] + convert_switch(name, block) + expected_menu[end:]
-    expected_menu = bridge_navigation(expected_menu, nodes)
+    expected_menu = order_left_column(bridge_navigation(expected_menu, nodes))
     assert expected_menu == after[menu].decode("utf-8-sig"), "".join(difflib.unified_diff(
         expected_menu.splitlines(True), after[menu].decode("utf-8-sig").splitlines(True),
         fromfile="expected", tofile="actual"))

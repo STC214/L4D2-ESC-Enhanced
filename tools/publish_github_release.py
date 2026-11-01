@@ -18,12 +18,12 @@ import zipfile
 from release_paths import ROOT, OUTPUT
 
 REPO = "STC214/L4D2-ESC-Enhanced"
-TAG = "v1.3.1"
+TAG = "v1.3.2"
 API = "https://api.github.com/repos/" + REPO
-NOTES = ROOT / "docs/releases/v1.3.1.md"
+NOTES = ROOT / "docs/releases/v1.3.2.md"
 ZIP = ROOT / "dist/C_session_release.zip"
 SUMS = ROOT / "dist/SHA256SUMS.txt"
-REPORT = ROOT / "reports/release_v1.3.1"
+REPORT = ROOT / "reports/release_v1.3.2"
 
 
 def git(*args):
@@ -114,6 +114,14 @@ def asset_name(path):
     return "C_ESC_LED_Health_Speed_TUMTaRA.vpk" if path == OUTPUT else path.name
 
 
+def assert_publish_sources_tracked():
+    # Unrelated untracked user files stay local; every reviewed production
+    # source and the release notes must nevertheless be tracked and committed.
+    from review_c_menu_consolidation import sources
+    assert not git("status", "--porcelain", "--untracked-files=no"), "Commit tracked release changes first"
+    git("ls-files", "--error-unmatch", "--", *sources(), NOTES.relative_to(ROOT).as_posix())
+
+
 def verify_assets(release, paths):
     by_name = {a["name"]: a for a in release["assets"]}
     assert set(by_name) == {asset_name(p) for p in paths}, "Unexpected/missing release assets"
@@ -149,11 +157,11 @@ def main():
         ref = api.request(API + "/git/tags/" + ref["sha"])["object"]
     assert ref["type"] == "commit" and ref["sha"] == commit, "Remote tag/source mismatch"
     if action == "publish":
-        assert not git("status", "--porcelain"), "Commit release sources/artifacts first"
+        assert_publish_sources_tracked()
         if release is None:
             release = api.request(API + "/releases", "POST", {
                 "tag_name": TAG, "target_commitish": commit,
-                "name": "C v1.3.1 — 勾选即时提交、延迟确认与二值项前置",
+                "name": "C v1.3.2 — 原生 ESC 菜单置顶与光圈默认值 114",
                 "body": NOTES.read_text(encoding="utf-8"), "draft": True, "prerelease": True})
             print("DRAFT created", flush=True)
         upload = release["upload_url"].split("{", 1)[0]

@@ -1,12 +1,12 @@
-# C 使用说明（1.3.1）
+# C 使用说明（整包 1.3.2／DLL 1.3.1）
 
-> 1.3.1 修复旧勾选框缺少提交的问题，并支持“地图全亮”等参数的延迟确认；必须同时更新 VPK 与 DLL，见 [勾选与提交说明](C勾选与提交.md)。旧版 Release 附件保留，不应与本版混装。
+> 1.3.2 将左列原生菜单置顶，自定义菜单放在“退出到主菜单”下方，手电光圈默认值为 114。配套 DLL 沿用 1.3.1，包含勾选提交与延迟确认功能，见 [勾选与提交说明](C勾选与提交.md)；推荐安装完整 ZIP。旧版 Release 附件保留，不应与本版混装。
 
 适用于 `【00】C_ESC_LED_血条和速度_TUMTaRA.vpk` 和配套 `CSessionDefaults.dll` **1.3.1**。
 
 ## 一、下载哪个文件
 
-进入 [v1.3.1 发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.3.1)，下载 **`C_session_release.zip`**。
+进入 [v1.3.2 发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.3.2)，下载 **`C_session_release.zip`**。
 
 | 发布文件 | 用途 |
 |---|---|

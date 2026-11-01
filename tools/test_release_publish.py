@@ -77,6 +77,19 @@ class ReleaseGuards(unittest.TestCase):
         with self.assertRaises(AssertionError):
             publish.check()
 
+    def test_publish_requires_clean_tracked_changes(self):
+        with patch.object(publish, 'git', return_value=' M tools/changed.py'):
+            with self.assertRaisesRegex(AssertionError, 'Commit tracked'):
+                publish.assert_publish_sources_tracked()
+
+    def test_publish_requires_reviewed_sources_tracked_not_unrelated_files(self):
+        with patch.object(publish, 'git', return_value='') as command:
+            publish.assert_publish_sources_tracked()
+        self.assertEqual(command.call_args_list[0].args,
+                         ('status', '--porcelain', '--untracked-files=no'))
+        self.assertEqual(command.call_args_list[1].args,
+                         ('ls-files', '--error-unmatch', '--', 'fixture.py', 'notes.md'))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

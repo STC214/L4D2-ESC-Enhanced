@@ -15,7 +15,7 @@ from pathlib import Path
 
 from audit_c import inspect
 from build_c_mod import OUTPUT, adapt_resource, prepare, validate_resolution, video_resolution
-from c_menu_consolidation import PATCH, SUBMENUS, bindings, transform, baseline
+from c_menu_consolidation import PATCH, SUBMENUS, bindings, transform, baseline, LEFT_COLUMN_ORDER, order_left_column
 from c_chat_layout import CHAT
 from c_flashlight_assets import TEXTURES, SHADER, validate as validate_flashlight
 from hud_integration import HUD, ROOT, LAYOUT, PICKUP, SPEED
@@ -262,6 +262,27 @@ class WholePackageTests(unittest.TestCase):
         from c_menu_consolidation import MENU
         bad = dict(self.files)
         bad[MENU] = adapt_resource(bad[MENU].decode(), {"QuickKickPlayer": {"navright": "GuangSheJiao"}}).encode()
+        with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
+            validate_files(bad, 1280, 720)
+
+    def test_left_column_native_first_and_existing_navigation_preserved(self):
+        from c_menu_consolidation import MENU
+        from inspect_menu import blocks, fields
+        menu = {name: fields(block) for name, _, _, block in blocks(self.files[MENU].decode())}
+        original = {name: fields(block) for name, _, _, block in blocks(baseline()[MENU].decode('utf-8-sig'))}
+        for index, name in enumerate(LEFT_COLUMN_ORDER):
+            self.assertEqual(menu[name]['ypos'], str(93 + 25 * index))
+            self.assertEqual(menu[name]['navup'], LEFT_COLUMN_ORDER[(index - 1) % 15])
+            self.assertEqual(menu[name]['navdown'], LEFT_COLUMN_ORDER[(index + 1) % 15])
+            for key in ('xpos', 'wide', 'tall', 'command', 'labeltext'):
+                self.assertEqual(menu[name].get(key), original[name].get(key))
+        text = self.files[MENU].decode()
+        self.assertEqual(order_left_column(text), text)
+
+    def test_old_left_column_order_rejected(self):
+        from c_menu_consolidation import MENU
+        bad = dict(self.files)
+        bad[MENU] = adapt_resource(bad[MENU].decode(), {'BtnReturnToGame': {'ypos': '218'}}).encode()
         with self.assertRaises(AssertionError), contextlib.redirect_stdout(io.StringIO()):
             validate_files(bad, 1280, 720)
 

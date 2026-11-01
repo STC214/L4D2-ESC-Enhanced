@@ -1,4 +1,4 @@
-"""Verify checkbox+commit pair, menu-only VPK delta, replay and pair rollback."""
+"""Verify checkbox+commit pair, exact menu/FOV delta, replay and pair rollback."""
 
 import difflib
 import json
@@ -8,7 +8,7 @@ import sys
 import zipfile
 
 from c_binary_switches import SWITCHES, CONTROL
-from c_menu_consolidation import MENU, validate
+from c_menu_consolidation import MENU, CFG, validate
 from c_session_release import GAME, DLL, ROOT, OUTPUT, TARGETS, save, sha
 from inspect_menu import blocks, fields
 from review_c_switch_fix import probe
@@ -39,7 +39,10 @@ def main():
             shutil.copyfile(source, target)
         assert sha(target) == digest
     before, after = read(BASE), read(OUTPUT)
-    assert set(before) == set(after) and {key for key in before if before[key] != after[key]} == {MENU}
+    changed = {MENU, CFG}
+    assert set(before) == set(after) and {key for key in before if before[key] != after[key]} == changed
+    assert before[CFG].count(b"r_flashlightfov 165") == 1
+    assert before[CFG].replace(b"r_flashlightfov 165", b"r_flashlightfov 114") == after[CFG]
     validate(after)
     old, new = settings(before), settings(after)
     assert [item["concommand"] for item in old] == [item["concommand"] for item in new]
@@ -52,22 +55,25 @@ def main():
     assert all(item["exit_status"] == 0 for item in build["records"])
     assert any("checkbox_bridge_test.exe" in " ".join(item["command"]) and "actual x86 hook/trampoline/unhook" in item["stdout"]
                for item in build["records"])
-    diff = "".join(difflib.unified_diff(before[MENU].decode("utf-8-sig").splitlines(True),
-                                      after[MENU].decode("utf-8-sig").splitlines(True),
-                                      fromfile="before/" + MENU, tofile="after/" + MENU))
+    diff = "".join("".join(difflib.unified_diff(before[path].decode("utf-8-sig").splitlines(True),
+                                              after[path].decode("utf-8-sig").splitlines(True),
+                                              fromfile="before/" + path, tofile="after/" + path))
+                   for path in sorted(changed))
     (WORK / "menu.patch").write_text(diff, encoding="utf-8", newline="\n")
     patch = WORK / "patch.zip"
-    manifest = {"baseline_sha256": BASE_HASH, "result_sha256": sha(OUTPUT), "changed": [MENU],
+    manifest = {"baseline_sha256": BASE_HASH, "result_sha256": sha(OUTPUT), "changed": sorted(changed),
                 "helper_before": OLD_DLL_HASH, "helper_after": sha(DLL)}
     with zipfile.ZipFile(patch, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest))
         archive.writestr("menu.patch", diff)
-        archive.writestr(MENU, after[MENU])
+        for path in sorted(changed):
+            archive.writestr(path, after[path])
         archive.write(DLL, "CSessionDefaults.dll")
     with zipfile.ZipFile(patch) as archive:
         assert archive.testzip() is None and json.loads(archive.read("manifest.json")) == manifest
         replay = dict(before)
-        replay[MENU] = archive.read(MENU)
+        for path in changed:
+            replay[path] = archive.read(path)
         assert archive.read("CSessionDefaults.dll") == DLL.read_bytes()
     replayed = WORK / "replayed.vpk"
     write(replayed, replay)
@@ -87,10 +93,10 @@ def main():
                         "stderr": result.stderr, "exit_status": result.returncode})
     save(WORK / "verification.json", {"status": "CHECKBOX_COMMIT_PATCH_AND_PAIR_ROLLBACK_PASSED",
          "scope": "Native x86 bridge fixtures and static resource verification; NOT live game clicks",
-         "records": records, "native_build": build, "unchanged_members": len(after) - 1,
+         "records": records, "native_build": build, "unchanged_members": len(after) - len(changed),
          "artifacts": {str(path): sha(path) for path in (BASE, OLD_DLL, OUTPUT, DLL, patch, replayed, restored, restored_dll)}})
     print("PASS 10 scoped checkboxes + native commit/readback tests; settings order unchanged")
-    print("PASS only ESC member changed; 222 other members unchanged; VPK/DLL patch and pair rollback reopened")
+    print(f"PASS ESC menu and exact FOV 165 -> 114 CFG delta; {len(after) - len(changed)} other members unchanged; VPK/DLL patch and pair rollback reopened")
     print("RECORD", WORK / "verification.json")
 
 

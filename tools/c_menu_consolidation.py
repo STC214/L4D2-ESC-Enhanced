@@ -42,6 +42,12 @@ CHANGED = {MENU, CFG, CHAT, LAYOUT, *SUBMENUS, *TEXTURES}
 PATCH = ROOT / "reports/c_menu_consolidation/patch.zip"
 DIFF = ROOT / "reports/c_menu_consolidation/menus.patch"
 BUNDLE = ROOT / "dist/C_session_release.zip"
+LEFT_COLUMN_ORDER = (
+    "BtnReturnToGame", "BtnGoIdle", "BtnCallAVote", "BtnInviteFriends",
+    "BtnLeaderboard", "BtnStatsAndAchievements", "BtnAddons", "BtnAudio1",
+    "BtnOptions", "BtnExitToMainMenu", "DrpSplitScreenMode", "QuickKickPlayer",
+    "DrpTvGammaHint", "DrpCaptionsHint", "DrpGameInstructorHint",
+)
 
 
 def sha(data):
@@ -71,6 +77,18 @@ def bindings(files):
 def labels(block, text):
     return re.sub(r'("labeltext"\s+")[^"\n]*(")',
                   lambda m: m[1] + text + m[2], block, flags=re.I)
+
+
+def order_left_column(text):
+    """Rotate existing rows: native menu first; preserve the circular nav links."""
+    found = set()
+    for name, start, end, block in reversed(blocks(text)):
+        if name in LEFT_COLUMN_ORDER:
+            found.add(name)
+            block = set_fields(block, {"ypos": str(93 + 25 * LEFT_COLUMN_ORDER.index(name))})
+            text = text[:start] + block + text[end:]
+    assert found == set(LEFT_COLUMN_ORDER)
+    return text
 
 
 def transform(files, width=1280, height=720):
@@ -122,7 +140,7 @@ def transform(files, width=1280, height=720):
             block = set_fields(block, changes)
         block = convert_switch(name, block)
         text = text[:start] + block + text[end:]
-    result[MENU] = bridge_navigation(text, old).encode("utf-8")
+    result[MENU] = order_left_column(bridge_navigation(text, old)).encode("utf-8")
     for path in SUBMENUS:
         text = files[path].decode("utf-8-sig")
         for _, start, end, block in reversed(blocks(text)):
