@@ -110,12 +110,32 @@ try {
         Write-ReportJson -Path (Join-Path $Report 'icon-source.json') -Value @{source_name=[IO.Path]::GetFileName($IconSource);source_sha256=$SourceHash;ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash;object_sha256=(Get-FileHash -LiteralPath $IconObject).Hash;original_unchanged=$true}
     }
     if (-not (Test-Path -LiteralPath $IconObject) -or -not (Test-Path -LiteralPath $IconFile)) { throw 'Icon resource missing: build with -IconSource <square-image-path> first.' }
+    $SourceBefore = @{}
+    foreach ($Path in Get-ChildItem -LiteralPath $PSScriptRoot -File) { $SourceBefore[$Path.Name] = (Get-FileHash -LiteralPath $Path.FullName).Hash }
+    $PromotionOutput = & (Join-Path $PSScriptRoot 'test_promotion.ps1')
+    $PromotionOutput
+    $Records.Add(@{command=@('PowerShell in-process &',(Join-Path $PSScriptRoot 'test_promotion.ps1'));exit_status=0;input='isolated workspace fixtures';output=($PromotionOutput -join "`n")})
     Invoke-RecordedGo -GoArgs @('test','-count=2','-v','./...')
     # The one LPARAM -> MINMAXINFO cast is a required Win32 callback ABI boundary.
     # All remaining vet analyzers stay enabled; the native smoke exercises that cast.
     Invoke-RecordedGo -GoArgs @('vet','-unsafeptr=false','./...')
-    $Exe = Join-Path $Out 'CSP_Spray_Manager.exe'
+    $FinalExe = Join-Path $Out 'CSP_Spray_Manager.exe'
+    $Candidate = Join-Path $Report 'candidate'
+    New-Item -ItemType Directory -Force -Path $Candidate | Out-Null
+    $Exe = Join-Path $Candidate 'CSP_Spray_Manager.exe'
     Invoke-RecordedGo -GoArgs @('build','-trimpath','-ldflags=-H=windowsgui -s -w -buildid=','-o',$Exe,'.')
+    $IconCheck = Join-Path $Report ('linked-icon.' + [guid]::NewGuid().ToString('N') + '.json')
+    $CheckInfo = New-Object Diagnostics.ProcessStartInfo
+    $CheckInfo.FileName = $Exe
+    $CheckInfo.Arguments = '--verify-icon "' + $IconFile + '" "' + $IconCheck + '"'
+    $CheckInfo.UseShellExecute = $false
+    $CheckInfo.CreateNoWindow = $true
+    $CheckProcess = [Diagnostics.Process]::Start($CheckInfo)
+    if (-not $CheckProcess.WaitForExit(20000)) { throw 'Linked icon verification timeout; previous product kept.' }
+    $CheckCode = $CheckProcess.ExitCode
+    $CheckProcess.Dispose()
+    $Records.Add(@{command=@($Exe,'--verify-icon',$IconFile,$IconCheck);exit_status=$CheckCode;input='current ICO vs linked PE';output=(Get-Content -LiteralPath $IconCheck -Raw -Encoding utf8)})
+    if ($CheckCode -ne 0 -or (Get-Content -LiteralPath $IconCheck -Raw | ConvertFrom-Json).status -ne 'PASS') { throw 'Linked icon mismatch; previous product kept.' }
     $Preview = Join-Path $Report 'studio-preview.png'
     $PreviewInfo = New-Object Diagnostics.ProcessStartInfo
     $PreviewInfo.FileName = $Exe
@@ -147,8 +167,17 @@ try {
     Write-Output 'STAGE protected-hashes-pass'
     $SourceHashes = @{}
     foreach ($Path in Get-ChildItem -LiteralPath $PSScriptRoot -File) { $SourceHashes[$Path.Name] = (Get-FileHash -LiteralPath $Path.FullName).Hash }
+    if ($SourceHashes.Count -ne $SourceBefore.Count) { throw 'Sources changed during build; previous product kept.' }
+    foreach ($Name in $SourceBefore.Keys) { if ($SourceHashes[$Name] -ne $SourceBefore[$Name]) { throw "Source changed during build: $Name; previous product kept." } }
+    if ((Get-FileHash -LiteralPath $Asset).Hash -ne $Pin) { throw 'Embedded selector baseline changed during build.' }
+    if ((Get-FileHash -LiteralPath $IconFile).Hash.ToLowerInvariant() -ne (Get-Content -LiteralPath $IconCheck -Raw | ConvertFrom-Json).ico_sha256) { throw 'ICO changed after linked-resource verification.' }
     Write-Output 'STAGE source-hashes-pass'
-    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=(Get-FileHash -LiteralPath $Exe).Hash; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.2.0';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash}
+    $Expected = (Get-FileHash -LiteralPath $Exe).Hash
+    $Backup = Join-Path $Candidate 'before.exe'
+    . (Join-Path $PSScriptRoot 'promote.ps1')
+    $Promotion = Set-VerifiedProduct $Root $Exe $FinalExe $Backup $Expected
+    $Exe = $FinalExe
+    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.2.1';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
     Write-ReportJson -Path (Join-Path $Report 'verification.json') -Value $Result
     Write-Output "PASS: $Exe"
 } finally {

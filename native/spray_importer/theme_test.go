@@ -61,3 +61,14 @@ func TestDrawItemNativeABI(t *testing.T) {
 		t.Fatal("DRAWITEMSTRUCT x64 ABI mismatch")
 	}
 }
+
+func TestListKeyboardFocusCue(t *testing.T) {
+	for _, c := range []struct {
+		State   uint32
+		Visible bool
+	}{{0, false}, {1, false}, {16, true}, {17, true}, {16 | 0x200, false}} {
+		if studioItemFocus(c.State) != c.Visible {
+			t.Fatal(c)
+		}
+	}
+}

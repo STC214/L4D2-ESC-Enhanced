@@ -43,6 +43,7 @@ var importedCount int
 var studioPaints int
 var paintedActions = map[uint32]bool{}
 var paintedList bool
+var paintedListFocus bool
 
 func uiFont(size, weight int) uintptr {
 	h, _, _ := gdi.NewProc("CreateFontW").Call(uintptr(int64(-px(size))), 0, 0, 0, uintptr(weight), 0, 0, 0, 1, 0, 0, 5, 0, uintptr(unsafe.Pointer(utf("Microsoft YaHei UI"))))
@@ -123,6 +124,8 @@ type drawItem struct {
 	Data                          uintptr
 }
 
+func studioItemFocus(state uint32) bool { return state&16 != 0 && state&0x200 == 0 }
+
 func studioDraw(item *drawItem) bool {
 	if item.Kind == 4 { // ODT_BUTTON
 		paintedActions[item.ID] = true
@@ -139,6 +142,15 @@ func studioDraw(item *drawItem) bool {
 			base = rgb(22, 62, 68)
 		}
 		fillArea(item.DC, item.Area, base)
+		if studioItemFocus(item.State) {
+			paintedListFocus = true
+			focus := item.Area
+			focus.Left += 2
+			focus.Top += 2
+			focus.Right -= 2
+			focus.Bottom -= 2
+			roundArea(item.DC, focus, base, studioAccent, 6)
+		}
 		r := item.Area
 		r.Left += int32(px(8))
 		r.Right = r.Left + int32(px(32))

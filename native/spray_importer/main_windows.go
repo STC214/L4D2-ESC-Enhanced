@@ -99,6 +99,7 @@ var smokeReport string
 var smokeError string
 var smokeWorkerDone bool
 var busy bool
+var savedFocus uintptr
 
 type jobResult struct {
 	ID      int
@@ -238,6 +239,9 @@ func chooseDirectory() (string, error) {
 }
 
 func uiBusy(value bool) {
+	if value {
+		savedFocus = call("GetFocus")
+	}
 	busy = value
 	for _, h := range buttons {
 		if value {
@@ -252,6 +256,9 @@ func uiBusy(value bool) {
 	} else {
 		call("EnableWindow", slotList, 1)
 		call("EnableWindow", pathEdit, 1)
+		if savedFocus != 0 && call("IsChild", window, savedFocus) != 0 {
+			call("SetFocus", savedFocus)
+		}
 	}
 }
 
@@ -439,6 +446,9 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 				return 0
 			}
 			call("KillTimer", hwnd, 1)
+			send(window, 0x127, 0x10002, 0)
+			call("SetFocus", slotList)
+			call("RedrawWindow", window, 0, 0, 0x181)
 			runSmoke()
 			call("DestroyWindow", hwnd)
 			return 0
@@ -478,7 +488,7 @@ func runSmoke() {
 	if !iconsOK {
 		good = false
 	}
-	styled := studioPaints > 0 && paintedList && len(paintedActions) == 6
+	styled := studioPaints > 0 && paintedList && len(paintedActions) == 6 && paintedListFocus
 	if !styled {
 		good = false
 	}
@@ -533,7 +543,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.2.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.2.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -592,6 +602,31 @@ func runWindow() error {
 }
 
 func main() {
+	if len(os.Args) == 4 && os.Args[1] == "--verify-icon" {
+		exe, err := os.Executable()
+		var raw, ico []byte
+		if err == nil {
+			raw, err = os.ReadFile(exe)
+		}
+		if err == nil {
+			ico, err = os.ReadFile(os.Args[2])
+		}
+		if err == nil {
+			err = verifyEmbeddedIcon(raw, ico)
+		}
+		r := map[string]any{"status": "PASS", "exe_sha256": digest(raw), "ico_sha256": digest(ico), "sizes": iconSizes}
+		if err != nil {
+			r["status"] = "FAIL"
+			r["error"] = err.Error()
+		}
+		if saveJSON(os.Args[3], r) != nil {
+			os.Exit(1)
+		}
+		if err != nil {
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 3 && os.Args[1] == "--studio-preview" {
 		if renderStudioPreview(os.Args[2]) != nil {
 			os.Exit(1)

@@ -6,7 +6,7 @@
 
 ## 一、下载哪个文件
 
-进入 [v1.5.0 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.5.0)，下载 **`C_session_release.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；该 ZIP 与旧 v1.3.2 发布保持一致。只安装 C 不需要喷漆工具。
+进入 [v1.5.1 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.5.1)，下载 **`C_session_release.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；该 ZIP 与旧 v1.3.2 发布保持一致。只安装 C 不需要喷漆工具。
 
 | 发布文件 | 用途 |
 |---|---|

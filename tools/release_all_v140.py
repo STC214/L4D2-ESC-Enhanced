@@ -26,6 +26,7 @@ ALL_ZIP = 'L4D2_ESC_All_Products_v1.4.0.zip'
 MANAGER_VERSION = '1.1.1'
 GO_TEST_COUNT = 29
 REQUIRE_STUDIO = False
+REQUIRE_PROMOTION = False
 
 
 def sha(path):
@@ -57,6 +58,10 @@ def verify_components():
         verify(EXE, ROOT / 'native/spray_importer/assets/app.ico')
         smoke = json.loads((ROOT / 'reports/spray_importer_go/win32-smoke.json').read_text(encoding='utf-8'))
         assert smoke['embedded_icons_loaded'] and smoke['studio_theme_painted']
+    if REQUIRE_PROMOTION:
+        assert go['source_snapshot_matched'] is True
+        assert go['promotion']['after_sha256'] == go['exe_sha256']
+        assert sha(go['promotion']['candidate']).upper() == go['exe_sha256']
     for name, digest in go['source_sha256'].items():
         assert sha(ROOT / 'native/spray_importer' / name).upper() == digest
     native = json.loads((ROOT / 'reports/spray_selector/verification.json').read_text(encoding='utf-8'))
