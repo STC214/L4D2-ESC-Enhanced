@@ -1,4 +1,4 @@
-param()
+param([string]$IconSource)
 $ErrorActionPreference = 'Stop'
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $Report = Join-Path $Root 'reports\spray_importer_go'
@@ -82,12 +82,52 @@ try {
     $Unformatted = & gofmt -l @GoFiles
     if ($LASTEXITCODE -ne 0 -or $Unformatted) { throw "Run gofmt first: $Unformatted" }
     Invoke-RecordedGo -GoArgs @('version')
+    $IconObject = Join-Path $PSScriptRoot 'icon_windows_amd64.syso'
+    $IconFile = Join-Path $PSScriptRoot 'assets\app.ico'
+    if ($IconSource) {
+        $IconSource = [IO.Path]::GetFullPath($IconSource)
+        $SourceHash = (Get-FileHash -LiteralPath $IconSource).Hash
+        $Bootstrap = Join-Path $Report 'icon_builder.exe'
+        Invoke-RecordedGo -GoArgs @('build','-trimpath','-ldflags=-H=windowsgui -s -w -buildid=','-o',$Bootstrap,'.')
+        $IconReport = Join-Path $Report ('icon-build.' + [guid]::NewGuid().ToString('N') + '.json')
+        $StartInfo = New-Object Diagnostics.ProcessStartInfo
+        $StartInfo.FileName = $Bootstrap
+        $StartInfo.Arguments = '--make-icon "' + $IconSource + '" "' + $IconFile + '" "' + $IconReport + '"'
+        $StartInfo.UseShellExecute = $false
+        $StartInfo.CreateNoWindow = $true
+        $Process = [Diagnostics.Process]::Start($StartInfo)
+        if (-not $Process.WaitForExit(60000)) { throw 'Icon conversion timeout; inspect before retrying.' }
+        $Code = $Process.ExitCode
+        $Process.Dispose()
+        $Records.Add(@{command=@($Bootstrap,'--make-icon',$IconSource,$IconFile,$IconReport);exit_status=$Code;input='user-selected square image';output=(Get-Content -LiteralPath $IconReport -Raw -Encoding utf8)})
+        if ($Code -ne 0 -or (Get-Content -LiteralPath $IconReport -Raw | ConvertFrom-Json).status -ne 'PASS') { throw 'Icon conversion failed.' }
+        $Windres = (Get-Command windres -ErrorAction Stop).Source
+        & $Windres --input=app.rc "--output=$IconObject" --input-format=rc --output-format=coff --target=pe-x86-64
+        $Code = $LASTEXITCODE
+        $Records.Add(@{command=@($Windres,'--input=app.rc',"--output=$IconObject",'--input-format=rc','--output-format=coff','--target=pe-x86-64');exit_status=$Code;input='assets/app.ico';output='Go-compatible COFF icon resource'})
+        if ($Code -ne 0) { throw 'Icon COFF conversion failed.' }
+        if ((Get-FileHash -LiteralPath $IconSource).Hash -ne $SourceHash) { throw 'Original image changed.' }
+        Write-ReportJson -Path (Join-Path $Report 'icon-source.json') -Value @{source_name=[IO.Path]::GetFileName($IconSource);source_sha256=$SourceHash;ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash;object_sha256=(Get-FileHash -LiteralPath $IconObject).Hash;original_unchanged=$true}
+    }
+    if (-not (Test-Path -LiteralPath $IconObject) -or -not (Test-Path -LiteralPath $IconFile)) { throw 'Icon resource missing: build with -IconSource <square-image-path> first.' }
     Invoke-RecordedGo -GoArgs @('test','-count=2','-v','./...')
     # The one LPARAM -> MINMAXINFO cast is a required Win32 callback ABI boundary.
     # All remaining vet analyzers stay enabled; the native smoke exercises that cast.
     Invoke-RecordedGo -GoArgs @('vet','-unsafeptr=false','./...')
     $Exe = Join-Path $Out 'CSP_Spray_Manager.exe'
     Invoke-RecordedGo -GoArgs @('build','-trimpath','-ldflags=-H=windowsgui -s -w -buildid=','-o',$Exe,'.')
+    $Preview = Join-Path $Report 'studio-preview.png'
+    $PreviewInfo = New-Object Diagnostics.ProcessStartInfo
+    $PreviewInfo.FileName = $Exe
+    $PreviewInfo.Arguments = '--studio-preview "' + $Preview + '"'
+    $PreviewInfo.UseShellExecute = $false
+    $PreviewInfo.CreateNoWindow = $true
+    $PreviewProcess = [Diagnostics.Process]::Start($PreviewInfo)
+    if (-not $PreviewProcess.WaitForExit(20000)) { throw 'Offscreen studio preview timeout.' }
+    $PreviewCode = $PreviewProcess.ExitCode
+    $PreviewProcess.Dispose()
+    $Records.Add(@{command=@($Exe,'--studio-preview',$Preview);exit_status=$PreviewCode;input='self-authored fixture, offscreen GDI';output='Design preview, NOT a desktop screenshot'})
+    if ($PreviewCode -ne 0 -or -not (Test-Path -LiteralPath $Preview)) { throw 'Offscreen preview failed.' }
     $Smoke = Join-Path $Report ('win32-smoke.' + [guid]::NewGuid().ToString('N') + '.json')
     Write-Output 'STAGE native-smoke-start'
     $StartInfo = New-Object Diagnostics.ProcessStartInfo
@@ -108,7 +148,7 @@ try {
     $SourceHashes = @{}
     foreach ($Path in Get-ChildItem -LiteralPath $PSScriptRoot -File) { $SourceHashes[$Path.Name] = (Get-FileHash -LiteralPath $Path.FullName).Hash }
     Write-Output 'STAGE source-hashes-pass'
-    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; embedded_vpk_sha256=$Pin; exe=$Exe; exe_sha256=(Get-FileHash -LiteralPath $Exe).Hash; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM to MINMAXINFO callback conversion; native ABI smoke required'; version='1.1.1'}
+    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=(Get-FileHash -LiteralPath $Exe).Hash; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.2.0';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash}
     Write-ReportJson -Path (Join-Path $Report 'verification.json') -Value $Result
     Write-Output "PASS: $Exe"
 } finally {

@@ -87,8 +87,9 @@ type openFile struct {
 }
 
 var window, slotList, pathEdit, statusLabel, font uintptr
+var largeIcon, smallIcon uintptr
 var buttons [6]uintptr
-var labels [4]uintptr
+var labels [6]uintptr
 var app *App
 var preview []byte
 var selected = 1
@@ -147,6 +148,10 @@ func confirm(s string) bool {
 }
 
 func updateList() {
+	importedCount = len(app.State.Slots)
+	if labels[5] != 0 {
+		text(labels[5], fmt.Sprintf("素材目录   %02d / 40", importedCount))
+	}
 	send(slotList, 0x184, 0, 0)
 	for n := 1; n <= 40; n++ {
 		title := fmt.Sprintf("%02d    编号测试图", n)
@@ -341,26 +346,40 @@ func layout() {
 	var r rect
 	call("GetClientRect", window, uintptr(unsafe.Pointer(&r)))
 	w, h := int(float64(r.Right)/scale), int(float64(r.Bottom)/scale)
-	place(labels[0], 20, 15, w-40, 28)
-	place(labels[1], 20, 55, 84, 24)
-	place(pathEdit, 105, 52, w-125, 28)
-	place(slotList, 20, 100, 255, h-180)
-	place(labels[2], 300, 100, w-320, 28)
-	place(labels[3], 300, 430, w-325, 80)
-	for i, b := range buttons {
-		place(b, 640, 145+i*48, w-660, 36)
+	p := studioGeometry(w, h)
+	for i, r := range p.Labels {
+		place(labels[i], r.X, r.Y, r.W, r.H)
 	}
-	place(statusLabel, 20, h-62, w-40, 48)
+	for i, r := range p.Buttons {
+		place(buttons[i], r.X, r.Y, r.W, r.H)
+	}
+	for hwnd, r := range map[uintptr]placement{pathEdit: p.Path, slotList: p.List, statusLabel: p.Status} {
+		place(hwnd, r.X, r.Y, r.W, r.H)
+	}
+	previewArea = p.Preview
 	call("InvalidateRect", window, 0, 1)
 }
 
 func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 	switch msg {
 	case 0x0005:
+		if w == 1 {
+			return 0
+		}
 		if slotList != 0 {
 			layout()
 		}
 		return 0
+	case 0x0014:
+		return 1
+	case 0x0133:
+		return studioControlColour(w, l, true)
+	case 0x0138, 0x0134:
+		return studioControlColour(w, l, false)
+	case 0x002b:
+		if studioDraw((*drawItem)(unsafe.Pointer(l))) {
+			return 1
+		}
 	case 0x0024:
 		// MINMAXINFO: reserved point, max size/pos, minimum tracking, maximum tracking.
 		points := (*[5]point)(unsafe.Pointer(l))
@@ -404,9 +423,10 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 	case 0x000f:
 		var p paintStruct
 		dc := call("BeginPaint", hwnd, uintptr(unsafe.Pointer(&p)))
+		studioPaint(dc)
 		if len(preview) > 0 {
 			info := bitmapInfo{Size: 40, Width: 256, Height: -256, Planes: 1, Bits: 32}
-			gdi.NewProc("StretchDIBits").Call(dc, ptrInt(px(300)), ptrInt(px(140)), ptrInt(px(280)), ptrInt(px(280)), 0, 0, 256, 256, uintptr(unsafe.Pointer(&preview[0])), uintptr(unsafe.Pointer(&info)), 0, 0x00cc0020)
+			gdi.NewProc("StretchDIBits").Call(dc, ptrInt(px(previewArea.X)), ptrInt(px(previewArea.Y)), ptrInt(px(previewArea.W)), ptrInt(px(previewArea.H)), 0, 0, 256, 256, uintptr(unsafe.Pointer(&preview[0])), uintptr(unsafe.Pointer(&info)), 0, 0x00cc0020)
 		}
 		call("EndPaint", hwnd, uintptr(unsafe.Pointer(&p)))
 		return 0
@@ -454,12 +474,20 @@ func runSmoke() {
 	if send(slotList, 0x18b, 0, 0) != 40 || len(preview) != 256*256*4 || !smokeWorkerDone || busy {
 		good = false
 	}
+	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
+	if !iconsOK {
+		good = false
+	}
+	styled := studioPaints > 0 && paintedList && len(paintedActions) == 6
+	if !styled {
+		good = false
+	}
 	status := "PASS"
 	if !good {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled}); e != nil {
 		smokeError = e.Error()
 	}
 }
@@ -482,9 +510,16 @@ func runWindow() error {
 	hfont, _, _ := gdi.NewProc("CreateFontW").Call(uintptr(int64(-px(16))), 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 5, 0, uintptr(unsafe.Pointer(utf("Microsoft YaHei UI"))))
 	font = hfont
 	defer gdi.NewProc("DeleteObject").Call(font)
+	closeStudio := initStudio()
+	defer closeStudio()
 	instance, _, _ := kernel.NewProc("GetModuleHandleW").Call(0)
+	largeIcon = call("LoadImageW", instance, 101, 1, ptrInt(px(32)), ptrInt(px(32)), 0x8000)
+	smallIcon = call("LoadImageW", instance, 101, 1, ptrInt(px(16)), ptrInt(px(16)), 0x8000)
+	if largeIcon == 0 || smallIcon == 0 {
+		return fmt.Errorf("内置图标资源 101 缺失，请使用带图标资源的正式构建")
+	}
 	cursor := call("LoadCursorW", 0, 32512)
-	class := windowClass{Size: uint32(unsafe.Sizeof(windowClass{})), Style: 3, Proc: syscall.NewCallback(wndProc), Instance: instance, Cursor: cursor, Background: 6, Name: utf("CSPSprayManagerWin32")}
+	class := windowClass{Size: uint32(unsafe.Sizeof(windowClass{})), Style: 3, Proc: syscall.NewCallback(wndProc), Instance: instance, Cursor: cursor, Name: utf("CSPSprayManagerWin32"), Icon: largeIcon, IconSmall: smallIcon}
 	if call("RegisterClassExW", uintptr(unsafe.Pointer(&class))) == 0 {
 		return fmt.Errorf("Win32 窗口类注册失败")
 	}
@@ -498,22 +533,35 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP 喷漆管理器 1.1.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.2.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
-	labels[0] = widget("STATIC", "40 槽位喷漆管理 · 导入 → 构建 → 退出游戏后部署", 0, 0)
-	labels[1] = widget("STATIC", "游戏目录", 0, 0)
-	pathEdit = widget("EDIT", app.Game, 0x00810080, 110)
-	slotList = widget("LISTBOX", "", 0x00a10101, 100)
+	send(window, 0x80, 1, largeIcon)
+	send(window, 0x80, 0, smallIcon)
+	darkTitlebar()
+	labels[0] = widget("STATIC", "SPRAY STUDIO", 0, 0)
+	labels[1] = widget("STATIC", "游戏安装目录", 0, 0)
+	pathEdit = widget("EDIT", app.Game, 0x00010080, 110)
+	slotList = widget("LISTBOX", "", 0x00210151, 100)
+	send(slotList, 0x1a0, 0, ptrInt(px(40)))
 	labels[2] = widget("STATIC", "", 0, 0)
-	labels[3] = widget("STATIC", "支持 PNG / JPEG / 静态 GIF / 24 位 BMP / 常用 VTF。\r\n等比适配 256×256，保留透明。\r\n菜单保留编号；需在进入战役前选择。", 0, 0)
+	labels[3] = widget("STATIC", "选图 → 构建 → 部署\r\n请在进入战役前选择喷漆", 0, 0)
+	labels[4] = widget("STATIC", "40 SLOTS  /  原生 Windows  /  你的喷漆素材工作台", 0, 0)
+	labels[5] = widget("STATIC", "素材目录", 0, 0)
 	statusLabel = widget("STATIC", "就绪。未导入的槽位保留内置编号图，C 与 DLL 不变。", 0, 0)
 	for i, item := range []struct {
 		ID    int
 		Title string
 	}{{106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}} {
-		buttons[i] = widget("BUTTON", item.Title, 0x00010000, item.ID)
+		buttons[i] = widget("BUTTON", item.Title, 0x0001000b, item.ID)
+	}
+	send(labels[0], 0x30, titleFont, 1)
+	for _, h := range []uintptr{labels[2], labels[5]} {
+		send(h, 0x30, captionFont, 1)
+	}
+	for _, h := range []uintptr{labels[1], labels[3], labels[4], statusLabel} {
+		send(h, 0x30, smallFont, 1)
 	}
 	updateList()
 	selectionChanged()
@@ -544,6 +592,34 @@ func runWindow() error {
 }
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "--studio-preview" {
+		if renderStudioPreview(os.Args[2]) != nil {
+			os.Exit(1)
+		}
+		return
+	}
+	if len(os.Args) == 5 && os.Args[1] == "--make-icon" {
+		img, err := loadImage(os.Args[2])
+		var raw []byte
+		if err == nil {
+			raw, err = makeIcon(img)
+		}
+		if err == nil {
+			err = atomicWrite(os.Args[3], raw)
+		}
+		report := map[string]any{"status": "PASS", "sizes": iconSizes, "ico_sha256": digest(raw)}
+		if err != nil {
+			report["status"] = "FAIL"
+			report["error"] = err.Error()
+		}
+		if e := saveJSON(os.Args[4], report); e != nil {
+			os.Exit(1)
+		}
+		if err != nil {
+			os.Exit(1)
+		}
+		return
+	}
 	exe, e := os.Executable()
 	if e != nil {
 		return

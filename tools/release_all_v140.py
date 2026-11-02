@@ -23,6 +23,9 @@ SELECTOR = ROOT / 'dist/spray_selector_prototype'
 MANAGER_ZIP = 'CSP_Spray_Manager_v1.1.1.zip'
 SELECTOR_ZIP = 'CSP_Selector_Complete_v1.4.0.zip'
 ALL_ZIP = 'L4D2_ESC_All_Products_v1.4.0.zip'
+MANAGER_VERSION = '1.1.1'
+GO_TEST_COUNT = 29
+REQUIRE_STUDIO = False
 
 
 def sha(path):
@@ -31,12 +34,12 @@ def sha(path):
 
 def sources():
     files = [ROOT / 'README.md', ROOT / '启动喷漆导入工具.cmd']
-    files += [path for path in (ROOT / 'docs').rglob('*') if path.is_file() and path.suffix in ('.md', '.json')]
+    files += [path for path in (ROOT / 'docs').rglob('*') if path.is_file() and path.suffix in ('.md', '.json', '.png')]
     files += list((ROOT / 'tools').glob('*.py'))
     files += [ROOT / 'maintenance/inspect_spray_menu.py', ROOT / 'maintenance/spray_mod_path_probe.py']
     for folder in ('native/spray_importer', 'experimental/spray_selector'):
         files += [path for path in (ROOT / folder).rglob('*') if path.is_file()
-                  and path.suffix in ('.go', '.mod', '.ps1', '.vpk', '.py', '.h', '.cpp')]
+                  and path.suffix in ('.go', '.mod', '.ps1', '.vpk', '.py', '.h', '.cpp', '.rc', '.ico', '.syso')]
     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(set(files))}
 
 
@@ -45,10 +48,15 @@ def verify_components():
     c = json.loads((ROOT / 'reports/c_current_review/verification.json').read_text(encoding='utf-8'))
     assert sha(ROOT / 'dist/c_session_helper/CSessionDefaults.dll') == c['rounds'][0]['helper_sha256']
     go = json.loads((ROOT / 'reports/spray_importer_go/verification.json').read_text(encoding='utf-8-sig'))
-    assert go['version'] == '1.1.1' and sha(EXE).upper() == go['exe_sha256']
+    assert go['version'] == MANAGER_VERSION and sha(EXE).upper() == go['exe_sha256']
     assert all(row['exit_status'] == 0 for row in go['records'])
     output = next(row['output'] for row in go['records'] if 'test' in row['command'])
-    assert output.count('--- PASS:') == 58 and '--- SKIP:' not in output
+    assert output.count('--- PASS:') == GO_TEST_COUNT * 2 and '--- SKIP:' not in output
+    if REQUIRE_STUDIO:
+        from verify_exe_icon import verify
+        verify(EXE, ROOT / 'native/spray_importer/assets/app.ico')
+        smoke = json.loads((ROOT / 'reports/spray_importer_go/win32-smoke.json').read_text(encoding='utf-8'))
+        assert smoke['embedded_icons_loaded'] and smoke['studio_theme_painted']
     for name, digest in go['source_sha256'].items():
         assert sha(ROOT / 'native/spray_importer' / name).upper() == digest
     native = json.loads((ROOT / 'reports/spray_selector/verification.json').read_text(encoding='utf-8'))
@@ -99,6 +107,8 @@ def package():
     archive(OUT / SELECTOR_ZIP, selector_files)
     manager_files = {'CSP_Spray_Manager.exe': EXE.read_bytes(),
                      '使用说明.md': (ROOT / 'docs/喷漆导入工具.md').read_bytes()}
+    if REQUIRE_STUDIO:
+        manager_files['images/spray-studio-preview.png'] = (ROOT / 'docs/images/spray-studio-preview.png').read_bytes()
     archive(OUT / MANAGER_ZIP, manager_files)
     for source, name in ((ROOT / 'dist/C_session_release.zip', 'C_session_release.zip'),
                          (ROOT / 'dist' / NAME, 'C_ESC_LED_Health_Speed_TUMTaRA.vpk'),
@@ -115,7 +125,7 @@ def package():
     all_files['diagnostics/numbered_contact_sheet.png'] = (OUT / 'numbered_contact_sheet.png').read_bytes()
     all_files['README.md'] = (ROOT / 'README.md').read_bytes()
     for path in (ROOT / 'docs').rglob('*'):
-        if path.is_file() and path.suffix in ('.md', '.json'):
+        if path.is_file() and path.suffix in ('.md', '.json', '.png'):
             all_files['docs/' + path.relative_to(ROOT / 'docs').as_posix()] = path.read_bytes()
     for name in ('spray_importer_go/verification.json', 'spray_importer_go/win32-smoke.json',
                  'spray_selector/verification.json', 'c_current_review/verification.json'):
@@ -183,7 +193,7 @@ def main():
     if action == 'publish':
         if release is None:
             release = api.request(previous.API + '/releases', 'POST', dict(tag_name=TAG, target_commitish=commit,
-                name='v1.4.0 — C + 40 槽喷漆选择器 + Go/Win32 工具', body=NOTES.read_text(encoding='utf-8'),
+                name=TAG + ' — C + Spray Studio ' + MANAGER_VERSION, body=NOTES.read_text(encoding='utf-8'),
                 draft=True, prerelease=True))
         existing = {row['name']: row for row in release['assets']}
         for name, digest in manifest['files'].items():
