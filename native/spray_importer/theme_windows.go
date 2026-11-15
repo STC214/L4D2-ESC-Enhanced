@@ -12,16 +12,19 @@ type studioLayout struct {
 	Labels                      [6]placement
 	Buttons                     [8]placement
 	List, Path, Status, Preview placement
+	Progress, Minimum           placement
 }
 
 func studioGeometry(w, h int) studioLayout {
 	var p studioLayout
-	p.Labels = [6]placement{{40, 26, w - 80, 34}, {40, 118, w - 330, 20}, {304, 210, w - 330, 26}, {w - 262, 127, 218, 44}, {40, 66, w - 80, 22}, {36, 210, 218, 24}}
+	p.Labels = [6]placement{{40, 26, w - 80, 34}, {40, 118, w - 330, 20}, {304, 210, w - 330, 26}, {w - 262, 118, 218, 20}, {40, 66, w - 80, 22}, {36, 210, 218, 24}}
 	p.List = placement{32, 246, 221, h - 338}
 	p.Path = placement{44, 145, w - 340, 24}
 	p.Status = placement{38, h - 57, w - 76, 38}
 	size := min(280, h-340, w-572)
 	p.Preview = placement{304, 246, size, size}
+	p.Progress = placement{304, 246 + size + 9, size, 12}
+	p.Minimum = placement{w - 250, 145, 110, 24}
 	for i := range p.Buttons {
 		p.Buttons[i] = placement{w - 236, 246 + i*35, 212, 28}
 	}

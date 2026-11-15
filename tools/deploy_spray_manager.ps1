@@ -80,6 +80,7 @@ function Read-Record {
     return $Value
 }
 . (Join-Path $Root 'native\spray_importer\promote.ps1')
+. (Join-Path $PSScriptRoot 'spray_backup_retention.ps1')
 if ($Action -ne 'Verify') {
     foreach ($Process in Get-Process -Name CSP_Spray_Manager -ErrorAction SilentlyContinue) {
         if ($Process.Path -and [IO.Path]::GetFullPath($Process.Path) -eq $Destination) { throw 'Close the production spray manager first; no process is terminated.' }
@@ -88,7 +89,7 @@ if ($Action -ne 'Verify') {
 $BeforeData = Snapshot-Data
 if ($Action -eq 'Install') {
     $Build = Get-Content -LiteralPath (Join-Path $Root 'reports\spray_importer_go\verification.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($Build.version -ne '1.9.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.9.0 build required.' }
+    if ($Build.version -ne '1.10.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.10.0 build required.' }
     foreach ($Step in $Build.records) { if ($Step.exit_status -ne 0) { throw 'Build verification contains a failed step.' } }
     $Source = Join-Path $Root 'dist\spray_importer_go\CSP_Spray_Manager.exe'
     if ((Get-FileHash -LiteralPath $Source).Hash -ne $Build.exe_sha256) { throw 'Source product hash differs from build evidence.' }
@@ -158,6 +159,9 @@ if ($Action -eq 'Install') {
     $Icon = Get-Content -LiteralPath $IconReport -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($Code -ne 0 -or $Icon.status -ne 'PASS' -or $Icon.exe_sha256 -ne $Expected) { throw 'Installed EXE/icon mismatch.' }
     Assert-SameData $BeforeData (Snapshot-Data)
+    if ($Record.status -eq 'INSTALLED') {
+        Remove-SupersededSprayExeBackups -ProductionRoot $ProductionRoot -Keep $Record.backup -Expected $Record.before_sha256
+    }
 }
 Write-Output ('PASS '+$Action+'; production data preserved; EXE SHA256='+(Get-FileHash -LiteralPath $Destination).Hash)
 } finally {

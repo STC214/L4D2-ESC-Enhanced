@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -45,11 +46,16 @@ func readTextureInput(path string) ([]byte, error) {
 	return raw, nil
 }
 
-func prepareTexture(path string, preserve bool) (preparedTexture, error) {
+func prepareTexture(path string, preserve bool, options ...importOptions) (preparedTexture, error) {
 	var result preparedTexture
+	o := conversionOptions(options)
+	if err := validMinimum(o.MinimumFrames); err != nil {
+		return result, err
+	}
+	o.report(2, "读取素材与检查格式")
 	ext := strings.ToLower(filepath.Ext(path))
 	if !preserve && (ext == ".png" || ext == ".apng") {
-		return preparePNGFile(path)
+		return preparePNGFile(path, o)
 	}
 	if preserve || ext == ".vtf" || ext == ".gif" {
 		raw, err := readTextureInput(path)
@@ -60,7 +66,7 @@ func prepareTexture(path string, preserve bool) (preparedTexture, error) {
 			info, err := inspectVTF(raw)
 			return preparedTexture{Raw: raw, Info: info, FPS: 10}, err
 		}
-		return convertGIF(raw)
+		return convertGIF(raw, o)
 	}
 	raw, err := readTextureInput(path)
 	if err != nil {
@@ -152,12 +158,15 @@ func inspectGIF(raw []byte) (int, error) {
 	return 0, bad
 }
 
-func convertGIF(raw []byte) (preparedTexture, error) {
+func convertGIF(raw []byte, options ...importOptions) (preparedTexture, error) {
 	var result preparedTexture
+	o := conversionOptions(options)
+	o.report(10, "校验 GIF 结构")
 	count, err := inspectGIF(raw)
 	if err != nil {
 		return result, err
 	}
+	o.report(20, "解码 GIF 数据")
 	g, err := gif.DecodeAll(bytes.NewReader(raw))
 	if err != nil {
 		return result, err
@@ -165,12 +174,13 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 	if len(g.Image) != count {
 		return result, errors.New("GIF 帧数不一致")
 	}
-	kept := min(count, qualityAnimationFrames)
+	kept := o.retainedFrames(count)
 	canvas := image.NewNRGBA(image.Rect(0, 0, g.Config.Width, g.Config.Height))
 	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: gifBackground(g, g.Image[0])}, image.Point{}, draw.Src)
 	masters := make([]*image.NRGBA, 0, kept)
 	totalDelay := 0
 	for i, frame := range g.Image[:kept] {
+		o.report(35+i*30/kept, fmt.Sprintf("合成动画帧 %d/%d", i+1, kept))
 		disposal := byte(0)
 		if i < len(g.Disposal) {
 			disposal = g.Disposal[i]
@@ -193,12 +203,15 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 			copy(canvas.Pix, previous)
 		}
 	}
-	result, err = qualityTexture(masters)
+	o.report(65, "压缩 DXT1 贴图")
+	result, err = qualityTexture(masters, o)
 	if err != nil {
 		return result, err
 	}
 	result.FPS = animationFPS(float64(kept) * 100 / float64(totalDelay))
 	result.Animation = &animationImport{Original: count, Kept: kept, Bytes: len(result.Raw), Size: result.Info.Width, Kind: "GIF", Encoding: "DXT1", Width: result.Info.Width, Height: result.Info.Height, MasterSize: masterSize}
+	o.explain(result.Animation)
+	o.report(85, "贴图转换完成，准备保存")
 	return result, nil
 }
 

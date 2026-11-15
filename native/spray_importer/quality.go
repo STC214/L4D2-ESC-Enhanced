@@ -26,7 +26,7 @@ func colorDistance(a, b color.NRGBA) int {
 
 // BC1/DXT1 with one-bit alpha. Select endpoints from the most distant opaque
 // pair in the block, not a black/white RGB bounding-box diagonal.
-func encodeDXT1(img *image.NRGBA) []byte {
+func encodeDXT1(img *image.NRGBA, progress ...func(int)) []byte {
 	w, h := img.Bounds().Dx(), img.Bounds().Dy()
 	out := make([]byte, vtfLevelBytes(w, h, 13))
 	at := 0
@@ -117,11 +117,14 @@ func encodeDXT1(img *image.NRGBA) []byte {
 			le.PutUint16(block[2:], b)
 			le.PutUint32(block[4:], indices)
 		}
+		if len(progress) > 0 && progress[0] != nil {
+			progress[0](min(100, (by+4)*100/h))
+		}
 	}
 	return out
 }
 
-func qualityTexture(masters []*image.NRGBA) (preparedTexture, error) {
+func qualityTexture(masters []*image.NRGBA, options ...importOptions) (preparedTexture, error) {
 	var result preparedTexture
 	if len(masters) < 1 || len(masters) > qualityAnimationFrames {
 		return result, errors.New("高清母版帧数量异常")
@@ -143,11 +146,19 @@ func qualityTexture(masters []*image.NRGBA) (preparedTexture, error) {
 	out[56] = 1
 	le.PutUint32(out[57:], 0xffffffff)
 	le.PutUint16(out[63:], 1)
-	for _, master := range masters {
+	o := conversionOptions(options)
+	last := -1
+	for i, master := range masters {
 		if master == nil || master.Bounds() != image.Rect(0, 0, masterSize, masterSize) {
 			return result, errors.New("高清母版尺寸须为 1024×1024")
 		}
-		out = append(out, encodeDXT1(fitImageRect(master, w, h))...)
+		out = append(out, encodeDXT1(fitImageRect(master, w, h), func(percent int) {
+			value := 65 + (i*20+percent*20/100)/len(masters)
+			if value != last {
+				last = value
+				o.report(value, "压缩 DXT1 贴图")
+			}
+		})...)
 	}
 	info, err := inspectVTF(out)
 	return preparedTexture{Raw: out, Info: info, Preview: masters[0], Masters: masters, Animation: &animationImport{Original: len(masters), Kept: len(masters), Bytes: len(out), Size: w, Kind: "图片", Encoding: "DXT1", Width: w, Height: h, MasterSize: masterSize}}, err

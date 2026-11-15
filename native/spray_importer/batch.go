@@ -202,13 +202,20 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 			return result, e
 		}
 		item := fmt.Sprintf("%s/items/%03d", rel, i+1)
-		prepared, err := prepareTexture(path, len(preserveVTF) > 0 && preserveVTF[0])
+		o := importOptions{MinimumFrames: a.Settings.MinimumAnimationFrames}
+		if a.Progress != nil {
+			o.Progress = func(percent int, stage string) {
+				a.Progress((i*85+percent*85/100)/len(inputs), fmt.Sprintf("素材 %d/%d：%s", i+1, len(inputs), stage))
+			}
+		}
+		prepared, err := prepareTexture(path, len(preserveVTF) > 0 && preserveVTF[0], o)
 		if err != nil {
 			return result, imageError(input.Source, err)
 		}
 		raw, info := prepared.Raw, prepared.Info
 		previewPath := ""
 		if prepared.Preview != nil {
+			o.report(88, "保存预览与高清母版")
 			previewPath = item + "/preview.png"
 			if e = savePNG(filepath.Join(a.Home, filepath.FromSlash(previewPath)), prepared.Preview); e != nil {
 				return result, e
@@ -225,6 +232,7 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 		if prepared.Animation != nil {
 			result.Notices = append(result.Notices, input.Title+"："+prepared.Animation.description())
 		}
+		o.report(100, "单项保存完成")
 	}
 	type entry struct {
 		Key string
@@ -269,5 +277,6 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 		return result, e
 	}
 	a.State = next
+	a.finishCatalog(rel)
 	return result, nil
 }

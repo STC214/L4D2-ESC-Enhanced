@@ -36,8 +36,9 @@ func fileHasAPNG(f *os.File, size int64) (bool, error) {
 	return false, errors.New("PNG/APNG 头部截断或块数量超限")
 }
 
-func preparePNGFile(path string) (preparedTexture, error) {
+func preparePNGFile(path string, options ...importOptions) (preparedTexture, error) {
 	var result preparedTexture
+	o := conversionOptions(options)
 	f, err := os.Open(path)
 	if err != nil {
 		return result, err
@@ -64,11 +65,11 @@ func preparePNGFile(path string) (preparedTexture, error) {
 		return result, err
 	}
 	if animated {
-		header, palette, frames, err := parseAPNGReader(f)
+		header, palette, frames, err := parseAPNGReader(&progressReader{reader: f, total: stat.Size(), options: o})
 		if err != nil {
 			return result, err
 		}
-		return convertAPNGFrames(header, palette, frames)
+		return convertAPNGFrames(header, palette, frames, o)
 	}
 	if stat.Size() > 32<<20 {
 		return result, errors.New("静态 PNG 输入超过 32 MiB；动画 APNG 另走流式导入")

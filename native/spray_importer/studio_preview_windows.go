@@ -35,7 +35,7 @@ func renderStudioPreview(path string) error {
 	p := studioGeometry(w, h)
 	previewArea = p.Preview
 	studioScene(dc, w, h)
-	titles := []string{"SPRAY STUDIO", "游戏安装目录", "槽位 01 · 内置编号测试图", "选图 → 构建 → 部署", "40 SLOTS  /  静态与动画喷漆  /  循环预览与完整导入", "素材目录   00 / 40"}
+	titles := []string{"SPRAY STUDIO", "游戏安装目录", "槽位 01 · 内置编号测试图", "动画最低帧数（2～256）", "40 SLOTS  /  静态与动画喷漆  /  循环预览与完整导入", "素材目录   00 / 40"}
 	for i, title := range titles {
 		face, ink := font, studioText
 		if i == 0 {
@@ -50,6 +50,9 @@ func renderStudioPreview(path string) error {
 		drawText(dc, title, logicalRect(p.Labels[i]), ink, face, false)
 	}
 	drawText(dc, defaultGame, logicalRect(p.Path), studioText, font, false)
+	fillArea(dc, logicalRect(p.Minimum), rgb(24, 39, 61))
+	drawText(dc, "30", logicalRect(p.Minimum), studioText, font, false)
+	fillArea(dc, logicalRect(p.Progress), studioBorder)
 	for i := 0; i < p.List.H/40; i++ {
 		r := logicalRect(placement{p.List.X, p.List.Y + i*40, p.List.W, 40})
 		if i == 0 {

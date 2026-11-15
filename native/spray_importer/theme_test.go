@@ -13,7 +13,10 @@ func TestStudioGeometryBounds(t *testing.T) {
 		if len(p.Buttons) != 8 || p.Buttons[7].Y+p.Buttons[7].H >= h-80 || p.Buttons[7].Y+p.Buttons[7].H >= p.Status.Y {
 			t.Fatal("reset button overlaps card/status", size, p.Buttons[7])
 		}
-		all := append([]placement{p.List, p.Path, p.Status, p.Preview}, p.Labels[:]...)
+		all := append([]placement{p.List, p.Path, p.Status, p.Preview, p.Progress, p.Minimum}, p.Labels[:]...)
+		if p.Progress.Y <= p.Preview.Y+p.Preview.H || p.Progress.Y+p.Progress.H >= p.Status.Y || p.Minimum.X <= p.Path.X+p.Path.W {
+			t.Fatal("import progress/settings overlap", size)
+		}
 		all = append(all, p.Buttons[:]...)
 		for _, r := range all {
 			if r.X < 0 || r.Y < 0 || r.W <= 0 || r.H <= 0 || r.X+r.W > w || r.Y+r.H > h {

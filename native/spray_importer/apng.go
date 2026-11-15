@@ -16,6 +16,8 @@ var be = binary.BigEndian
 
 type animationImport struct {
 	Original, Kept, Bytes, Size int
+	MinimumFrames               int    `json:",omitempty"`
+	StaticFallback              bool   `json:",omitempty"`
 	Kind, Encoding              string `json:",omitempty"`
 	Width, Height, MasterSize   int    `json:",omitempty"`
 }
@@ -25,6 +27,9 @@ func (a *animationImport) description() string {
 		return ""
 	}
 	if a.MasterSize > 0 {
+		if a.StaticFallback {
+			return fmt.Sprintf("%s：容量与清晰度预算可保留 %d 帧，低于阈值 %d；已取第一帧作为静态喷漆；原 %d 帧，%d×%d 母版，导出 %d×%d DXT1（1位透明），%d 字节", a.Kind, min(a.Original, qualityAnimationFrames), a.MinimumFrames, a.Original, a.MasterSize, a.MasterSize, a.Width, a.Height, a.Bytes)
+		}
 		return fmt.Sprintf("%s：%d×%d 母版；导出 %d×%d %s（1位透明）；保留前 %d/%d 帧，舍弃 %d 帧，%d 字节", a.Kind, a.MasterSize, a.MasterSize, a.Width, a.Height, a.Encoding, a.Kept, a.Original, a.Original-a.Kept, a.Bytes)
 	}
 	return fmt.Sprintf("APNG：保留前 %d/%d 帧，舍弃 %d 帧；输出 %d×%d，%d 字节", a.Kept, a.Original, a.Original-a.Kept, a.Size, a.Size, a.Bytes)
@@ -269,9 +274,11 @@ func convertAPNG(raw []byte) (preparedTexture, error) {
 	return convertAPNGFrames(header, palette, frames)
 }
 
-func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedTexture, error) {
+func convertAPNGFrames(header, palette []byte, frames []apngFrame, options ...importOptions) (preparedTexture, error) {
 	var result preparedTexture
-	kept := min(len(frames), qualityAnimationFrames)
+	o := conversionOptions(options)
+	kept := o.retainedFrames(len(frames))
+	o.report(32, "计算帧数与容量预算")
 	w, h := int(be.Uint32(header)), int(be.Uint32(header[4:]))
 	if w*h > (64<<20)/kept {
 		return result, errors.New("APNG 保留帧累计画布超过 64M 像素")
@@ -279,7 +286,8 @@ func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedText
 	canvas := image.NewNRGBA(image.Rect(0, 0, w, h))
 	masters := make([]*image.NRGBA, 0, kept)
 	totalDelay := 0.0
-	for _, frame := range frames[:kept] {
+	for i, frame := range frames[:kept] {
+		o.report(35+i*30/kept, fmt.Sprintf("合成动画帧 %d/%d", i+1, kept))
 		var encoded bytes.Buffer
 		encoded.WriteString("\x89PNG\r\n\x1a\n")
 		ihdr := append([]byte{}, header...)
@@ -313,11 +321,14 @@ func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedText
 			copy(canvas.Pix, previous)
 		}
 	}
-	result, err := qualityTexture(masters)
+	o.report(65, "压缩 DXT1 贴图")
+	result, err := qualityTexture(masters, o)
 	if err != nil {
 		return result, err
 	}
 	result.FPS = animationFPS(float64(kept) / totalDelay)
 	result.Animation = &animationImport{Original: len(frames), Kept: kept, Bytes: len(result.Raw), Size: result.Info.Width, Kind: "APNG", Encoding: "DXT1", Width: result.Info.Width, Height: result.Info.Height, MasterSize: masterSize}
+	o.explain(result.Animation)
+	o.report(85, "贴图转换完成，准备保存")
 	return result, nil
 }

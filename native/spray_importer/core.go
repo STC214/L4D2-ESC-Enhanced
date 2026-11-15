@@ -57,8 +57,11 @@ type Transaction struct {
 	Guards       map[string]string
 }
 type App struct {
-	Home, Game string
-	State      State
+	Home, Game         string
+	State              State
+	Settings           importSettings
+	Progress           func(int, string)
+	MaintenanceWarning string
 }
 
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
@@ -130,8 +133,19 @@ func safePath(base, relative string) (string, error) {
 }
 
 func newApp(home, game string) (*App, error) {
-	a := &App{Home: home, Game: game, State: State{Slots: map[int]Slot{}}}
-	e := loadJSON(filepath.Join(home, "slots.json"), &a.State)
+	a := &App{Home: home, Game: game, State: State{Slots: map[int]Slot{}}, Settings: importSettings{MinimumAnimationFrames: 30}}
+	settingsPath, e := safePath(home, "settings.json")
+	if e != nil {
+		return nil, e
+	}
+	e = loadJSON(settingsPath, &a.Settings)
+	if e != nil && !os.IsNotExist(e) {
+		return nil, e
+	}
+	if e = validMinimum(a.Settings.MinimumAnimationFrames); e != nil {
+		return nil, e
+	}
+	e = loadJSON(filepath.Join(home, "slots.json"), &a.State)
 	if e != nil && !os.IsNotExist(e) {
 		return nil, e
 	}
@@ -194,7 +208,7 @@ func (a *App) Import(path string, n int) error {
 	if e := a.checkState(); e != nil {
 		return e
 	}
-	prepared, e := prepareTexture(path, false)
+	prepared, e := prepareTexture(path, false, importOptions{MinimumFrames: a.Settings.MinimumAnimationFrames, Progress: a.Progress})
 	if e != nil {
 		return imageError(path, e)
 	}
@@ -205,6 +219,9 @@ func (a *App) Import(path string, n int) error {
 	}
 	previewPath := ""
 	if prepared.Preview != nil {
+		if a.Progress != nil {
+			a.Progress(88, "保存预览与高清母版")
+		}
 		previewPath = rel + "/preview.png"
 		if e = savePNG(filepath.Join(folder, "preview.png"), prepared.Preview); e != nil {
 			return e
@@ -249,6 +266,7 @@ func (a *App) Import(path string, n int) error {
 		return e
 	}
 	a.State = next
+	a.finishCatalog(rel)
 	return nil
 }
 

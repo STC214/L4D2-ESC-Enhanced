@@ -31,6 +31,13 @@ Run-Step 'Install'
 $Again = Get-Content -LiteralPath (Join-Path $Report 'deployment.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($First.backup -ne $Again.backup) { throw 'Repeat install replaced the rollback record.' }
 Run-Step 'Verify'
+$Stale = Join-Path $Production '.release-backups\superseded'
+New-Item -ItemType Directory -Force -Path $Stale | Out-Null
+Copy-Item -LiteralPath $Old -Destination (Join-Path $Stale 'before.exe')
+Copy-Item -LiteralPath $Old -Destination (Join-Path $Stale 'saved-new.exe')
+Run-Step 'Verify'
+if (Test-Path -LiteralPath $Stale) { throw 'Superseded EXE backups retained.' }
+if ((Get-FileHash -LiteralPath $First.backup).Hash -ne $OldHash) { throw 'Latest rollback backup removed.' }
 $InstalledText = [IO.File]::ReadAllText((Join-Path $Report 'deployment.json'))
 function Expect-Rejected([string]$Action) {
     $Info = New-Object Diagnostics.ProcessStartInfo

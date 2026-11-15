@@ -23,6 +23,9 @@ func fixture(t *testing.T) (*App, string) {
 	if e != nil {
 		t.Fatal(e)
 	}
+	// Legacy animation regressions explicitly opt into prefix animation;
+	// new policy tests cover the production default of 30 and settings persistence.
+	a.Settings.MinimumAnimationFrames = 2
 	img := image.NewNRGBA(image.Rect(0, 0, 128, 64))
 	for y := 0; y < 64; y++ {
 		for x := 0; x < 128; x++ {

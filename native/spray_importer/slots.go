@@ -136,5 +136,6 @@ func (a *App) ResetDefaults() (string, error) {
 		return "", err
 	}
 	a.State = next
+	a.finishCatalog(rel)
 	return folder, nil
 }

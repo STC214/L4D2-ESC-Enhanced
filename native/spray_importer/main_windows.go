@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -106,6 +107,28 @@ var smokeError string
 var smokeWorkerDone bool
 var busy bool
 var savedFocus uintptr
+var importProgress, minimumEdit uintptr
+var progressObserved bool
+
+type progressEvent struct {
+	Percent int
+	Stage   string
+}
+
+var importUpdates = make(chan progressEvent, 1)
+
+func queueImportProgress(percent int, stage string) {
+	value := progressEvent{percent, stage}
+	select {
+	case <-importUpdates:
+	default:
+	}
+	select {
+	case importUpdates <- value:
+	default:
+	}
+	call("PostMessageW", window, 0x8002, 0, 0)
+}
 
 type jobResult struct {
 	ID      int
@@ -116,6 +139,22 @@ type jobResult struct {
 var completed = make(chan jobResult, 1)
 
 func beginJob(id int, work func() (string, error)) {
+	if id == 101 || id == 106 || id == 107 {
+		n, err := strconv.Atoi(strings.TrimSpace(windowText(minimumEdit)))
+		if err != nil {
+			failure(fmt.Errorf("动画最低帧数须为 2～256 的整数"))
+			return
+		}
+		if err = app.SetMinimumFrames(n); err != nil {
+			failure(err)
+			return
+		}
+	}
+	select {
+	case <-importUpdates:
+	default:
+	}
+	send(importProgress, 0x402, 0, 0)
 	uiBusy(true)
 	go func() {
 		result := jobResult{ID: id}
@@ -313,9 +352,11 @@ func uiBusy(value bool) {
 	if value {
 		call("EnableWindow", slotList, 0)
 		call("EnableWindow", pathEdit, 0)
+		call("EnableWindow", minimumEdit, 0)
 	} else {
 		call("EnableWindow", slotList, 1)
 		call("EnableWindow", pathEdit, 1)
+		call("EnableWindow", minimumEdit, 1)
 		if savedFocus != 0 && call("IsChild", window, savedFocus) != 0 {
 			call("SetFocus", savedFocus)
 		}
@@ -469,7 +510,7 @@ func layout() {
 	for i, r := range p.Buttons {
 		place(buttons[i], r.X, r.Y, r.W, r.H)
 	}
-	for hwnd, r := range map[uintptr]placement{pathEdit: p.Path, slotList: p.List, statusLabel: p.Status} {
+	for hwnd, r := range map[uintptr]placement{pathEdit: p.Path, slotList: p.List, statusLabel: p.Status, importProgress: p.Progress, minimumEdit: p.Minimum} {
 		place(hwnd, r.X, r.Y, r.W, r.H)
 	}
 	previewArea = p.Preview
@@ -514,10 +555,28 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			operation(id)
 			return 0
 		}
+	case 0x8002:
+		select {
+		case value := <-importUpdates:
+			if busy {
+				send(importProgress, 0x402, uintptr(value.Percent), 0)
+				setStatus(fmt.Sprintf("%d%% · %s", value.Percent, value.Stage))
+				if smoke && value.Percent == 50 && send(importProgress, 0x408, 0, 0) == 50 {
+					progressObserved = true
+				}
+			}
+		default:
+		}
+		return 0
 	case 0x8001:
 		select {
 		case result := <-completed:
 			uiBusy(false)
+			if result.Err == nil {
+				send(importProgress, 0x402, 100, 0)
+			} else {
+				send(importProgress, 0x402, 0, 0)
+			}
 			if smoke && result.ID == 0 {
 				smokeWorkerDone = result.Err == nil
 			}
@@ -530,6 +589,9 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 					}
 					updateList()
 					selectionChanged()
+				}
+				if app.MaintenanceWarning != "" {
+					result.Message += "；" + app.MaintenanceWarning
 				}
 				setStatus(result.Message)
 				if (result.ID == 101 || result.ID == 106) && (strings.Contains(result.Message, "DXT1") || strings.Contains(result.Message, "APNG")) {
@@ -581,7 +643,7 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		if smoke {
 			if !smokeWorkerDone {
 				if !busy {
-					beginJob(0, func() (string, error) { return digest(embeddedVPK), nil })
+					beginJob(0, func() (string, error) { app.Progress(50, "进度控件测试"); return digest(embeddedVPK), nil })
 				}
 				return 0
 			}
@@ -638,7 +700,7 @@ func runSmoke() {
 	var client rect
 	call("GetClientRect", window, uintptr(unsafe.Pointer(&client)))
 	good := true
-	controls := append([]uintptr{slotList, pathEdit, statusLabel}, buttons[:]...)
+	controls := append([]uintptr{slotList, pathEdit, statusLabel, importProgress, minimumEdit}, buttons[:]...)
 	controls = append(controls, labels[:]...)
 	for _, h := range controls {
 		var r rect
@@ -655,7 +717,7 @@ func runSmoke() {
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
 	resetPresent := call("GetDlgItem", window, 108) == buttons[7] && buttons[7] != 0
-	if !iconsOK || !resetPresent {
+	if !iconsOK || !resetPresent || !progressObserved || windowText(minimumEdit) != strconv.Itoa(app.Settings.MinimumAnimationFrames) {
 		good = false
 	}
 	styled := studioPaints > 0 && paintedList && len(paintedActions) == len(buttons) && paintedListFocus
@@ -667,12 +729,13 @@ func runSmoke() {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "action_buttons": len(buttons), "reset_button_present": resetPresent, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "action_buttons": len(buttons), "reset_button_present": resetPresent, "progress_control_observed": progressObserved, "minimum_frames": app.Settings.MinimumAnimationFrames, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
 		smokeError = e.Error()
 	}
 }
 
 func runWindow() error {
+	syscall.NewLazyDLL("comctl32.dll").NewProc("InitCommonControls").Call()
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	com, _, _ := ole.NewProc("CoInitializeEx").Call(0, 2)
@@ -713,7 +776,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.9.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.10.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -726,7 +789,15 @@ func runWindow() error {
 	slotList = widget("LISTBOX", "", 0x00210151, 100)
 	send(slotList, 0x1a0, 0, ptrInt(px(40)))
 	labels[2] = widget("STATIC", "", 0, 0)
-	labels[3] = widget("STATIC", "选图 → 构建 → 部署\r\n请在进入战役前选择喷漆", 0, 0)
+	labels[3] = widget("STATIC", "动画最低帧数（2～256）", 0, 0)
+	minimumEdit = widget("EDIT", strconv.Itoa(app.Settings.MinimumAnimationFrames), 0x00012080, 111)
+	send(minimumEdit, 0xc5, 3, 0)
+	importProgress = widget("msctls_progress32", "", 1, 112)
+	send(importProgress, 0x406, 0, 100)
+	app.Progress = queueImportProgress
+	if minimumEdit == 0 || importProgress == 0 {
+		return fmt.Errorf("导入设置或进度控件创建失败")
+	}
 	labels[4] = widget("STATIC", "40 SLOTS  /  GIF · APNG · VTF 动画  /  等比例循环预览", 0, 0)
 	labels[5] = widget("STATIC", "素材目录", 0, 0)
 	statusLabel = widget("STATIC", "就绪。未导入的槽位保留内置编号图，C 与 DLL 不变。", 0, 0)
@@ -853,7 +924,23 @@ func main() {
 		smokeReport = filepath.Join(filepath.Dir(exe), "win32-smoke.json")
 	}
 	app, e = newApp(home, defaultGame)
+	if len(os.Args) == 3 && os.Args[1] == "--prune-backups" {
+		if e == nil {
+			e = app.PruneBackups()
+		}
+		result := map[string]any{"status": "PASS", "picture_decoding": false, "home": home}
+		if e != nil {
+			result["status"], result["error"] = "FAIL", e.Error()
+		}
+		if err := saveJSON(os.Args[2], result); err != nil || e != nil {
+			os.Exit(1)
+		}
+		return
+	}
 	if e == nil {
+		if err := app.PruneBackups(); err != nil {
+			app.MaintenanceWarning = "旧备份保留，清理待重试：" + err.Error()
+		}
 		e = runWindow()
 	}
 	if e != nil {
