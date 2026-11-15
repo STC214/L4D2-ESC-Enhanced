@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 )
@@ -92,6 +93,10 @@ var buttons [7]uintptr
 var labels [6]uintptr
 var app *App
 var preview []byte
+var currentClip *previewClip
+var currentFrame int
+var previewStart time.Time
+var smokeAnimationStarted, smokeAnimationTick bool
 var selected = 1
 var scale = 1.0
 var smoke bool
@@ -183,20 +188,14 @@ func selectionChanged() {
 		return
 	}
 	selected = int(result) + 1
-	if row, ok := app.State.Slots[selected]; ok && row.metadataOnly() {
-		preview = nil
-		info, err := app.VTFMetadata(selected)
-		if err != nil {
-			text(labels[2], fmt.Sprintf("槽位 %02d · 结构校验失败", selected))
-			setStatus(err.Error())
-		} else {
-			text(labels[2], fmt.Sprintf("槽位 %02d · %s", selected, row.Title))
-			setStatus(fmt.Sprintf("VTF %d.%d · %d×%d · %d 帧 · %d mip · 仅参数，无画面预览", info.Major, info.Minor, info.Width, info.Height, info.Frames, info.Mips))
-		}
-		call("InvalidateRect", window, 0, 1)
-		return
+	call("KillTimer", window, 2)
+	currentClip, currentFrame = nil, 0
+	preview = nil
+	clip, e := app.LoadPreview(selected)
+	var img image.Image
+	if e == nil {
+		img, e = clip.Frame(0)
 	}
-	img, e := app.Preview(selected)
 	if e != nil {
 		preview = nil
 		text(labels[2], fmt.Sprintf("槽位 %02d · 预览读取失败", selected))
@@ -205,6 +204,13 @@ func selectionChanged() {
 		return
 	}
 	setPreview(img)
+	currentClip, previewStart = clip, time.Now()
+	if clip.Info.Frames > 1 {
+		call("SetTimer", window, 2, ptrInt(max(10, int(1000/clip.FPS))), 0)
+		setStatus(fmt.Sprintf("动画喷漆 · %d 帧 · %.3g FPS · 预览循环播放，构建保留全部帧", clip.Info.Frames, clip.FPS))
+	} else {
+		setStatus(fmt.Sprintf("静态喷漆预览 · %d×%d", clip.Info.Width, clip.Info.Height))
+	}
 	title := "内置编号测试图"
 	if row, ok := app.State.Slots[selected]; ok {
 		title = row.Title
@@ -214,7 +220,7 @@ func selectionChanged() {
 
 func chooseFile() (string, error) {
 	buf := make([]uint16, 32768)
-	filter := utf16.Encode([]rune("支持的静态图片 (*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.vtf)\x00*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.vtf\x00所有文件\x00*.*\x00\x00"))
+	filter := utf16.Encode([]rune("静态图片／动画 GIF／动画 VTF\x00*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.vtf\x00所有文件\x00*.*\x00\x00"))
 	of := openFile{Owner: window, Filter: &filter[0], FilterIndex: 1, File: &buf[0], MaxFile: uint32(len(buf)), Title: utf("选择要导入的喷漆图片"), Flags: 0x80000 | 0x1000 | 0x800 | 8}
 	of.Size = uint32(unsafe.Sizeof(of))
 	ok, _, _ := common.NewProc("GetOpenFileNameW").Call(uintptr(unsafe.Pointer(&of)))
@@ -334,7 +340,7 @@ func operation(id int) {
 			failure(e)
 			return
 		}
-		if len(paths) == 0 || !confirm("将自动拆解所选 VPK 的静态喷漆，与已有图片合并并重新编号 01～40。\n原始 VPK 保持不变；坏包、坏图或超出 40 槽时整批停止。\n\n导入后请重新构建，再退出游戏后部署。继续？") {
+		if len(paths) == 0 || !confirm("将自动拆解所选 VPK 的静态／动画喷漆，与已有素材合并并重新编号 01～40。\n动画 VTF 保留全部帧与 mip，支持循环预览；原始 VPK 保持不变。\n坏包、坏图或超出 40 槽时整批停止。导入后请重新构建，再退出游戏后部署。继续？") {
 			return
 		}
 		setStatus("正在拆解喷漆 VPK、转换并重新编号……")
@@ -362,9 +368,15 @@ func operation(id int) {
 			return
 		}
 		number := selected
-		setStatus("正在转换图片……")
+		setStatus("正在导入静态／动画喷漆素材……")
 		beginJob(id, func() (string, error) {
 			err := app.Import(path, number)
+			if err == nil {
+				row := app.State.Slots[number]
+				if row.VTF != nil && row.VTF.Frames > 1 {
+					return fmt.Sprintf("动画喷漆已导入槽位 %02d：%d 帧，%.3g FPS；支持循环预览。请构建后部署。", number, row.VTF.Frames, animationFPS(row.FrameRate)), nil
+				}
+			}
 			return fmt.Sprintf("槽位 %02d 已导入。请构建，再退出游戏后部署。", number), err
 		})
 		return
@@ -378,7 +390,7 @@ func operation(id int) {
 		if folder == "" {
 			return
 		}
-		if !confirm("导入整个目录及子目录，与已有图片合并后按名称自然排序，槽位编号可能变化。\n超过 40 张或存在损坏图片将停止整批提交，不会静默截断。\n\n这一步只导入，不部署到游戏。继续？") {
+		if !confirm("导入整个目录及子目录中的静态图片、动画 GIF／VTF，与已有素材合并后自然排序，槽位编号可能变化。\n超过 40 张或存在损坏素材将停止整批提交，不会静默截断。\n\n这一步只导入，不部署到游戏。继续？") {
 			return
 		}
 		setStatus("正在扫描、转换并排序目录图片……")
@@ -516,11 +528,60 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		call("EndPaint", hwnd, uintptr(unsafe.Pointer(&p)))
 		return 0
 	case 0x0113:
+		if w == 2 {
+			if !busy && currentClip != nil && currentClip.Info.Frames > 1 {
+				frame := int(time.Since(previewStart).Seconds()*currentClip.FPS) % currentClip.Info.Frames
+				if frame != currentFrame {
+					img, err := currentClip.Frame(frame)
+					if err != nil {
+						call("KillTimer", hwnd, 2)
+						preview, currentClip = nil, nil
+						call("InvalidateRect", hwnd, 0, 1)
+						setStatus(err.Error())
+					} else {
+						currentFrame = frame
+						setPreview(img)
+						if smoke {
+							smokeAnimationTick = true
+						}
+					}
+				}
+			}
+			return 0
+		}
 		if smoke {
 			if !smokeWorkerDone {
 				if !busy {
 					beginJob(0, func() (string, error) { return digest(embeddedVPK), nil })
 				}
+				return 0
+			}
+			if !smokeAnimationStarted {
+				raw := make([]byte, 88)
+				copy(raw, "VTF\x00")
+				le.PutUint32(raw[4:], 7)
+				le.PutUint32(raw[8:], 2)
+				le.PutUint32(raw[12:], 80)
+				le.PutUint16(raw[16:], 1)
+				le.PutUint16(raw[18:], 1)
+				le.PutUint16(raw[24:], 2)
+				raw[56] = 1
+				le.PutUint32(raw[57:], 0xffffffff)
+				le.PutUint16(raw[63:], 1)
+				copy(raw[80:], []byte{255, 0, 0, 255, 0, 255, 0, 255})
+				info, err := inspectVTF(raw)
+				if err != nil {
+					smokeError = err.Error()
+					call("DestroyWindow", hwnd)
+					return 0
+				}
+				currentClip = &previewClip{Raw: raw, Info: info, FPS: 10}
+				currentFrame, previewStart = 0, time.Now()
+				smokeAnimationStarted = true
+				call("SetTimer", hwnd, 2, 50, 0)
+				return 0
+			}
+			if !smokeAnimationTick {
 				return 0
 			}
 			call("KillTimer", hwnd, 1)
@@ -537,6 +598,7 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		}
 		return 0
 	case 0x0002:
+		call("KillTimer", hwnd, 2)
 		call("PostQuitMessage", 0)
 		return 0
 	}
@@ -559,7 +621,7 @@ func runSmoke() {
 			good = false
 		}
 	}
-	if send(slotList, 0x18b, 0, 0) != 40 || len(preview) != 256*256*4 || !smokeWorkerDone || busy {
+	if send(slotList, 0x18b, 0, 0) != 40 || len(preview) != 256*256*4 || !smokeWorkerDone || !smokeAnimationTick || busy {
 		good = false
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
@@ -575,7 +637,7 @@ func runSmoke() {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick}); e != nil {
 		smokeError = e.Error()
 	}
 }
@@ -621,7 +683,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.4.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.5.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -635,7 +697,7 @@ func runWindow() error {
 	send(slotList, 0x1a0, 0, ptrInt(px(40)))
 	labels[2] = widget("STATIC", "", 0, 0)
 	labels[3] = widget("STATIC", "选图 → 构建 → 部署\r\n请在进入战役前选择喷漆", 0, 0)
-	labels[4] = widget("STATIC", "40 SLOTS  /  原生 Windows  /  你的喷漆素材工作台", 0, 0)
+	labels[4] = widget("STATIC", "40 SLOTS  /  静态与动画喷漆  /  循环预览与完整导入", 0, 0)
 	labels[5] = widget("STATIC", "素材目录", 0, 0)
 	statusLabel = widget("STATIC", "就绪。未导入的槽位保留内置编号图，C 与 DLL 不变。", 0, 0)
 	for i, item := range []struct {

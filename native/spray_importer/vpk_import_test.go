@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,8 +57,8 @@ func TestVPKImportTwoPackagesBuildDeployRollback(t *testing.T) {
 		if info == nil {
 			t.Fatal("VPK metadata missing")
 		}
-		if _, e = a.Preview(n); !errors.Is(e, errMetadataPreview) {
-			t.Fatal("VPK picture preview was not blocked", e)
+		if img, e := a.Preview(n); e != nil || img == nil {
+			t.Fatal("self-authored VPK runtime preview failed", e)
 		}
 	}
 	state := a.State

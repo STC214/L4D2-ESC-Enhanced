@@ -35,7 +35,7 @@ func renderStudioPreview(path string) error {
 	p := studioGeometry(w, h)
 	previewArea = p.Preview
 	studioScene(dc, w, h)
-	titles := []string{"SPRAY STUDIO", "游戏安装目录", "槽位 01 · 内置编号测试图", "选图 → 构建 → 部署", "40 SLOTS  /  原生 Windows  /  你的喷漆素材工作台", "素材目录   00 / 40"}
+	titles := []string{"SPRAY STUDIO", "游戏安装目录", "槽位 01 · 内置编号测试图", "选图 → 构建 → 部署", "40 SLOTS  /  静态与动画喷漆  /  循环预览与完整导入", "素材目录   00 / 40"}
 	for i, title := range titles {
 		face, ink := font, studioText
 		if i == 0 {

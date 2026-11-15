@@ -57,11 +57,12 @@ if ($Action -ne 'Verify') {
 $BeforeData = Snapshot-Data
 if ($Action -eq 'Install') {
     $Build = Get-Content -LiteralPath (Join-Path $Root 'reports\spray_importer_go\verification.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($Build.version -ne '1.4.1' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.4.1 build required.' }
+    if ($Build.version -ne '1.5.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.5.0 build required.' }
     foreach ($Step in $Build.records) { if ($Step.exit_status -ne 0) { throw 'Build verification contains a failed step.' } }
     $Source = Join-Path $Root 'dist\spray_importer_go\CSP_Spray_Manager.exe'
     if ((Get-FileHash -LiteralPath $Source).Hash -ne $Build.exe_sha256) { throw 'Source product hash differs from build evidence.' }
     $BeforeHash = (Get-FileHash -LiteralPath $Destination).Hash
+    $PreviousRecord = $null
     if (Test-Path -LiteralPath $RecordPath) {
         $Previous = Get-Content -LiteralPath $RecordPath -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($Previous.status -eq 'PREPARED') { throw 'Pending production deployment; preserve its recovery record.' }
@@ -70,12 +71,20 @@ if ($Action -eq 'Install') {
                 Write-Output 'PASS Install already completed; original rollback record retained.'
                 exit 0
             }
-            throw 'Existing installed record differs; preserve its backup before a new deployment.'
+            if ($Previous.production_root -ne $ProductionRoot -or $Previous.destination -ne $Destination -or $BeforeHash -ne $Previous.after_sha256) {
+                throw 'Production EXE differs from previous deployment; preserve its recovery record.'
+            }
+            $History = Join-Path $ReportDirectory 'history'
+            New-Item -ItemType Directory -Force -Path $History | Out-Null
+            $PreviousRecord = Join-Path $History ('deployment-'+[guid]::NewGuid().ToString('N')+'.json')
+            $RecordHash = (Get-FileHash -LiteralPath $RecordPath).Hash
+            Copy-Item -LiteralPath $RecordPath -Destination $PreviousRecord
+            if ((Get-FileHash -LiteralPath $PreviousRecord).Hash -ne $RecordHash) { throw 'Previous deployment history backup failed.' }
         }
     }
     $Backup = Join-Path $ProductionRoot ('.release-backups\'+[guid]::NewGuid().ToString('N')+'\before.exe')
     $Stage = Join-Path $ProductionRoot ('.deploy-'+[guid]::NewGuid().ToString('N')+'.exe')
-    $Record = @{status='PREPARED';production_root=$ProductionRoot;destination=$Destination;before_sha256=$BeforeHash;after_sha256=$Build.exe_sha256;backup=$Backup;data_before=$BeforeData;source=$Source;version=$Build.version}
+    $Record = @{status='PREPARED';production_root=$ProductionRoot;destination=$Destination;before_sha256=$BeforeHash;after_sha256=$Build.exe_sha256;backup=$Backup;data_before=$BeforeData;source=$Source;version=$Build.version;previous_record=$PreviousRecord}
     Write-Record $Record
     try {
         Copy-Item -LiteralPath $Source -Destination $Stage

@@ -17,12 +17,16 @@ if (-not (Test-Path -LiteralPath $Old)) {
 $OldHash = (Get-FileHash -LiteralPath $Old).Hash
 Copy-Item -LiteralPath $Old -Destination (Join-Path $Production 'CSP_Spray_Manager.exe')
 [IO.File]::WriteAllBytes((Join-Path $Data 'fixture.bin'),[byte[]](1,2,3,4))
+New-Item -ItemType Directory -Force -Path $Report | Out-Null
+$Legacy = @{status='INSTALLED';production_root=$Production;destination=(Join-Path $Production 'CSP_Spray_Manager.exe');after_sha256=$OldHash;version='previous-fixture-version'}
+[IO.File]::WriteAllText((Join-Path $Report 'deployment.json'),($Legacy|ConvertTo-Json),(New-Object Text.UTF8Encoding($false)))
 function Run-Step([string]$Action) {
     & powershell.exe -NoProfile -File $Script -Action $Action -ProductionRoot $Production -ReportDirectory $Report
     if ($LASTEXITCODE -ne 0) { throw "Deployment fixture $Action failed." }
 }
 Run-Step 'Install'
 $First = Get-Content -LiteralPath (Join-Path $Report 'deployment.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if (-not (Test-Path -LiteralPath $First.previous_record)) { throw 'Previous version deployment record was not archived.' }
 Run-Step 'Install'
 $Again = Get-Content -LiteralPath (Join-Path $Report 'deployment.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($First.backup -ne $Again.backup) { throw 'Repeat install replaced the rollback record.' }

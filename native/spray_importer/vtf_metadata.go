@@ -8,8 +8,6 @@ type VTFInfo struct {
 	Format                                    uint32
 }
 
-var errMetadataPreview = errors.New("VPK 素材仅显示结构参数，不生成画面预览")
-
 func vtfLevelBytes(w, h int, format uint32) int {
 	switch format {
 	case 0, 12:

@@ -32,9 +32,10 @@ const defaultGame = `E:\SteamLibrary\steamapps\common\Left 4 Dead 2`
 type Slot struct {
 	Title, Texture, Preview, SHA256, Source, SortKey string
 	VTF                                              *VTFInfo `json:",omitempty"`
+	FrameRate                                        float64  `json:",omitempty"`
 }
 
-func (s Slot) metadataOnly() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
+func (s Slot) rawVTF() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
 
 type State struct{ Slots map[int]Slot }
 type Build struct {
@@ -187,7 +188,7 @@ func (a *App) Import(path string, n int) error {
 	if e := a.checkState(); e != nil {
 		return e
 	}
-	img, e := loadImage(path)
+	prepared, e := prepareTexture(path, false)
 	if e != nil {
 		return imageError(path, e)
 	}
@@ -196,10 +197,14 @@ func (a *App) Import(path string, n int) error {
 	if e != nil {
 		return e
 	}
-	if e = savePNG(filepath.Join(folder, "preview.png"), img); e != nil {
-		return e
+	previewPath := ""
+	if prepared.Preview != nil {
+		previewPath = rel + "/preview.png"
+		if e = savePNG(filepath.Join(folder, "preview.png"), prepared.Preview); e != nil {
+			return e
+		}
 	}
-	raw := encodeVTF(img)
+	raw := prepared.Raw
 	if e = atomicWrite(filepath.Join(folder, "texture.vtf"), raw); e != nil {
 		return e
 	}
@@ -211,7 +216,7 @@ func (a *App) Import(path string, n int) error {
 	if e != nil {
 		return e
 	}
-	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: rel + "/preview.png", SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source)}
+	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS}
 	previous, exists := a.State.Slots[n]
 	a.State.Slots[n] = row
 	if e = saveJSON(filepath.Join(a.Home, "slots.json"), a.State); e != nil {
@@ -226,16 +231,20 @@ func (a *App) Import(path string, n int) error {
 }
 
 func (a *App) Preview(n int) (image.Image, error) {
+	clip, err := a.LoadPreview(n)
+	if err != nil {
+		return nil, err
+	}
+	return clip.Frame(0)
+}
+
+// Reading preview bytes is separate from decoding, so metadata-only acceptance
+// checks on user packages never need to invoke Frame or Preview.
+func (a *App) LoadPreview(n int) (*previewClip, error) {
 	if e := validSlot(n); e != nil {
 		return nil, e
 	}
 	if s, ok := a.State.Slots[n]; ok {
-		if s.metadataOnly() {
-			if _, e := a.VTFMetadata(n); e != nil {
-				return nil, e
-			}
-			return nil, errMetadataPreview
-		}
 		p, e := safePath(a.Home, s.Texture)
 		if e != nil {
 			return nil, e
@@ -247,13 +256,25 @@ func (a *App) Preview(n int) (image.Image, error) {
 		if digest(raw) != s.SHA256 {
 			return nil, errors.New("导入素材哈希不符")
 		}
-		return decodeVTF(raw)
+		info, e := inspectVTF(raw)
+		if e != nil {
+			return nil, e
+		}
+		if s.VTF != nil && !reflect.DeepEqual(info, s.VTF) {
+			return nil, errors.New("VTF 参数与导入记录不一致")
+		}
+		return &previewClip{Raw: raw, Info: info, FPS: animationFPS(s.FrameRate)}, nil
 	}
 	files, e := readVPK(embeddedVPK)
 	if e != nil {
 		return nil, e
 	}
-	return decodeVTF(files[slotPath(n, "vtf")])
+	raw := files[slotPath(n, "vtf")]
+	info, e := inspectVTF(raw)
+	if e != nil {
+		return nil, e
+	}
+	return &previewClip{Raw: raw, Info: info, FPS: 10}, nil
 }
 
 func (a *App) VTFMetadata(n int) (*VTFInfo, error) {
@@ -261,7 +282,7 @@ func (a *App) VTFMetadata(n int) (*VTFInfo, error) {
 		return nil, e
 	}
 	s, ok := a.State.Slots[n]
-	if !ok || !s.metadataOnly() {
+	if !ok || !s.rawVTF() {
 		return nil, nil
 	}
 	p, e := safePath(a.Home, s.Texture)
@@ -328,7 +349,8 @@ func (a *App) Build() (string, error) {
 		if digest(b) != s.SHA256 {
 			return "", errors.New("导入图片已被外部修改")
 		}
-		if s.metadataOnly() {
+		frames := 1
+		if s.rawVTF() {
 			info, err := inspectVTF(b)
 			if err != nil {
 				return "", err
@@ -336,11 +358,15 @@ func (a *App) Build() (string, error) {
 			if s.VTF != nil && !reflect.DeepEqual(info, s.VTF) {
 				return "", errors.New("VTF 参数与导入记录不一致")
 			}
+			frames = info.Frames
 		} else if _, e = decodeVTF(b); e != nil {
 			return "", e
 		}
 		name := slotPath(n, "vtf")
 		files[name] = b
+		if frames > 1 {
+			files[slotPath(n, "vmt")] = animationMaterial(n, frames, s.FrameRate)
+		}
 		meta.Changed = append(meta.Changed, name)
 	}
 	sort.Strings(meta.Changed)

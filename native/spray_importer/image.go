@@ -177,11 +177,15 @@ func validateStaticGIF(raw []byte) error {
 }
 
 func fitImage(src image.Image) *image.NRGBA {
+	return fitImageSize(src, 256)
+}
+
+func fitImageSize(src image.Image, size int) *image.NRGBA {
 	b := src.Bounds()
 	w, h := b.Dx(), b.Dy()
-	scale := math.Min(256/float64(w), 256/float64(h))
+	scale := math.Min(float64(size)/float64(w), float64(size)/float64(h))
 	nw, nh := max(1, int(math.Round(float64(w)*scale))), max(1, int(math.Round(float64(h)*scale)))
-	out := image.NewNRGBA(image.Rect(0, 0, 256, 256))
+	out := image.NewNRGBA(image.Rect(0, 0, size, size))
 	for y := 0; y < nh; y++ {
 		for x := 0; x < nw; x++ {
 			fx := math.Max(0, math.Min(float64(w-1), (float64(x)+.5)*float64(w)/float64(nw)-.5))
@@ -204,7 +208,7 @@ func fitImage(src image.Image) *image.NRGBA {
 				pixel.G = uint8(math.Round(sums[1] * 255 / sums[3]))
 				pixel.B = uint8(math.Round(sums[2] * 255 / sums[3]))
 			}
-			out.SetNRGBA(x+(256-nw)/2, y+(256-nh)/2, pixel)
+			out.SetNRGBA(x+(size-nw)/2, y+(size-nh)/2, pixel)
 		}
 	}
 	return out

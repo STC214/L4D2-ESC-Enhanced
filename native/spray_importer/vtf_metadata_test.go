@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -134,9 +133,7 @@ func TestVPKMetadataOnlyAcceptance(t *testing.T) {
 				t.Fatal(info)
 			}
 		}
-		if _, err = a.Preview(n); !errors.Is(err, errMetadataPreview) {
-			t.Fatal("picture preview not blocked", err)
-		}
+		// Deliberately do not call runtime Preview/Frame on approved user files.
 		data, err := os.ReadFile(filepath.Join(a.Home, filepath.FromSlash(row.Texture)))
 		must(t, err)
 		if !bytes.Equal(data, expected[strings.ToLower(filepath.Clean(row.Source))]) {
@@ -194,7 +191,7 @@ func TestVPKMetadataOnlyAcceptance(t *testing.T) {
 		}
 		return err
 	}))
-	t.Logf("PASS metadata-only: %d textures, 1 nine-frame animation, byte-identical import/build/MOD, renumbered VMT, 81-file fixture deploy/rollback; no picture decoding/PNG/preview", wantTotal)
+	t.Logf("PASS metadata-only: %d textures, 1 nine-frame animation, byte-identical import/build/MOD, renumbered VMT, 81-file fixture deploy/rollback; no user picture decoding/PNG/preview invoked during acceptance", wantTotal)
 }
 
 func TestVPKAnimatedTruncationAndMetadataTamper(t *testing.T) {
@@ -229,7 +226,7 @@ func TestVPKAnimatedTruncationAndMetadataTamper(t *testing.T) {
 	}
 }
 
-func TestLegacyVPKMetadataOnlyWithoutMigration(t *testing.T) {
+func TestLegacyVPKPreviewWithoutMigration(t *testing.T) {
 	a, source := fixture(t)
 	must(t, a.Import(source, 1)) // generated test picture, not user content
 	row := a.State.Slots[1]
@@ -242,8 +239,8 @@ func TestLegacyVPKMetadataOnlyWithoutMigration(t *testing.T) {
 	if info == nil || info.Frames != 1 {
 		t.Fatal(info)
 	}
-	if _, err = a.Preview(1); !errors.Is(err, errMetadataPreview) {
-		t.Fatal("legacy VPK preview not blocked", err)
+	if img, err := a.Preview(1); err != nil || img == nil {
+		t.Fatal("legacy self-authored VPK preview failed", err)
 	}
 	_, err = a.Build()
 	must(t, err)

@@ -201,32 +201,22 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 			return result, e
 		}
 		item := fmt.Sprintf("%s/items/%03d", rel, i+1)
-		var raw []byte
-		var info *VTFInfo
+		prepared, err := prepareTexture(path, len(preserveVTF) > 0 && preserveVTF[0])
+		if err != nil {
+			return result, imageError(input.Source, err)
+		}
+		raw, info := prepared.Raw, prepared.Info
 		previewPath := ""
-		if len(preserveVTF) > 0 && preserveVTF[0] {
-			raw, e = os.ReadFile(path)
-			if e == nil {
-				info, e = inspectVTF(raw)
-			}
-			if e != nil {
-				return result, imageError(input.Source, e)
-			}
-		} else {
-			img, err := loadImage(path)
-			if err != nil {
-				return result, imageError(path, err)
-			}
+		if prepared.Preview != nil {
 			previewPath = item + "/preview.png"
-			if e = savePNG(filepath.Join(a.Home, filepath.FromSlash(previewPath)), img); e != nil {
+			if e = savePNG(filepath.Join(a.Home, filepath.FromSlash(previewPath)), prepared.Preview); e != nil {
 				return result, e
 			}
-			raw = encodeVTF(img)
 		}
 		if e = atomicWrite(filepath.Join(a.Home, filepath.FromSlash(item), "texture.vtf"), raw); e != nil {
 			return result, e
 		}
-		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info}
+		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info, FrameRate: prepared.FPS}
 	}
 	type entry struct {
 		Key string
