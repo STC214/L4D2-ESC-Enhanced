@@ -11,6 +11,14 @@ import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_manager_guide_is_current_self_contained_manual(self):
+        guide = release.manager_guide().decode('utf-8')
+        self.assertIn('# CSP 喷漆处理工具使用说明', guide)
+        self.assertIn('settings.json', guide)
+        self.assertIn('2～256', guide)
+        self.assertNotIn('](喷漆导入工具.md)', guide)
+        self.assertIn('/blob/' + release.TAG + '/docs/', guide)
+
     def test_go_top_level_counts_ignore_subtests_and_fuzz(self):
         run = ('--- PASS: TestOne (0.00s)\n'
                '    --- PASS: TestOne/child (0.00s)\n'

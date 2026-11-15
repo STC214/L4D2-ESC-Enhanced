@@ -145,6 +145,14 @@ func newApp(home, game string) (*App, error) {
 	if e = validMinimum(a.Settings.MinimumAnimationFrames); e != nil {
 		return nil, e
 	}
+	if a.Settings.GameDirectory != "" {
+		if !filepath.IsAbs(a.Settings.GameDirectory) {
+			return nil, errors.New("配置中的游戏目录须为绝对路径，请检查 settings.json")
+		}
+		// Do not stat or erase a remembered path when its disk is temporarily
+		// unavailable. Deployment still runs its existing compatibility checks.
+		a.Game = filepath.Clean(a.Settings.GameDirectory)
+	}
 	e = loadJSON(filepath.Join(home, "slots.json"), &a.State)
 	if e != nil && !os.IsNotExist(e) {
 		return nil, e

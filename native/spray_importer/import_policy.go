@@ -10,26 +10,6 @@ import (
 	"strings"
 )
 
-type importSettings struct {
-	MinimumAnimationFrames int
-}
-
-func (a *App) SetMinimumFrames(n int) error {
-	if err := validMinimum(n); err != nil {
-		return err
-	}
-	settings := importSettings{MinimumAnimationFrames: n}
-	path, err := safePath(a.Home, "settings.json")
-	if err != nil {
-		return err
-	}
-	if err = saveJSON(path, settings); err != nil {
-		return err
-	}
-	a.Settings = settings
-	return nil
-}
-
 func (a *App) finishCatalog(rel string) {
 	a.MaintenanceWarning = ""
 	// Commit a pointer first. Interrupted cleanup may leave extra old copies,

@@ -109,6 +109,7 @@ var busy bool
 var savedFocus uintptr
 var importProgress, minimumEdit uintptr
 var progressObserved bool
+var gamePathRestored bool
 
 type progressEvent struct {
 	Percent int
@@ -182,6 +183,18 @@ func widget(class, title string, style uint32, id int) uintptr {
 }
 
 func setStatus(s string) { text(statusLabel, s) }
+
+func saveGamePath(showStatus bool) error {
+	err := app.RememberGameDirectory(windowText(pathEdit))
+	if showStatus {
+		if err != nil {
+			setStatus("游戏目录尚未保存：" + err.Error())
+		} else {
+			setStatus("游戏目录已自动保存，下次启动将恢复。")
+		}
+	}
+	return err
+}
 func failure(err error) {
 	if err == nil {
 		return
@@ -401,12 +414,10 @@ func operation(id int) {
 		return
 	}
 	if id == 103 || id == 104 {
-		game := strings.Trim(strings.TrimSpace(windowText(pathEdit)), "\"")
-		if !filepath.IsAbs(game) {
-			failure(fmt.Errorf("请输入游戏目录的绝对路径"))
+		if err := saveGamePath(true); err != nil {
+			failure(err)
 			return
 		}
-		app.Game = filepath.Clean(game)
 	}
 	if id == 101 {
 		path, e := chooseFile()
@@ -547,6 +558,16 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			return 0
 		}
 		id, notification := int(w&0xffff), int(w>>16)
+		if id == 110 && pathEdit != 0 {
+			if notification == 0x300 {
+				call("SetTimer", window, 3, 800, 0)
+			}
+			if notification == 0x200 {
+				call("KillTimer", window, 3)
+				saveGamePath(true)
+			}
+			return 0
+		}
 		if id == 100 && notification == 1 {
 			selectionChanged()
 			return 0
@@ -619,6 +640,13 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		call("EndPaint", hwnd, uintptr(unsafe.Pointer(&p)))
 		return 0
 	case 0x0113:
+		if w == 3 {
+			call("KillTimer", hwnd, 3)
+			if !busy {
+				saveGamePath(true)
+			}
+			return 0
+		}
 		if w == 2 {
 			if !busy && currentClip != nil && currentClip.Info.Frames > 1 {
 				frame := int(time.Since(previewStart).Seconds()*currentClip.FPS) % currentClip.Info.Frames
@@ -643,6 +671,20 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		if smoke {
 			if !smokeWorkerDone {
 				if !busy {
+					game := filepath.Join(filepath.Dir(smokeReport), "game-path-fixture")
+					err := atomicWrite(filepath.Join(game, "left4dead2.exe"), []byte("fixture, never executed"))
+					if err == nil {
+						err = atomicWrite(filepath.Join(game, "left4dead2/gameinfo.txt"), []byte("fixture metadata"))
+					}
+					if err != nil {
+						smokeError = err.Error()
+						call("DestroyWindow", hwnd)
+						return 0
+					}
+					text(pathEdit, game)
+					send(window, 0x111, 110|(0x200<<16), pathEdit)
+					reopened, err := newApp(app.Home, defaultGame)
+					gamePathRestored = err == nil && reopened.Game == game && reopened.Settings.MinimumAnimationFrames == app.Settings.MinimumAnimationFrames
 					beginJob(0, func() (string, error) { app.Progress(50, "进度控件测试"); return digest(embeddedVPK), nil })
 				}
 				return 0
@@ -685,11 +727,17 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 		}
 	case 0x0010:
 		if !busy {
+			if err := saveGamePath(true); err != nil && strings.Trim(strings.TrimSpace(windowText(pathEdit)), "\"") != app.Game {
+				if !confirm("游戏目录未保存：" + err.Error() + "\n仍要关闭吗？下次将使用上次保存的目录。") {
+					return 0
+				}
+			}
 			call("DestroyWindow", hwnd)
 		}
 		return 0
 	case 0x0002:
 		call("KillTimer", hwnd, 2)
+		call("KillTimer", hwnd, 3)
 		call("PostQuitMessage", 0)
 		return 0
 	}
@@ -717,7 +765,7 @@ func runSmoke() {
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
 	resetPresent := call("GetDlgItem", window, 108) == buttons[7] && buttons[7] != 0
-	if !iconsOK || !resetPresent || !progressObserved || windowText(minimumEdit) != strconv.Itoa(app.Settings.MinimumAnimationFrames) {
+	if !iconsOK || !resetPresent || !progressObserved || !gamePathRestored || windowText(minimumEdit) != strconv.Itoa(app.Settings.MinimumAnimationFrames) {
 		good = false
 	}
 	styled := studioPaints > 0 && paintedList && len(paintedActions) == len(buttons) && paintedListFocus
@@ -729,7 +777,7 @@ func runSmoke() {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "action_buttons": len(buttons), "reset_button_present": resetPresent, "progress_control_observed": progressObserved, "minimum_frames": app.Settings.MinimumAnimationFrames, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "action_buttons": len(buttons), "reset_button_present": resetPresent, "progress_control_observed": progressObserved, "game_path_saved_and_restored": gamePathRestored, "minimum_frames": app.Settings.MinimumAnimationFrames, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
 		smokeError = e.Error()
 	}
 }
@@ -776,7 +824,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.10.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.10.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -817,6 +865,9 @@ func runWindow() error {
 	updateList()
 	selectionChanged()
 	layout()
+	if !smoke {
+		call("SetTimer", window, 3, 800, 0)
+	}
 	call("ShowWindow", window, 1)
 	call("UpdateWindow", window)
 	if smoke {

@@ -103,6 +103,15 @@ def archive(path, files):
         assert {name: stream.read(name) for name in stream.namelist()} == files
 
 
+def manager_guide():
+    # Ship the current user manual, not the historical implementation log.
+    # The standalone ZIP has no docs tree; make its sole relative doc link
+    # point at the matching immutable repository tag instead.
+    text = (ROOT / 'docs/喷漆工具使用说明.md').read_text(encoding='utf-8')
+    history = 'https://github.com/' + previous.REPO + '/blob/' + TAG + '/docs/' + urllib.parse.quote('喷漆导入工具.md')
+    return text.replace('(喷漆导入工具.md)', '(' + history + ')').encode('utf-8')
+
+
 def package():
     verify_components()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -124,7 +133,7 @@ def package():
         'No native engine DLL on disk is replaced. Current bridge is pinned to inspected game binaries.\n').encode()
     archive(OUT / SELECTOR_ZIP, selector_files)
     manager_files = {'CSP_Spray_Manager.exe': EXE.read_bytes(),
-                     '使用说明.md': (ROOT / 'docs/喷漆导入工具.md').read_bytes()}
+                     '使用说明.md': manager_guide()}
     if REQUIRE_STUDIO:
         manager_files['images/spray-studio-preview.png'] = (ROOT / 'docs/images/spray-studio-preview.png').read_bytes()
     archive(OUT / MANAGER_ZIP, manager_files)
