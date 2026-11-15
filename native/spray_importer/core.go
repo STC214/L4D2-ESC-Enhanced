@@ -31,8 +31,9 @@ const defaultGame = `E:\SteamLibrary\steamapps\common\Left 4 Dead 2`
 
 type Slot struct {
 	Title, Texture, Preview, SHA256, Source, SortKey string
-	VTF                                              *VTFInfo `json:",omitempty"`
-	FrameRate                                        float64  `json:",omitempty"`
+	VTF                                              *VTFInfo         `json:",omitempty"`
+	FrameRate                                        float64          `json:",omitempty"`
+	Animation                                        *animationImport `json:",omitempty"`
 }
 
 func (s Slot) rawVTF() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
@@ -216,7 +217,7 @@ func (a *App) Import(path string, n int) error {
 	if e != nil {
 		return e
 	}
-	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS}
+	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS, Animation: prepared.Animation}
 	previous, exists := a.State.Slots[n]
 	a.State.Slots[n] = row
 	if e = saveJSON(filepath.Join(a.Home, "slots.json"), a.State); e != nil {

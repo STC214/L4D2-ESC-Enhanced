@@ -97,6 +97,7 @@ var currentClip *previewClip
 var currentFrame int
 var previewStart time.Time
 var smokeAnimationStarted, smokeAnimationTick bool
+var previewFramePaints int
 var selected = 1
 var scale = 1.0
 var smoke bool
@@ -179,7 +180,8 @@ func setPreview(img image.Image) {
 			preview[i], preview[i+1], preview[i+2], preview[i+3] = c.B, c.G, c.R, 255
 		}
 	}
-	call("InvalidateRect", window, 0, 1)
+	r := logicalRect(previewArea)
+	call("InvalidateRect", window, uintptr(unsafe.Pointer(&r)), 0)
 }
 
 func selectionChanged() {
@@ -214,13 +216,16 @@ func selectionChanged() {
 	title := "内置编号测试图"
 	if row, ok := app.State.Slots[selected]; ok {
 		title = row.Title
+		if row.Animation != nil {
+			setStatus(row.Animation.description() + "；循环预览，构建后部署")
+		}
 	}
 	text(labels[2], fmt.Sprintf("槽位 %02d  ·  %s", selected, title))
 }
 
 func chooseFile() (string, error) {
 	buf := make([]uint16, 32768)
-	filter := utf16.Encode([]rune("静态图片／动画 GIF／动画 VTF\x00*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.vtf\x00所有文件\x00*.*\x00\x00"))
+	filter := utf16.Encode([]rune("静态图片／动画 GIF／APNG／VTF\x00*.png;*.apng;*.jpg;*.jpeg;*.gif;*.bmp;*.vtf\x00所有文件\x00*.*\x00\x00"))
 	of := openFile{Owner: window, Filter: &filter[0], FilterIndex: 1, File: &buf[0], MaxFile: uint32(len(buf)), Title: utf("选择要导入的喷漆图片"), Flags: 0x80000 | 0x1000 | 0x800 | 8}
 	of.Size = uint32(unsafe.Sizeof(of))
 	ok, _, _ := common.NewProc("GetOpenFileNameW").Call(uintptr(unsafe.Pointer(&of)))
@@ -284,26 +289,7 @@ func chooseVPKs() ([]string, error) {
 }
 
 func chooseDirectory() (string, error) {
-	type browseInfo struct {
-		Owner, Root     uintptr
-		Display, Title  *uint16
-		Flags           uint32
-		Callback, Param uintptr
-		Image           int32
-	}
-	display := make([]uint16, 260)
-	info := browseInfo{Owner: window, Display: &display[0], Title: utf("选择喷漆图片目录（包含子目录，导入后按名称自动排序）"), Flags: 0x41}
-	pidl, _, _ := shell.NewProc("SHBrowseForFolderW").Call(uintptr(unsafe.Pointer(&info)))
-	if pidl == 0 {
-		return "", nil
-	}
-	defer ole.NewProc("CoTaskMemFree").Call(pidl)
-	path := make([]uint16, 32768)
-	ok, _, _ := shell.NewProc("SHGetPathFromIDListEx").Call(pidl, uintptr(unsafe.Pointer(&path[0])), uintptr(len(path)), 0)
-	if ok == 0 {
-		return "", fmt.Errorf("所选项目不是可读取的文件系统目录")
-	}
-	return syscall.UTF16ToString(path), nil
+	return modernDirectory(window)
 }
 
 func uiBusy(value bool) {
@@ -373,6 +359,9 @@ func operation(id int) {
 			err := app.Import(path, number)
 			if err == nil {
 				row := app.State.Slots[number]
+				if row.Animation != nil {
+					return row.Animation.description() + "。已导入，请构建后部署。", nil
+				}
 				if row.VTF != nil && row.VTF.Frames > 1 {
 					return fmt.Sprintf("动画喷漆已导入槽位 %02d：%d 帧，%.3g FPS；支持循环预览。请构建后部署。", number, row.VTF.Frames, animationFPS(row.FrameRate)), nil
 				}
@@ -390,13 +379,17 @@ func operation(id int) {
 		if folder == "" {
 			return
 		}
-		if !confirm("导入整个目录及子目录中的静态图片、动画 GIF／VTF，与已有素材合并后自然排序，槽位编号可能变化。\n超过 40 张或存在损坏素材将停止整批提交，不会静默截断。\n\n这一步只导入，不部署到游戏。继续？") {
+		if !confirm("导入整个目录及子目录中的静态图片、动画 GIF／APNG／VTF，与已有素材合并后自然排序，槽位编号可能变化。\n超过 40 张或存在损坏素材将停止整批提交。APNG 超容量时保留连续前缀帧并报告数量。\n\n这一步只导入，不部署到游戏。继续？") {
 			return
 		}
 		setStatus("正在扫描、转换并排序目录图片……")
 		beginJob(id, func() (string, error) {
 			r, e := app.ImportFolder(folder)
-			return fmt.Sprintf("目录导入完成：新增 %d，更新 %d，共 %d 张；略过 %d 个非图片或链接。请重新构建。", r.Imported, r.Updated, r.Total, r.Skipped), e
+			message := fmt.Sprintf("目录导入完成：新增 %d，更新 %d，共 %d 张；略过 %d 个非图片或链接。请重新构建。", r.Imported, r.Updated, r.Total, r.Skipped)
+			if len(r.Notices) > 0 {
+				message += "\n" + strings.Join(r.Notices, "\n")
+			}
+			return message, e
 		})
 		return
 	}
@@ -513,6 +506,9 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 					selectionChanged()
 				}
 				setStatus(result.Message)
+				if (result.ID == 101 || result.ID == 106) && strings.Contains(result.Message, "APNG") {
+					call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(result.Message))), uintptr(unsafe.Pointer(utf("APNG 导入结果"))), 0x40)
+				}
 			}
 		default:
 		}
@@ -520,7 +516,14 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 	case 0x000f:
 		var p paintStruct
 		dc := call("BeginPaint", hwnd, uintptr(unsafe.Pointer(&p)))
-		studioPaint(dc)
+		r := logicalRect(previewArea)
+		// An animation frame replaces every pixel in its rectangle. Do not
+		// clear/repaint the scene underneath it between two frame blits.
+		if len(preview) == 0 || p.Area.Left < r.Left || p.Area.Top < r.Top || p.Area.Right > r.Right || p.Area.Bottom > r.Bottom {
+			studioPaint(dc)
+		} else {
+			previewFramePaints++
+		}
 		if len(preview) > 0 {
 			info := bitmapInfo{Size: 40, Width: 256, Height: -256, Planes: 1, Bits: 32}
 			gdi.NewProc("StretchDIBits").Call(dc, ptrInt(px(previewArea.X)), ptrInt(px(previewArea.Y)), ptrInt(px(previewArea.W)), ptrInt(px(previewArea.H)), 0, 0, 256, 256, uintptr(unsafe.Pointer(&preview[0])), uintptr(unsafe.Pointer(&info)), 0, 0x00cc0020)
@@ -621,7 +624,7 @@ func runSmoke() {
 			good = false
 		}
 	}
-	if send(slotList, 0x18b, 0, 0) != 40 || len(preview) != 256*256*4 || !smokeWorkerDone || !smokeAnimationTick || busy {
+	if send(slotList, 0x18b, 0, 0) != 40 || len(preview) != 256*256*4 || !smokeWorkerDone || !smokeAnimationTick || previewFramePaints == 0 || busy {
 		good = false
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
@@ -637,7 +640,7 @@ func runSmoke() {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
 		smokeError = e.Error()
 	}
 }
@@ -683,7 +686,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.6.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.7.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -697,7 +700,7 @@ func runWindow() error {
 	send(slotList, 0x1a0, 0, ptrInt(px(40)))
 	labels[2] = widget("STATIC", "", 0, 0)
 	labels[3] = widget("STATIC", "选图 → 构建 → 部署\r\n请在进入战役前选择喷漆", 0, 0)
-	labels[4] = widget("STATIC", "40 SLOTS  /  静态与动画喷漆  /  循环预览与完整导入", 0, 0)
+	labels[4] = widget("STATIC", "40 SLOTS  /  GIF · APNG · VTF 动画  /  等比例循环预览", 0, 0)
 	labels[5] = widget("STATIC", "素材目录", 0, 0)
 	statusLabel = widget("STATIC", "就绪。未导入的槽位保留内置编号图，C 与 DLL 不变。", 0, 0)
 	for i, item := range []struct {

@@ -50,6 +50,7 @@ func naturalLess(a, b string) bool {
 type BatchResult struct {
 	Imported, Updated, Total, Skipped int
 	Folder                            string
+	Notices                           []string
 }
 
 type batchInput struct {
@@ -93,7 +94,7 @@ func scanFolder(root string) ([]string, int, error) {
 			return nil
 		}
 		switch strings.ToLower(filepath.Ext(path)) {
-		case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".vtf":
+		case ".png", ".apng", ".jpg", ".jpeg", ".gif", ".bmp", ".vtf":
 			if !info.Mode().IsRegular() {
 				skipped++
 				return nil
@@ -111,7 +112,7 @@ func scanFolder(root string) ([]string, int, error) {
 		return nil, skipped, e
 	}
 	if len(files) == 0 {
-		return nil, skipped, errors.New("目录中没有支持的图片（PNG/JPEG/GIF/BMP/VTF）")
+		return nil, skipped, errors.New("目录中没有支持的图片（PNG/APNG/JPEG/GIF/BMP/VTF）")
 	}
 	sort.Slice(files, func(i, j int) bool {
 		a, b := filepath.Base(files[i]), filepath.Base(files[j])
@@ -216,7 +217,10 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 		if e = atomicWrite(filepath.Join(a.Home, filepath.FromSlash(item), "texture.vtf"), raw); e != nil {
 			return result, e
 		}
-		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info, FrameRate: prepared.FPS}
+		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info, FrameRate: prepared.FPS, Animation: prepared.Animation}
+		if prepared.Animation != nil {
+			result.Notices = append(result.Notices, input.Title+"："+prepared.Animation.description())
+		}
 	}
 	type entry struct {
 		Key string

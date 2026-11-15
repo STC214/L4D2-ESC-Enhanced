@@ -74,6 +74,11 @@ func loadImage(path string) (*image.NRGBA, error) {
 	if len(raw) > 32<<20 {
 		return nil, errors.New("图片须小于 32 MiB")
 	}
+	return loadImageData(raw)
+}
+
+func loadImageData(raw []byte) (*image.NRGBA, error) {
+	var err error
 	var src image.Image
 	if bytes.HasPrefix(raw, []byte("VTF\x00")) {
 		src, err = decodeVTF(raw)
