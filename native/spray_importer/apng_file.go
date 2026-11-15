@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"image"
 	"io"
 	"os"
 	"path/filepath"
@@ -79,9 +80,9 @@ func preparePNGFile(path string) (preparedTexture, error) {
 	if len(raw) > 32<<20 {
 		return result, errors.New("静态图片输入超过 32 MiB")
 	}
-	img, err := loadImageData(raw)
+	img, err := loadImageSizeData(raw, masterSize)
 	if err != nil {
 		return result, err
 	}
-	return preparedTexture{Raw: encodeVTF(img), Preview: img}, nil
+	return qualityTexture([]*image.NRGBA{img})
 }

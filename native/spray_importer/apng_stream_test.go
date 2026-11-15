@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +21,7 @@ func largeAPNGFixture(t *testing.T, path string, corrupt bool) {
 	t.Helper()
 	frames := make([]ownAPNGFrame, 40)
 	for i := range frames {
-		frames[i] = ownAPNGFrame{area: image.Rect(0, 0, 4, 4), c: color.NRGBA{R: uint8(i), A: 255}}
+		frames[i] = ownAPNGFrame{area: image.Rect(0, 0, 4, 4), c: color.NRGBA{R: uint8(i * 40), A: 255}}
 	}
 	raw := ownAPNG(t, frames, false)
 	f, err := os.Create(path)
@@ -82,14 +83,14 @@ func TestLargeAPNGStreamingSingleAndFolder(t *testing.T) {
 			}
 		}
 		row := a.State.Slots[1]
-		if row.Animation == nil || row.Animation.Original != 40 || row.Animation.Kept != 31 || row.Animation.Bytes >= 512<<10 {
+		if row.Animation == nil || row.Animation.Original != 40 || row.Animation.Kept != 3 || row.Animation.Bytes >= 512<<10 || row.VTF.Width != 512 {
 			t.Fatal(row.Animation)
 		}
 		clip, err := a.LoadPreview(1)
 		must(t, err)
-		last, err := decodeVTFFrame(clip.Raw, 30)
+		last, err := decodeVTFFrame(clip.Raw, 2)
 		must(t, err)
-		if last.NRGBAAt(32, 32).R != 30 {
+		if math.Abs(float64(last.NRGBAAt(256, 256).R)-80) > 7 {
 			t.Fatal("prefix changed")
 		}
 		_, err = a.Build()
@@ -105,7 +106,7 @@ func TestAPNGStreamDiscardedCRCAndBounds(t *testing.T) {
 	raw := ownAPNG(t, frames, false)
 	_, _, parsed, err := parseAPNG(raw)
 	must(t, err)
-	for _, frame := range parsed[31:] {
+	for _, frame := range parsed[3:] {
 		if len(frame.data) != 0 || !frame.hasData {
 			t.Fatal("discarded pixels retained")
 		}
@@ -142,7 +143,7 @@ func TestFailureDiagnosticsAndRotation(t *testing.T) {
 	must(t, err)
 	var row map[string]string
 	must(t, json.Unmarshal(latest, &row))
-	if row["Error"] != cause.Error() || row["Version"] != "1.7.2" || row["Time"] == "" {
+	if row["Error"] != cause.Error() || row["Version"] != "1.8.0" || row["Time"] == "" {
 		t.Fatal(row)
 	}
 	path := filepath.Join(home, "logs/errors.jsonl")

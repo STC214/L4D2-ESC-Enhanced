@@ -177,7 +177,7 @@ func TestAnimatedGIFImportFolderAndTiming(t *testing.T) {
 		clip, err := a.LoadPreview(n)
 		must(t, err)
 		if strings.HasSuffix(row.Title, ".gif") {
-			if clip.Info.Frames != 3 || clip.Info.Width != 128 || math.Abs(clip.FPS-5) > 0.001 {
+			if clip.Info.Frames != 3 || clip.Info.Width != 512 || math.Abs(clip.FPS-5) > 0.001 {
 				t.Fatal(clip.Info, clip.FPS)
 			}
 			if len(clip.Raw) >= 512<<10 {
@@ -193,14 +193,13 @@ func TestAnimatedGIFDisposalComposition(t *testing.T) {
 	for _, mode := range []byte{gif.DisposalPrevious, gif.DisposalBackground} {
 		prepared, err := convertGIF(ownGIF(t, mode))
 		must(t, err)
-		img, err := decodeVTFFrame(prepared.Raw, 2)
-		must(t, err)
+		img := prepared.Masters[2]
 		want := color.NRGBA{R: 255, A: 255}
 		if mode == gif.DisposalBackground {
 			want = color.NRGBA{}
 		}
-		if img.NRGBAAt(16, 16) != want || img.NRGBAAt(112, 112) != (color.NRGBA{B: 255, A: 255}) {
-			t.Fatal(mode, img.NRGBAAt(16, 16), img.NRGBAAt(112, 112))
+		if img.NRGBAAt(128, 128) != want || img.NRGBAAt(896, 896) != (color.NRGBA{B: 255, A: 255}) {
+			t.Fatal(mode, img.NRGBAAt(128, 128), img.NRGBAAt(896, 896))
 		}
 	}
 }
@@ -236,7 +235,7 @@ func TestAnimatedGIFPreflightLimits(t *testing.T) {
 	must(t, gif.EncodeAll(&out, g))
 	prepared, err := convertGIF(out.Bytes())
 	must(t, err)
-	if prepared.Info.Frames != 256 || prepared.Info.Width != 16 || prepared.FPS != 10 {
+	if prepared.Info.Frames != 3 || prepared.Info.Width != 512 || prepared.FPS != 10 || prepared.Animation.Original != 256 || len(prepared.Masters) != 3 {
 		t.Fatal(prepared.Info, prepared.FPS)
 	}
 }

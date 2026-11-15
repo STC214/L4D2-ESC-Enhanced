@@ -34,6 +34,7 @@ type Slot struct {
 	VTF                                              *VTFInfo         `json:",omitempty"`
 	FrameRate                                        float64          `json:",omitempty"`
 	Animation                                        *animationImport `json:",omitempty"`
+	Masters                                          []string         `json:",omitempty"`
 }
 
 func (s Slot) rawVTF() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
@@ -205,6 +206,10 @@ func (a *App) Import(path string, n int) error {
 			return e
 		}
 	}
+	masters, e := persistMasters(a.Home, rel, previewPath, prepared)
+	if e != nil {
+		return e
+	}
 	raw := prepared.Raw
 	if e = atomicWrite(filepath.Join(folder, "texture.vtf"), raw); e != nil {
 		return e
@@ -217,7 +222,7 @@ func (a *App) Import(path string, n int) error {
 	if e != nil {
 		return e
 	}
-	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS, Animation: prepared.Animation}
+	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS, Animation: prepared.Animation, Masters: masters}
 	previous, exists := a.State.Slots[n]
 	a.State.Slots[n] = row
 	if e = saveJSON(filepath.Join(a.Home, "slots.json"), a.State); e != nil {

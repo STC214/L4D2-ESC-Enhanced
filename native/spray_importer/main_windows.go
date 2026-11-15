@@ -385,7 +385,7 @@ func operation(id int) {
 		if folder == "" {
 			return
 		}
-		if !confirm("导入整个目录及子目录中的静态图片、动画 GIF／APNG／VTF，与已有素材合并后自然排序，槽位编号可能变化。\n超过 40 张或存在损坏素材将停止整批提交。APNG 超容量时保留连续前缀帧并报告数量。\n\n这一步只导入，不部署到游戏。继续？") {
+		if !confirm("导入整个目录及子目录中的静态图片、动画 GIF／APNG／VTF，与已有素材合并后自然排序，槽位编号可能变化。\n图片保存 1024 母版，静态导出接近 1024，GIF／APNG 动画导出 512，最多保留连续前 3 帧；DXT1 使用 1 位透明。原始 VTF 原样保留。\n超过 40 张或存在损坏素材将停止整批提交。继续？") {
 			return
 		}
 		setStatus("正在扫描、转换并排序目录图片……")
@@ -393,7 +393,10 @@ func operation(id int) {
 			r, e := app.ImportFolder(folder)
 			message := fmt.Sprintf("目录导入完成：新增 %d，更新 %d，共 %d 张；略过 %d 个非图片或链接。请重新构建。", r.Imported, r.Updated, r.Total, r.Skipped)
 			if len(r.Notices) > 0 {
-				message += "\n" + strings.Join(r.Notices, "\n")
+				message += "\n" + strings.Join(r.Notices[:min(3, len(r.Notices))], "\n")
+				if len(r.Notices) > 3 {
+					message += fmt.Sprintf("\n另 %d 项参数请点击对应槽位查看。", len(r.Notices)-3)
+				}
 			}
 			return message, e
 		})
@@ -512,8 +515,8 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 					selectionChanged()
 				}
 				setStatus(result.Message)
-				if (result.ID == 101 || result.ID == 106) && strings.Contains(result.Message, "APNG") {
-					call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(result.Message))), uintptr(unsafe.Pointer(utf("APNG 导入结果"))), 0x40)
+				if (result.ID == 101 || result.ID == 106) && (strings.Contains(result.Message, "DXT1") || strings.Contains(result.Message, "APNG")) {
+					call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(result.Message))), uintptr(unsafe.Pointer(utf("高清导入结果"))), 0x40)
 				}
 			}
 		default:
@@ -692,7 +695,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.7.2 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.8.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}

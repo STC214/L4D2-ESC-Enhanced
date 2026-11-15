@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"image"
 	"image/color"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -83,31 +84,27 @@ func TestAPNGCompositionAndHiddenDefault(t *testing.T) {
 			if result.Info.Frames != 3 || result.FPS != 25 {
 				t.Fatal(result.Info, result.FPS)
 			}
-			first, err := decodeVTFFrame(result.Raw, 0)
-			must(t, err)
-			if first.NRGBAAt(16, 16) != (color.NRGBA{R: 255, A: 255}) {
+			first := result.Masters[0]
+			if first.NRGBAAt(128, 128) != (color.NRGBA{R: 255, A: 255}) {
 				t.Fatal("hidden default used")
 			}
-			second, err := decodeVTFFrame(result.Raw, 1)
-			must(t, err)
-			if c := second.NRGBAAt(16, 16); c.R < 126 || c.R > 128 || c.G < 127 || c.G > 129 || c.A != 255 {
+			second := result.Masters[1]
+			if c := second.NRGBAAt(128, 128); c.R < 126 || c.R > 128 || c.G < 127 || c.G > 129 || c.A != 255 {
 				t.Fatal("OVER", c)
 			}
-			third, err := decodeVTFFrame(result.Raw, 2)
-			must(t, err)
-			c := third.NRGBAAt(16, 16)
+			third := result.Masters[2]
+			c := third.NRGBAAt(128, 128)
 			if dispose == 1 && c.A != 0 || dispose == 2 && c != (color.NRGBA{R: 255, A: 255}) {
 				t.Fatal("dispose", dispose, c)
 			}
-			if third.NRGBAAt(112, 112) != (color.NRGBA{B: 255, A: 255}) {
+			if third.NRGBAAt(896, 896) != (color.NRGBA{B: 255, A: 255}) {
 				t.Fatal("partial frame offset")
 			}
 			frames[1].blend = 0
 			result, err = convertAPNG(ownAPNG(t, frames, hidden))
 			must(t, err)
-			second, err = decodeVTFFrame(result.Raw, 1)
-			must(t, err)
-			if second.NRGBAAt(16, 16) != (color.NRGBA{G: 255, A: 128}) {
+			second = result.Masters[1]
+			if second.NRGBAAt(128, 128) != (color.NRGBA{G: 255, A: 128}) {
 				t.Fatal("SOURCE blend")
 			}
 		}
@@ -117,7 +114,7 @@ func TestAPNGCompositionAndHiddenDefault(t *testing.T) {
 func TestAPNGBudgetPrefixAndImportRoutes(t *testing.T) {
 	frames := make([]ownAPNGFrame, 40)
 	for i := range frames {
-		frames[i] = ownAPNGFrame{area: image.Rect(0, 0, 4, 4), c: color.NRGBA{R: uint8(i), A: 255}}
+		frames[i] = ownAPNGFrame{area: image.Rect(0, 0, 4, 4), c: color.NRGBA{R: uint8(i * 40), A: 255}}
 	}
 	raw := ownAPNG(t, frames, false)
 	for _, route := range []string{"single-png", "folder-apng"} {
@@ -134,19 +131,19 @@ func TestAPNGBudgetPrefixAndImportRoutes(t *testing.T) {
 		} else {
 			r, err := a.ImportFolder(dir)
 			must(t, err)
-			if len(r.Notices) != 1 || !strings.Contains(r.Notices[0], "31/40") {
+			if len(r.Notices) != 1 || !strings.Contains(r.Notices[0], "3/40") {
 				t.Fatal(r.Notices)
 			}
 		}
 		row := a.State.Slots[1]
-		if row.Animation == nil || row.Animation.Original != 40 || row.Animation.Kept != 31 || row.Animation.Size != 64 || row.Animation.Bytes >= 512<<10 {
+		if row.Animation == nil || row.Animation.Original != 40 || row.Animation.Kept != 3 || row.Animation.Size != 512 || row.Animation.Bytes >= 512<<10 || len(row.Masters) != 3 {
 			t.Fatal(row.Animation)
 		}
 		clip, err := a.LoadPreview(1)
 		must(t, err)
-		last, err := decodeVTFFrame(clip.Raw, 30)
+		last, err := decodeVTFFrame(clip.Raw, 2)
 		must(t, err)
-		if clip.Info.Frames != 31 || last.NRGBAAt(32, 32).R != 30 {
+		if clip.Info.Frames != 3 || math.Abs(float64(last.NRGBAAt(256, 256).R)-80) > 7 {
 			t.Fatal("not a continuous prefix")
 		}
 		folder, err := a.Build()
@@ -160,7 +157,7 @@ func TestAPNGBudgetPrefixAndImportRoutes(t *testing.T) {
 		}
 		reopened, err := newApp(a.Home, a.Game)
 		must(t, err)
-		if reopened.State.Slots[1].Animation.Kept != 31 {
+		if reopened.State.Slots[1].Animation.Kept != 3 {
 			t.Fatal("notice not persisted")
 		}
 	}

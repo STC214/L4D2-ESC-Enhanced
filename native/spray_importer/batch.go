@@ -217,7 +217,11 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 		if e = atomicWrite(filepath.Join(a.Home, filepath.FromSlash(item), "texture.vtf"), raw); e != nil {
 			return result, e
 		}
-		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info, FrameRate: prepared.FPS, Animation: prepared.Animation}
+		masters, err := persistMasters(a.Home, item, previewPath, prepared)
+		if err != nil {
+			return result, err
+		}
+		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info, FrameRate: prepared.FPS, Animation: prepared.Animation, Masters: masters}
 		if prepared.Animation != nil {
 			result.Notices = append(result.Notices, input.Title+"："+prepared.Animation.description())
 		}

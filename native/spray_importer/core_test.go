@@ -220,15 +220,18 @@ func TestBuildOnlyOneTexture(t *testing.T) {
 	after, e := readVPK(b)
 	must(t, e)
 	count := 0
+	// Near-1024 output is 1020x1024, so its confirmation image needs the
+	// matching aspect-fit rectangle. All unrelated slots/resources stay exact.
+	expectedChanges := map[string]bool{slotPath(17, "vtf"): true, "resource/ui/csp_test/confirm_017.res": true}
 	for name, data := range before {
 		if !bytes.Equal(data, after[name]) {
 			count++
-			if name != slotPath(17, "vtf") {
+			if !expectedChanges[name] {
 				t.Fatal(name)
 			}
 		}
 	}
-	if count != 1 {
+	if count != len(expectedChanges) {
 		t.Fatal(count)
 	}
 }

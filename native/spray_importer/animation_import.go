@@ -19,6 +19,7 @@ type preparedTexture struct {
 	FPS       float64
 	Preview   *image.NRGBA
 	Animation *animationImport
+	Masters   []*image.NRGBA
 }
 
 func readTextureInput(path string) ([]byte, error) {
@@ -61,11 +62,15 @@ func prepareTexture(path string, preserve bool) (preparedTexture, error) {
 		}
 		return convertGIF(raw)
 	}
-	img, err := loadImage(path)
+	raw, err := readTextureInput(path)
 	if err != nil {
 		return result, err
 	}
-	return preparedTexture{Raw: encodeVTF(img), Preview: img}, nil
+	img, err := loadImageSizeData(raw, masterSize)
+	if err != nil {
+		return result, err
+	}
+	return qualityTexture([]*image.NRGBA{img})
 }
 
 // Bound frames and decoded rectangle area before gif.DecodeAll allocates them.
@@ -160,26 +165,12 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 	if len(g.Image) != count {
 		return result, errors.New("GIF 帧数不一致")
 	}
-	size := 256
-	for 80+size*size*4*count >= 512<<10 {
-		size /= 2
-	}
+	kept := min(count, qualityAnimationFrames)
 	canvas := image.NewNRGBA(image.Rect(0, 0, g.Config.Width, g.Config.Height))
 	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: gifBackground(g, g.Image[0])}, image.Point{}, draw.Src)
-	out := make([]byte, 80, 80+size*size*4*count)
-	copy(out, "VTF\x00")
-	le.PutUint32(out[4:], 7)
-	le.PutUint32(out[8:], 2)
-	le.PutUint32(out[12:], 80)
-	le.PutUint16(out[16:], uint16(size))
-	le.PutUint16(out[18:], uint16(size))
-	le.PutUint16(out[24:], uint16(count))
-	le.PutUint32(out[20:], 0x230c)
-	out[56] = 1
-	le.PutUint32(out[57:], 0xffffffff)
-	le.PutUint16(out[63:], 1)
+	masters := make([]*image.NRGBA, 0, kept)
 	totalDelay := 0
-	for i, frame := range g.Image {
+	for i, frame := range g.Image[:kept] {
 		disposal := byte(0)
 		if i < len(g.Disposal) {
 			disposal = g.Disposal[i]
@@ -189,8 +180,7 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 			previous = append([]byte{}, canvas.Pix...)
 		}
 		draw.Draw(canvas, frame.Bounds(), frame, frame.Bounds().Min, draw.Over)
-		fitted := fitImageSize(canvas, size)
-		out = append(out, fitted.Pix...)
+		masters = append(masters, fitImageSize(canvas, masterSize))
 		delay := g.Delay[i]
 		if delay <= 0 {
 			delay = 10
@@ -203,8 +193,13 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 			copy(canvas.Pix, previous)
 		}
 	}
-	info, err := inspectVTF(out)
-	return preparedTexture{Raw: out, Info: info, FPS: animationFPS(float64(count) * 100 / float64(totalDelay))}, err
+	result, err = qualityTexture(masters)
+	if err != nil {
+		return result, err
+	}
+	result.FPS = animationFPS(float64(kept) * 100 / float64(totalDelay))
+	result.Animation = &animationImport{Original: count, Kept: kept, Bytes: len(result.Raw), Size: result.Info.Width, Kind: "GIF", Encoding: "DXT1", Width: result.Info.Width, Height: result.Info.Height, MasterSize: masterSize}
+	return result, nil
 }
 
 func gifBackground(g *gif.GIF, frame *image.Paletted) color.Color {

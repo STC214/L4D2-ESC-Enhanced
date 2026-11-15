@@ -16,11 +16,16 @@ var be = binary.BigEndian
 
 type animationImport struct {
 	Original, Kept, Bytes, Size int
+	Kind, Encoding              string `json:",omitempty"`
+	Width, Height, MasterSize   int    `json:",omitempty"`
 }
 
 func (a *animationImport) description() string {
 	if a == nil {
 		return ""
+	}
+	if a.MasterSize > 0 {
+		return fmt.Sprintf("%s：%d×%d 母版；导出 %d×%d %s（1位透明）；保留前 %d/%d 帧，舍弃 %d 帧，%d 字节", a.Kind, a.MasterSize, a.MasterSize, a.Width, a.Height, a.Encoding, a.Kept, a.Original, a.Original-a.Kept, a.Bytes)
 	}
 	return fmt.Sprintf("APNG：保留前 %d/%d 帧，舍弃 %d 帧；输出 %d×%d，%d 字节", a.Kept, a.Original, a.Original-a.Kept, a.Size, a.Size, a.Bytes)
 }
@@ -127,7 +132,7 @@ func parseAPNGReader(input io.Reader) ([]byte, []byte, []apngFrame, error) {
 			}
 			take = 4
 		}
-		keepPayload := kind == "IDAT" && len(frames) == 1 && frames[0].defaultFrame || kind == "fdAT" && len(frames) > 0 && len(frames) <= 31
+		keepPayload := kind == "IDAT" && len(frames) == 1 && frames[0].defaultFrame || kind == "fdAT" && len(frames) > 0 && len(frames) <= qualityAnimationFrames
 		if keepPayload {
 			if n > apngCompressedLimit-retained {
 				return nil, nil, nil, errors.New("APNG 保留帧压缩数据超过 128 MiB 内存预算")
@@ -266,28 +271,13 @@ func convertAPNG(raw []byte) (preparedTexture, error) {
 
 func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedTexture, error) {
 	var result preparedTexture
-	size := 256
-	for size > 64 && 80+size*size*4*len(frames) >= 512<<10 {
-		size /= 2
-	}
-	kept := min(len(frames), ((512<<10)-81)/(size*size*4))
+	kept := min(len(frames), qualityAnimationFrames)
 	w, h := int(be.Uint32(header)), int(be.Uint32(header[4:]))
 	if w*h > (64<<20)/kept {
 		return result, errors.New("APNG 保留帧累计画布超过 64M 像素")
 	}
 	canvas := image.NewNRGBA(image.Rect(0, 0, w, h))
-	out := make([]byte, 80, 80+size*size*4*kept)
-	copy(out, "VTF\x00")
-	le.PutUint32(out[4:], 7)
-	le.PutUint32(out[8:], 2)
-	le.PutUint32(out[12:], 80)
-	le.PutUint16(out[16:], uint16(size))
-	le.PutUint16(out[18:], uint16(size))
-	le.PutUint32(out[20:], 0x230c)
-	le.PutUint16(out[24:], uint16(kept))
-	out[56] = 1
-	le.PutUint32(out[57:], 0xffffffff)
-	le.PutUint16(out[63:], 1)
+	masters := make([]*image.NRGBA, 0, kept)
 	totalDelay := 0.0
 	for _, frame := range frames[:kept] {
 		var encoded bytes.Buffer
@@ -314,7 +304,7 @@ func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedText
 			op = draw.Over
 		}
 		draw.Draw(canvas, frame.area, img, img.Bounds().Min, op)
-		out = append(out, fitImageSize(canvas, size).Pix...)
+		masters = append(masters, fitImageSize(canvas, masterSize))
 		totalDelay += frame.delay
 		switch frame.dispose {
 		case 1:
@@ -323,6 +313,11 @@ func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedText
 			copy(canvas.Pix, previous)
 		}
 	}
-	info, err := inspectVTF(out)
-	return preparedTexture{Raw: out, Info: info, FPS: animationFPS(float64(kept) / totalDelay), Animation: &animationImport{len(frames), kept, len(out), size}}, err
+	result, err := qualityTexture(masters)
+	if err != nil {
+		return result, err
+	}
+	result.FPS = animationFPS(float64(kept) / totalDelay)
+	result.Animation = &animationImport{Original: len(frames), Kept: kept, Bytes: len(result.Raw), Size: result.Info.Width, Kind: "APNG", Encoding: "DXT1", Width: result.Info.Width, Height: result.Info.Height, MasterSize: masterSize}
+	return result, nil
 }
