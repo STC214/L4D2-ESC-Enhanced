@@ -137,9 +137,17 @@ func parseAPNGReader(input io.Reader) ([]byte, []byte, []apngFrame, error) {
 		}
 		hash := crc32.NewIEEE()
 		hash.Write(chunkHeader[4:])
-		data := make([]byte, int(take))
-		if _, err := io.ReadFull(io.TeeReader(input, hash), data); err != nil {
-			return nil, nil, nil, bad
+		// A forged length must not trigger a length-sized allocation before
+		// the bytes actually arrive. Grow retained data from fixed-size reads.
+		data := make([]byte, 0, min(int(take), len(buffer)))
+		for remaining := take; remaining > 0; {
+			amount := min(int(remaining), len(buffer))
+			if _, err := io.ReadFull(input, buffer[:amount]); err != nil {
+				return nil, nil, nil, bad
+			}
+			hash.Write(buffer[:amount])
+			data = append(data, buffer[:amount]...)
+			remaining -= uint64(amount)
 		}
 		copied, err := io.CopyBuffer(hash, io.LimitReader(input, int64(n-take)), buffer)
 		if err != nil || uint64(copied) != n-take {

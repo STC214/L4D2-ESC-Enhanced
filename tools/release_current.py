@@ -2,17 +2,17 @@
 
 import release_all_v140 as release
 
-release.TAG = 'v1.9.1'
-release.OUT = release.ROOT / 'dist/release_v1.9.1'
-release.REPORT = release.ROOT / 'reports/release_v1.9.1'
-release.NOTES = release.ROOT / 'docs/releases/v1.9.1.md'
-release.MANAGER_VERSION = '1.7.1'
-release.GO_TEST_COUNT = 79
+release.TAG = 'v1.9.2'
+release.OUT = release.ROOT / 'dist/release_v1.9.2'
+release.REPORT = release.ROOT / 'reports/release_v1.9.2'
+release.NOTES = release.ROOT / 'docs/releases/v1.9.2.md'
+release.MANAGER_VERSION = '1.7.2'
+release.GO_TEST_COUNT = 81
 release.REQUIRE_STUDIO = True
 release.REQUIRE_PROMOTION = True
-release.MANAGER_ZIP = 'CSP_Spray_Manager_v1.7.1.zip'
-release.SELECTOR_ZIP = 'CSP_Selector_Complete_v1.9.1.zip'
-release.ALL_ZIP = 'L4D2_ESC_All_Products_v1.9.1.zip'
+release.MANAGER_ZIP = 'CSP_Spray_Manager_v1.7.2.zip'
+release.SELECTOR_ZIP = 'CSP_Selector_Complete_v1.9.2.zip'
+release.ALL_ZIP = 'L4D2_ESC_All_Products_v1.9.2.zip'
 
 if __name__ == '__main__':
     release.main()

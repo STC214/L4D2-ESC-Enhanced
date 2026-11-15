@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"time"
+	"unicode/utf8"
 )
 
 // Diagnostic records contain time/error/path text only, never pixels or source
@@ -14,7 +15,16 @@ func recordFailure(home string, cause error) error {
 	if cause == nil {
 		return nil
 	}
-	record := struct{ Time, Version, Error string }{time.Now().Format(time.RFC3339Nano), "1.7.1", cause.Error()}
+	message := cause.Error()
+	const maxMessageBytes = 64 << 10
+	if len(message) > maxMessageBytes {
+		end := maxMessageBytes
+		for end > 0 && !utf8.RuneStart(message[end]) {
+			end--
+		}
+		message = message[:end] + " [诊断文本已截断]"
+	}
+	record := struct{ Time, Version, Error string }{time.Now().Format(time.RFC3339Nano), "1.7.2", message}
 	latest, err := safePath(home, "logs/last-error.json")
 	if err != nil {
 		return err
