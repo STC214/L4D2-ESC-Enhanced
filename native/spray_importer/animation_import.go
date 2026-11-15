@@ -161,6 +161,7 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 		size /= 2
 	}
 	canvas := image.NewNRGBA(image.Rect(0, 0, g.Config.Width, g.Config.Height))
+	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: gifBackground(g, g.Image[0])}, image.Point{}, draw.Src)
 	out := make([]byte, 80, 80+size*size*4*count)
 	copy(out, "VTF\x00")
 	le.PutUint32(out[4:], 7)
@@ -193,21 +194,24 @@ func convertGIF(raw []byte) (preparedTexture, error) {
 		totalDelay += delay
 		switch disposal {
 		case gif.DisposalBackground:
-			background := color.Color(color.Transparent)
-			if p, ok := g.Config.ColorModel.(color.Palette); ok && int(g.BackgroundIndex) < len(p) {
-				background = p[g.BackgroundIndex]
-				if int(g.BackgroundIndex) < len(frame.Palette) {
-					_, _, _, a := frame.Palette[g.BackgroundIndex].RGBA()
-					if a == 0 {
-						background = color.Transparent
-					}
-				}
-			}
-			draw.Draw(canvas, frame.Bounds(), &image.Uniform{C: background}, image.Point{}, draw.Src)
+			draw.Draw(canvas, frame.Bounds(), &image.Uniform{C: gifBackground(g, frame)}, image.Point{}, draw.Src)
 		case gif.DisposalPrevious:
 			copy(canvas.Pix, previous)
 		}
 	}
 	info, err := inspectVTF(out)
 	return preparedTexture{Raw: out, Info: info, FPS: animationFPS(float64(count) * 100 / float64(totalDelay))}, err
+}
+
+func gifBackground(g *gif.GIF, frame *image.Paletted) color.Color {
+	if p, ok := g.Config.ColorModel.(color.Palette); ok && int(g.BackgroundIndex) < len(p) {
+		if int(g.BackgroundIndex) < len(frame.Palette) {
+			_, _, _, alpha := frame.Palette[g.BackgroundIndex].RGBA()
+			if alpha == 0 {
+				return color.Transparent
+			}
+		}
+		return p[g.BackgroundIndex]
+	}
+	return color.Transparent
 }
