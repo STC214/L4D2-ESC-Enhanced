@@ -143,7 +143,7 @@ func TestFailureDiagnosticsAndRotation(t *testing.T) {
 	must(t, err)
 	var row map[string]string
 	must(t, json.Unmarshal(latest, &row))
-	if row["Error"] != cause.Error() || row["Version"] != "1.8.0" || row["Time"] == "" {
+	if row["Error"] != cause.Error() || row["Version"] != "1.9.0" || row["Time"] == "" {
 		t.Fatal(row)
 	}
 	path := filepath.Join(home, "logs/errors.jsonl")

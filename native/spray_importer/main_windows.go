@@ -89,7 +89,7 @@ type openFile struct {
 
 var window, slotList, pathEdit, statusLabel, font uintptr
 var largeIcon, smallIcon uintptr
-var buttons [7]uintptr
+var buttons [8]uintptr
 var labels [6]uintptr
 var app *App
 var preview []byte
@@ -167,9 +167,9 @@ func updateList() {
 	}
 	send(slotList, 0x184, 0, 0)
 	for n := 1; n <= 40; n++ {
-		title := fmt.Sprintf("%02d    编号测试图", n)
-		if row, ok := app.State.Slots[n]; ok {
-			title = fmt.Sprintf("%02d    %s", n, row.Title)
+		title := slotTitle(n) + "    默认"
+		if _, ok := app.State.Slots[n]; ok {
+			title = slotTitle(n) + "    已导入"
 		}
 		send(slotList, 0x180, 0, uintptr(unsafe.Pointer(utf(title))))
 	}
@@ -219,9 +219,9 @@ func selectionChanged() {
 	} else {
 		setStatus(fmt.Sprintf("静态喷漆预览 · %d×%d", clip.Info.Width, clip.Info.Height))
 	}
-	title := "内置编号测试图"
+	title := slotTitle(selected) + "（默认）"
 	if row, ok := app.State.Slots[selected]; ok {
-		title = row.Title
+		title = slotTitle(selected)
 		if row.Animation != nil {
 			setStatus(row.Animation.description() + "；循环预览，构建后部署")
 		}
@@ -324,6 +324,23 @@ func uiBusy(value bool) {
 
 func operation(id int) {
 	if busy {
+		return
+	}
+	if id == 108 {
+		if !confirm("恢复全部 40 个槽位为默认编号喷漆？\n将清空当前导入绑定，保留原始文件、历史母版及清单备份，方便重新导入。\n这一步不直接修改游戏；如需恢复游戏内喷漆，请随后构建并退出游戏后部署。") {
+			return
+		}
+		setStatus("正在备份清单并恢复全部默认槽位……")
+		beginJob(id, func() (string, error) {
+			folder, err := app.ResetDefaults()
+			if err != nil {
+				return "", err
+			}
+			if folder == "" {
+				return "全部槽位已是默认状态；可直接导入新素材，或构建默认包后部署。", nil
+			}
+			return "已恢复全部 40 个默认槽位；可重新导入。需恢复游戏内效果请构建后部署。清单备份：" + filepath.Base(folder), nil
+		})
 		return
 	}
 	if id == 107 {
@@ -493,7 +510,7 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			selectionChanged()
 			return 0
 		}
-		if id >= 101 && id <= 107 && notification == 0 {
+		if id >= 101 && id <= 108 && notification == 0 {
 			operation(id)
 			return 0
 		}
@@ -507,8 +524,8 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			if result.Err != nil {
 				failure(result.Err)
 			} else {
-				if result.ID == 101 || result.ID == 106 || result.ID == 107 {
-					if result.ID == 106 || result.ID == 107 {
+				if result.ID == 101 || result.ID == 106 || result.ID == 107 || result.ID == 108 {
+					if result.ID == 106 || result.ID == 107 || result.ID == 108 {
 						selected = 1
 					}
 					updateList()
@@ -637,7 +654,8 @@ func runSmoke() {
 		good = false
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
-	if !iconsOK {
+	resetPresent := call("GetDlgItem", window, 108) == buttons[7] && buttons[7] != 0
+	if !iconsOK || !resetPresent {
 		good = false
 	}
 	styled := studioPaints > 0 && paintedList && len(paintedActions) == len(buttons) && paintedListFocus
@@ -649,7 +667,7 @@ func runSmoke() {
 		status = "FAIL"
 		smokeError = "native control bounds/count/preview"
 	}
-	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
+	if e := saveJSON(smokeReport, map[string]any{"status": status, "runtime": "native Win32 window/message loop/GDI preview", "slots": 40, "action_buttons": len(buttons), "reset_button_present": resetPresent, "controls_fit": good, "client_width": client.Right, "client_height": client.Bottom, "python_used": false, "async_worker_completed": smokeWorkerDone, "embedded_icons_loaded": iconsOK, "studio_theme_painted": styled, "animation_timer_completed": smokeAnimationTick, "preview_only_paints": previewFramePaints}); e != nil {
 		smokeError = e.Error()
 	}
 }
@@ -695,7 +713,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.8.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.9.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -715,7 +733,7 @@ func runWindow() error {
 	for i, item := range []struct {
 		ID    int
 		Title string
-	}{{107, "导入 VPK（最多2个）…"}, {106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}} {
+	}{{107, "导入 VPK（最多2个）…"}, {106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}, {108, "恢复全部默认槽位…"}} {
 		buttons[i] = widget("BUTTON", item.Title, 0x0001000b, item.ID)
 	}
 	send(labels[0], 0x30, titleFont, 1)

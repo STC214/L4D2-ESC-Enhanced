@@ -88,7 +88,7 @@ if ($Action -ne 'Verify') {
 $BeforeData = Snapshot-Data
 if ($Action -eq 'Install') {
     $Build = Get-Content -LiteralPath (Join-Path $Root 'reports\spray_importer_go\verification.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($Build.version -ne '1.8.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.8.0 build required.' }
+    if ($Build.version -ne '1.9.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.9.0 build required.' }
     foreach ($Step in $Build.records) { if ($Step.exit_status -ne 0) { throw 'Build verification contains a failed step.' } }
     $Source = Join-Path $Root 'dist\spray_importer_go\CSP_Spray_Manager.exe'
     if ((Get-FileHash -LiteralPath $Source).Hash -ne $Build.exe_sha256) { throw 'Source product hash differs from build evidence.' }

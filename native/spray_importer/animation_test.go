@@ -176,7 +176,7 @@ func TestAnimatedGIFImportFolderAndTiming(t *testing.T) {
 	for n, row := range a.State.Slots {
 		clip, err := a.LoadPreview(n)
 		must(t, err)
-		if strings.HasSuffix(row.Title, ".gif") {
+		if strings.HasSuffix(originalTitle(row), ".gif") {
 			if clip.Info.Frames != 3 || clip.Info.Width != 512 || math.Abs(clip.FPS-5) > 0.001 {
 				t.Fatal(clip.Info, clip.FPS)
 			}

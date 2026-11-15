@@ -35,11 +35,15 @@ type Slot struct {
 	FrameRate                                        float64          `json:",omitempty"`
 	Animation                                        *animationImport `json:",omitempty"`
 	Masters                                          []string         `json:",omitempty"`
+	OriginalTitle                                    string           `json:",omitempty"`
 }
 
 func (s Slot) rawVTF() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
 
-type State struct{ Slots map[int]Slot }
+type State struct {
+	Slots    map[int]Slot
+	Defaults bool `json:",omitempty"`
+}
 type Build struct {
 	StateHash string
 	Files     map[string]string
@@ -145,7 +149,7 @@ func newApp(home, game string) (*App, error) {
 func (a *App) checkState() error {
 	var disk State
 	err := loadJSON(filepath.Join(a.Home, "slots.json"), &disk)
-	if os.IsNotExist(err) && len(a.State.Slots) == 0 {
+	if os.IsNotExist(err) && len(a.State.Slots) == 0 && !a.State.Defaults {
 		return nil
 	}
 	if err != nil {
@@ -223,16 +227,28 @@ func (a *App) Import(path string, n int) error {
 		return e
 	}
 	row := Slot{Title: filepath.Base(path), Texture: rel + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: filepath.Clean(source), SortKey: filepath.ToSlash(source), VTF: prepared.Info, FrameRate: prepared.FPS, Animation: prepared.Animation, Masters: masters}
-	previous, exists := a.State.Slots[n]
-	a.State.Slots[n] = row
-	if e = saveJSON(filepath.Join(a.Home, "slots.json"), a.State); e != nil {
-		if exists {
-			a.State.Slots[n] = previous
-		} else {
-			delete(a.State.Slots, n)
-		}
+	next := State{Slots: map[int]Slot{}}
+	for slot, existing := range a.State.Slots {
+		next.Slots[slot] = existing
+	}
+	next.Slots[n] = row
+	next, e = numberSlots(a.Home, rel, next)
+	if e != nil {
 		return e
 	}
+	if e = saveJSON(filepath.Join(folder, "before.json"), a.State); e != nil {
+		return e
+	}
+	if e = saveJSON(filepath.Join(folder, "after.json"), next); e != nil {
+		return e
+	}
+	if e = a.checkState(); e != nil {
+		return e
+	}
+	if e = saveJSON(filepath.Join(a.Home, "slots.json"), next); e != nil {
+		return e
+	}
+	a.State = next
 	return nil
 }
 
@@ -316,7 +332,7 @@ func (a *App) Build() (string, error) {
 	if e := a.checkState(); e != nil {
 		return "", e
 	}
-	if len(a.State.Slots) == 0 {
+	if len(a.State.Slots) == 0 && !a.State.Defaults {
 		return "", errors.New("请先导入图片")
 	}
 	files, e := readVPK(embeddedVPK)

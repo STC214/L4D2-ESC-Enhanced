@@ -236,8 +236,8 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 	}
 	sort.Slice(rows, func(i, j int) bool {
 		x, y := rows[i], rows[j]
-		if x.Row.Title != y.Row.Title {
-			return naturalLess(x.Row.Title, y.Row.Title)
+		if originalTitle(x.Row) != originalTitle(y.Row) {
+			return naturalLess(originalTitle(x.Row), originalTitle(y.Row))
 		}
 		if x.Row.SortKey != y.Row.SortKey {
 			return naturalLess(x.Row.SortKey, y.Row.SortKey)
@@ -247,6 +247,10 @@ func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF .
 	next := State{Slots: map[int]Slot{}}
 	for i, row := range rows {
 		next.Slots[i+1] = row.Row
+	}
+	next, e = numberSlots(a.Home, rel+"/numbered", next)
+	if e != nil {
+		return result, e
 	}
 	if e = a.checkState(); e != nil {
 		return result, e

@@ -121,7 +121,7 @@ func TestVPKImportNaturalOrderAndExternalReference(t *testing.T) {
 		t.Fatal(r)
 	}
 	for i, title := range []string{"1.vtf", "2.vtf", "10.vtf", "own.png"} {
-		if a.State.Slots[i+1].Title != title {
+		if a.State.Slots[i+1].OriginalTitle != title || a.State.Slots[i+1].Title != slotTitle(i+1) {
 			t.Fatal(a.State)
 		}
 	}

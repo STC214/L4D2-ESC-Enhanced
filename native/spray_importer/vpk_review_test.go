@@ -147,7 +147,7 @@ func TestReviewTwoVPKsAtCapacityAndOverflow(t *testing.T) {
 		t.Fatal(r)
 	}
 	for n := 1; n <= 40; n++ {
-		if a.State.Slots[n].Title != fmt.Sprintf("%d.vtf", (n+1)/2) {
+		if a.State.Slots[n].OriginalTitle != fmt.Sprintf("%d.vtf", (n+1)/2) || a.State.Slots[n].Title != slotTitle(n) {
 			t.Fatal("natural numbering wrong", n, a.State.Slots[n])
 		}
 	}

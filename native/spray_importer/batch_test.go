@@ -39,7 +39,7 @@ func TestFolderRecursiveSortAndBackups(t *testing.T) {
 		t.Fatal(result)
 	}
 	for i, want := range []string{"图1.png", "图2.PNG", "图10.png"} {
-		if a.State.Slots[i+1].Title != want {
+		if a.State.Slots[i+1].OriginalTitle != want || a.State.Slots[i+1].Title != slotTitle(i+1) {
 			t.Fatal(a.State)
 		}
 	}
@@ -66,7 +66,7 @@ func TestFolderMergeResortAndRepeatUpdates(t *testing.T) {
 	batchFile(t, source, folder, "2.png")
 	result, e := a.ImportFolder(folder)
 	must(t, e)
-	if result.Total != 3 || a.State.Slots[1].Title != "2.png" || a.State.Slots[3].Title != "20.png" {
+	if result.Total != 3 || a.State.Slots[1].OriginalTitle != "2.png" || a.State.Slots[3].OriginalTitle != "20.png" {
 		t.Fatal(result, a.State)
 	}
 	result, e = a.ImportFolder(folder)
@@ -164,11 +164,13 @@ func TestRepeatedSourceUsesLowestOriginalSlot(t *testing.T) {
 		first, second := row, row
 		first.Title = "first.png"
 		second.Title = "second.png"
+		first.OriginalTitle = "first.png"
+		second.OriginalTitle = "second.png"
 		a.State.Slots = map[int]Slot{1: first, 2: second}
 		must(t, saveJSON(filepath.Join(a.Home, "slots.json"), a.State))
 		_, e := a.ImportFolder(folder)
 		must(t, e)
-		if a.State.Slots[1].Title != "new.png" || a.State.Slots[2].Title != "second.png" {
+		if a.State.Slots[1].OriginalTitle != "new.png" || a.State.Slots[2].OriginalTitle != "second.png" {
 			t.Fatal("updated a random duplicate", a.State)
 		}
 	}
