@@ -9,6 +9,7 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
+	"io"
 )
 
 var be = binary.BigEndian
@@ -30,7 +31,11 @@ type apngFrame struct {
 	dispose, blend byte
 	data           [][]byte
 	defaultFrame   bool
+	hasData        bool
 }
+
+const apngInputLimit = 1 << 30
+const apngCompressedLimit = 128 << 20
 
 func pngChunk(out *bytes.Buffer, kind string, data []byte) {
 	var n [4]byte
@@ -48,8 +53,13 @@ func pngChunk(out *bytes.Buffer, kind string, data []byte) {
 // Parse all chunk bounds, CRCs, frame counts and sequence numbers before any
 // pixel allocation. Only the retained continuous prefix is decompressed.
 func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
+	return parseAPNGReader(bytes.NewReader(raw))
+}
+
+func parseAPNGReader(input io.Reader) ([]byte, []byte, []apngFrame, error) {
 	bad := errors.New("APNG 结构、CRC、帧序号或尺寸异常")
-	if !bytes.HasPrefix(raw, []byte("\x89PNG\r\n\x1a\n")) {
+	var signature [8]byte
+	if _, err := io.ReadFull(input, signature[:]); err != nil || string(signature[:]) != "\x89PNG\r\n\x1a\n" {
 		return nil, nil, nil, bad
 	}
 	var header []byte
@@ -57,18 +67,86 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 	var frames []apngFrame
 	declared, sequence := uint32(0), uint32(0)
 	sawIDAT, endedIDAT, ended := false, false, false
+	seenPalette, seenTransparency := false, false
 	w, h := 0, 0
-	for at := 8; at < len(raw); {
-		if len(raw)-at < 12 {
+	total, retained := uint64(8), uint64(0)
+	buffer := make([]byte, 32<<10)
+	for chunks := 0; !ended; chunks++ {
+		if chunks >= 100000 {
+			return nil, nil, nil, errors.New("APNG 块数量超过 100000")
+		}
+		var chunkHeader [8]byte
+		if _, err := io.ReadFull(input, chunkHeader[:]); err != nil {
 			return nil, nil, nil, bad
 		}
-		n := uint64(be.Uint32(raw[at:]))
-		if n+12 > uint64(len(raw)-at) {
+		n := uint64(be.Uint32(chunkHeader[:]))
+		if n > 0x7fffffff || n+12 > apngInputLimit-total {
+			return nil, nil, nil, errors.New("APNG 输入超过 1 GiB 流式处理上限或块长度异常")
+		}
+		total += n + 12
+		kind := string(chunkHeader[4:])
+		// Validate chunk names before discarding ancillary payloads.
+		for _, c := range chunkHeader[4:] {
+			if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z') {
+				return nil, nil, nil, bad
+			}
+		}
+		if chunkHeader[6]&32 != 0 {
 			return nil, nil, nil, bad
 		}
-		end := at + 8 + int(n)
-		kind, data := string(raw[at+4:at+8]), raw[at+8:end]
-		if crc32.ChecksumIEEE(raw[at+4:end]) != be.Uint32(raw[end:]) {
+		take := uint64(0)
+		switch kind {
+		case "IHDR":
+			if n != 13 {
+				return nil, nil, nil, bad
+			}
+			take = n
+		case "acTL":
+			if n != 8 {
+				return nil, nil, nil, bad
+			}
+			take = n
+		case "fcTL":
+			if n != 26 {
+				return nil, nil, nil, bad
+			}
+			take = n
+		case "PLTE":
+			if n > 768 {
+				return nil, nil, nil, bad
+			}
+			take = n
+		case "tRNS":
+			if n > 256 {
+				return nil, nil, nil, bad
+			}
+			take = n
+		case "fdAT":
+			if n < 4 {
+				return nil, nil, nil, bad
+			}
+			take = 4
+		}
+		keepPayload := kind == "IDAT" && len(frames) == 1 && frames[0].defaultFrame || kind == "fdAT" && len(frames) > 0 && len(frames) <= 31
+		if keepPayload {
+			if n > apngCompressedLimit-retained {
+				return nil, nil, nil, errors.New("APNG 保留帧压缩数据超过 128 MiB 内存预算")
+			}
+			retained += n
+			take = n
+		}
+		hash := crc32.NewIEEE()
+		hash.Write(chunkHeader[4:])
+		data := make([]byte, int(take))
+		if _, err := io.ReadFull(io.TeeReader(input, hash), data); err != nil {
+			return nil, nil, nil, bad
+		}
+		copied, err := io.CopyBuffer(hash, io.LimitReader(input, int64(n-take)), buffer)
+		if err != nil || uint64(copied) != n-take {
+			return nil, nil, nil, bad
+		}
+		var checksum [4]byte
+		if _, err := io.ReadFull(input, checksum[:]); err != nil || hash.Sum32() != be.Uint32(checksum[:]) {
 			return nil, nil, nil, bad
 		}
 		if header == nil && kind != "IHDR" {
@@ -88,8 +166,13 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 				return nil, nil, nil, bad
 			}
 		case "PLTE", "tRNS":
-			if sawIDAT {
+			if sawIDAT || kind == "PLTE" && seenPalette || kind == "tRNS" && seenTransparency {
 				return nil, nil, nil, bad
+			}
+			if kind == "PLTE" {
+				seenPalette = true
+			} else {
+				seenTransparency = true
 			}
 			pngChunk(&palette, kind, data)
 		case "acTL":
@@ -101,7 +184,7 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 				return nil, nil, nil, bad
 			}
 		case "fcTL":
-			if len(data) != 26 || be.Uint32(data) != sequence || (len(frames) > 0 && len(frames[len(frames)-1].data) == 0) {
+			if len(data) != 26 || be.Uint32(data) != sequence || (len(frames) > 0 && !frames[len(frames)-1].hasData) {
 				return nil, nil, nil, bad
 			}
 			sequence++
@@ -130,6 +213,7 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 				if len(frames) != 1 || !frames[0].defaultFrame {
 					return nil, nil, nil, bad
 				}
+				frames[0].hasData = true
 				frames[0].data = append(frames[0].data, data)
 			}
 		case "fdAT":
@@ -137,9 +221,12 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 				return nil, nil, nil, bad
 			}
 			sequence++
-			frames[len(frames)-1].data = append(frames[len(frames)-1].data, data[4:])
+			frames[len(frames)-1].hasData = true
+			if keepPayload {
+				frames[len(frames)-1].data = append(frames[len(frames)-1].data, data[4:])
+			}
 		case "IEND":
-			if len(data) != 0 || end+4 != len(raw) {
+			if n != 0 {
 				return nil, nil, nil, bad
 			}
 			ended = true
@@ -149,9 +236,12 @@ func parseAPNG(raw []byte) ([]byte, []byte, []apngFrame, error) {
 				return nil, nil, nil, bad
 			}
 		}
-		at = end + 4
 	}
-	if !ended || !sawIDAT || int(declared) != len(frames) || len(frames) == 0 || len(frames[len(frames)-1].data) == 0 {
+	var trailing [1]byte
+	if _, err := io.ReadFull(input, trailing[:]); err != io.EOF {
+		return nil, nil, nil, bad
+	}
+	if !ended || !sawIDAT || int(declared) != len(frames) || len(frames) == 0 || !frames[len(frames)-1].hasData {
 		return nil, nil, nil, bad
 	}
 	return header, palette.Bytes(), frames, nil
@@ -163,6 +253,11 @@ func convertAPNG(raw []byte) (preparedTexture, error) {
 	if err != nil {
 		return result, err
 	}
+	return convertAPNGFrames(header, palette, frames)
+}
+
+func convertAPNGFrames(header, palette []byte, frames []apngFrame) (preparedTexture, error) {
+	var result preparedTexture
 	size := 256
 	for size > 64 && 80+size*size*4*len(frames) >= 512<<10 {
 		size /= 2

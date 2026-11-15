@@ -177,7 +177,7 @@ try {
     . (Join-Path $PSScriptRoot 'promote.ps1')
     $Promotion = Set-VerifiedProduct $Root $Exe $FinalExe $Backup $Expected
     $Exe = $FinalExe
-    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.7.0';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
+    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.7.1';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
     Write-ReportJson -Path (Join-Path $Report 'verification.json') -Value $Result
     Write-Output "PASS: $Exe"
 } finally {

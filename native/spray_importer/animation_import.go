@@ -47,7 +47,10 @@ func readTextureInput(path string) ([]byte, error) {
 func prepareTexture(path string, preserve bool) (preparedTexture, error) {
 	var result preparedTexture
 	ext := strings.ToLower(filepath.Ext(path))
-	if preserve || ext == ".vtf" || ext == ".gif" || ext == ".png" || ext == ".apng" {
+	if !preserve && (ext == ".png" || ext == ".apng") {
+		return preparePNGFile(path)
+	}
+	if preserve || ext == ".vtf" || ext == ".gif" {
 		raw, err := readTextureInput(path)
 		if err != nil {
 			return result, err
@@ -56,29 +59,7 @@ func prepareTexture(path string, preserve bool) (preparedTexture, error) {
 			info, err := inspectVTF(raw)
 			return preparedTexture{Raw: raw, Info: info, FPS: 10}, err
 		}
-		if ext == ".gif" {
-			return convertGIF(raw)
-		}
-		animated := false
-		for at := 8; at+12 <= len(raw); {
-			n := uint64(be.Uint32(raw[at:]))
-			if n+12 > uint64(len(raw)-at) {
-				break
-			}
-			if string(raw[at+4:at+8]) == "acTL" {
-				animated = true
-				break
-			}
-			at += int(n) + 12
-		}
-		if ext == ".apng" || animated {
-			return convertAPNG(raw)
-		}
-		img, err := loadImageData(raw)
-		if err != nil {
-			return result, err
-		}
-		return preparedTexture{Raw: encodeVTF(img), Preview: img}, nil
+		return convertGIF(raw)
 	}
 	img, err := loadImage(path)
 	if err != nil {

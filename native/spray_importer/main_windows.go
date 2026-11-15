@@ -147,8 +147,14 @@ func failure(err error) {
 	if err == nil {
 		return
 	}
-	setStatus("操作未完成：" + err.Error())
-	call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(err.Error()))), uintptr(unsafe.Pointer(utf("CSP 喷漆管理器"))), 0x10)
+	message := err.Error()
+	if app != nil {
+		if logErr := recordFailure(app.Home, err); logErr != nil {
+			message += "\n诊断记录写入异常：" + logErr.Error()
+		}
+	}
+	setStatus("操作未完成：" + message)
+	call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(message))), uintptr(unsafe.Pointer(utf("CSP 喷漆管理器"))), 0x10)
 }
 func confirm(s string) bool {
 	return call("MessageBoxW", window, uintptr(unsafe.Pointer(utf(s))), uintptr(unsafe.Pointer(utf("确认操作"))), 0x24) == 6
@@ -686,7 +692,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.7.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.7.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
