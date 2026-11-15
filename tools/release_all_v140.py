@@ -1,8 +1,10 @@
 """Package/publish current deliverables only; never read user image directories."""
 
 import argparse
+from collections import Counter
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -29,6 +31,16 @@ REQUIRE_STUDIO = False
 REQUIRE_PROMOTION = False
 
 
+def verify_go_test_output(output, expected):
+    # Subtests and fuzz seed results also contain '--- PASS:'. Count each
+    # top-level Test function twice, not every nested/fuzz line as a test.
+    names = re.findall(r'^--- PASS: (Test[^ /\s]+) \(', output, re.MULTILINE)
+    counts = Counter(names)
+    assert len(counts) == expected and set(counts.values()) == {2}, 'Expected two complete Go test rounds'
+    assert '--- SKIP:' not in output and '--- FAIL:' not in output
+    assert re.search(r'^PASS\r?$', output, re.MULTILINE), 'Missing overall test PASS'
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -37,6 +49,7 @@ def sources():
     files = [ROOT / 'README.md', ROOT / '启动喷漆导入工具.cmd']
     files += [path for path in (ROOT / 'docs').rglob('*') if path.is_file() and path.suffix in ('.md', '.json', '.png')]
     files += list((ROOT / 'tools').glob('*.py'))
+    files += list((ROOT / 'tools').glob('*.ps1'))
     files += [ROOT / 'maintenance/inspect_spray_menu.py', ROOT / 'maintenance/spray_mod_path_probe.py']
     for folder in ('native/spray_importer', 'experimental/spray_selector'):
         files += [path for path in (ROOT / folder).rglob('*') if path.is_file()
@@ -52,7 +65,7 @@ def verify_components():
     assert go['version'] == MANAGER_VERSION and sha(EXE).upper() == go['exe_sha256']
     assert all(row['exit_status'] == 0 for row in go['records'])
     output = next(row['output'] for row in go['records'] if 'test' in row['command'])
-    assert output.count('--- PASS:') == GO_TEST_COUNT * 2 and '--- SKIP:' not in output
+    verify_go_test_output(output, GO_TEST_COUNT)
     if REQUIRE_STUDIO:
         from verify_exe_icon import verify
         verify(EXE, ROOT / 'native/spray_importer/assets/app.ico')

@@ -88,7 +88,7 @@ type openFile struct {
 
 var window, slotList, pathEdit, statusLabel, font uintptr
 var largeIcon, smallIcon uintptr
-var buttons [6]uintptr
+var buttons [7]uintptr
 var labels [6]uintptr
 var app *App
 var preview []byte
@@ -183,6 +183,19 @@ func selectionChanged() {
 		return
 	}
 	selected = int(result) + 1
+	if row, ok := app.State.Slots[selected]; ok && row.metadataOnly() {
+		preview = nil
+		info, err := app.VTFMetadata(selected)
+		if err != nil {
+			text(labels[2], fmt.Sprintf("槽位 %02d · 结构校验失败", selected))
+			setStatus(err.Error())
+		} else {
+			text(labels[2], fmt.Sprintf("槽位 %02d · %s", selected, row.Title))
+			setStatus(fmt.Sprintf("VTF %d.%d · %d×%d · %d 帧 · %d mip · 仅参数，无画面预览", info.Major, info.Minor, info.Width, info.Height, info.Frames, info.Mips))
+		}
+		call("InvalidateRect", window, 0, 1)
+		return
+	}
 	img, e := app.Preview(selected)
 	if e != nil {
 		preview = nil
@@ -213,6 +226,55 @@ func chooseFile() (string, error) {
 		return "", nil
 	}
 	return syscall.UTF16ToString(buf), nil
+}
+
+func selectedVPKPaths(buf []uint16) ([]string, error) {
+	var parts []string
+	terminated := false
+	for start, i := 0, 0; i < len(buf); i++ {
+		if buf[i] != 0 {
+			continue
+		}
+		if i == start {
+			terminated = true
+			break
+		}
+		parts = append(parts, syscall.UTF16ToString(buf[start:i]))
+		start = i + 1
+	}
+	if !terminated {
+		return nil, fmt.Errorf("文件选择结果已截断，请重新选择")
+	}
+	if len(parts) <= 1 {
+		return parts, nil
+	}
+	if len(parts) > 3 {
+		return nil, fmt.Errorf("一次最多选择两个喷漆 VPK")
+	}
+	paths := make([]string, 0, len(parts)-1)
+	for _, name := range parts[1:] {
+		if filepath.Base(name) != name || strings.ContainsAny(name, `\/:`) {
+			return nil, fmt.Errorf("文件选择结果路径异常")
+		}
+		paths = append(paths, filepath.Join(parts[0], name))
+	}
+	return paths, nil
+}
+
+func chooseVPKs() ([]string, error) {
+	buf := make([]uint16, 32768)
+	filter := utf16.Encode([]rune("喷漆 MOD (*.vpk)\x00*.vpk\x00\x00"))
+	of := openFile{Owner: window, Filter: &filter[0], FilterIndex: 1, File: &buf[0], MaxFile: uint32(len(buf)), Title: utf("选择 1～2 个喷漆 VPK（Ctrl 多选）"), Flags: 0x80000 | 0x200 | 0x1000 | 0x800 | 8}
+	of.Size = uint32(unsafe.Sizeof(of))
+	ok, _, _ := common.NewProc("GetOpenFileNameW").Call(uintptr(unsafe.Pointer(&of)))
+	if ok == 0 {
+		code, _, _ := common.NewProc("CommDlgExtendedError").Call()
+		if code != 0 {
+			return nil, fmt.Errorf("VPK 选择窗口错误：0x%x", code)
+		}
+		return nil, nil
+	}
+	return selectedVPKPaths(buf)
 }
 
 func chooseDirectory() (string, error) {
@@ -264,6 +326,22 @@ func uiBusy(value bool) {
 
 func operation(id int) {
 	if busy {
+		return
+	}
+	if id == 107 {
+		paths, e := chooseVPKs()
+		if e != nil {
+			failure(e)
+			return
+		}
+		if len(paths) == 0 || !confirm("将自动拆解所选 VPK 的静态喷漆，与已有图片合并并重新编号 01～40。\n原始 VPK 保持不变；坏包、坏图或超出 40 槽时整批停止。\n\n导入后请重新构建，再退出游戏后部署。继续？") {
+			return
+		}
+		setStatus("正在拆解喷漆 VPK、转换并重新编号……")
+		beginJob(id, func() (string, error) {
+			r, err := app.ImportVPKs(paths)
+			return fmt.Sprintf("VPK 导入完成：新增 %d，更新 %d，共 %d 张，已重新编号。请重新构建。", r.Imported, r.Updated, r.Total), err
+		})
 		return
 	}
 	if id == 103 || id == 104 {
@@ -401,7 +479,7 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			selectionChanged()
 			return 0
 		}
-		if id >= 101 && id <= 106 && notification == 0 {
+		if id >= 101 && id <= 107 && notification == 0 {
 			operation(id)
 			return 0
 		}
@@ -415,8 +493,8 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			if result.Err != nil {
 				failure(result.Err)
 			} else {
-				if result.ID == 101 || result.ID == 106 {
-					if result.ID == 106 {
+				if result.ID == 101 || result.ID == 106 || result.ID == 107 {
+					if result.ID == 106 || result.ID == 107 {
 						selected = 1
 					}
 					updateList()
@@ -488,7 +566,7 @@ func runSmoke() {
 	if !iconsOK {
 		good = false
 	}
-	styled := studioPaints > 0 && paintedList && len(paintedActions) == 6 && paintedListFocus
+	styled := studioPaints > 0 && paintedList && len(paintedActions) == len(buttons) && paintedListFocus
 	if !styled {
 		good = false
 	}
@@ -543,7 +621,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.2.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.4.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -563,7 +641,7 @@ func runWindow() error {
 	for i, item := range []struct {
 		ID    int
 		Title string
-	}{{106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}} {
+	}{{107, "导入 VPK（最多2个）…"}, {106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}} {
 		buttons[i] = widget("BUTTON", item.Title, 0x0001000b, item.ID)
 	}
 	send(labels[0], 0x30, titleFont, 1)

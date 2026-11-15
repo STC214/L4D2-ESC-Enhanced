@@ -62,8 +62,8 @@ func renderStudioPreview(path string) error {
 		nr.Right = r.Right
 		drawText(dc, "编号测试图", nr, studioText, smallFont, false)
 	}
-	for i, title := range []string{"整目录导入并排序…", "单张导入到当前槽位…", "构建部署包", "部署到游戏", "回退最近部署", "打开数据目录"} {
-		studioAction(dc, logicalRect(p.Buttons[i]), []uint32{106, 101, 102, 103, 104, 105}[i], 0, title)
+	for i, title := range []string{"导入 VPK（最多2个）…", "整目录导入并排序…", "单张导入到当前槽位…", "构建部署包", "部署到游戏", "回退最近部署", "打开数据目录"} {
+		studioAction(dc, logicalRect(p.Buttons[i]), []uint32{107, 106, 101, 102, 103, 104, 105}[i], 0, title)
 	}
 	files, e := readVPK(embeddedVPK)
 	if e != nil {

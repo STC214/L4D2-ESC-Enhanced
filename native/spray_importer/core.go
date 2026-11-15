@@ -29,7 +29,13 @@ const vpkName = "CSP_Numbered_Selector_TEST.vpk"
 const prefix = "materials/vgui/logos/csp_test/"
 const defaultGame = `E:\SteamLibrary\steamapps\common\Left 4 Dead 2`
 
-type Slot struct{ Title, Texture, Preview, SHA256, Source, SortKey string }
+type Slot struct {
+	Title, Texture, Preview, SHA256, Source, SortKey string
+	VTF                                              *VTFInfo `json:",omitempty"`
+}
+
+func (s Slot) metadataOnly() bool { return s.VTF != nil || strings.Contains(s.Source, "::") }
+
 type State struct{ Slots map[int]Slot }
 type Build struct {
 	StateHash string
@@ -224,6 +230,12 @@ func (a *App) Preview(n int) (image.Image, error) {
 		return nil, e
 	}
 	if s, ok := a.State.Slots[n]; ok {
+		if s.metadataOnly() {
+			if _, e := a.VTFMetadata(n); e != nil {
+				return nil, e
+			}
+			return nil, errMetadataPreview
+		}
 		p, e := safePath(a.Home, s.Texture)
 		if e != nil {
 			return nil, e
@@ -242,6 +254,35 @@ func (a *App) Preview(n int) (image.Image, error) {
 		return nil, e
 	}
 	return decodeVTF(files[slotPath(n, "vtf")])
+}
+
+func (a *App) VTFMetadata(n int) (*VTFInfo, error) {
+	if e := validSlot(n); e != nil {
+		return nil, e
+	}
+	s, ok := a.State.Slots[n]
+	if !ok || !s.metadataOnly() {
+		return nil, nil
+	}
+	p, e := safePath(a.Home, s.Texture)
+	if e != nil {
+		return nil, e
+	}
+	raw, e := os.ReadFile(p)
+	if e != nil {
+		return nil, e
+	}
+	if digest(raw) != s.SHA256 {
+		return nil, errors.New("导入素材哈希不符")
+	}
+	info, e := inspectVTF(raw)
+	if e != nil {
+		return nil, e
+	}
+	if s.VTF != nil && !reflect.DeepEqual(info, s.VTF) {
+		return nil, errors.New("VTF 参数与导入记录不一致")
+	}
+	return info, nil
 }
 
 func (a *App) Build() (string, error) {
@@ -287,7 +328,15 @@ func (a *App) Build() (string, error) {
 		if digest(b) != s.SHA256 {
 			return "", errors.New("导入图片已被外部修改")
 		}
-		if _, e = decodeVTF(b); e != nil {
+		if s.metadataOnly() {
+			info, err := inspectVTF(b)
+			if err != nil {
+				return "", err
+			}
+			if s.VTF != nil && !reflect.DeepEqual(info, s.VTF) {
+				return "", errors.New("VTF 参数与导入记录不一致")
+			}
+		} else if _, e = decodeVTF(b); e != nil {
 			return "", e
 		}
 		name := slotPath(n, "vtf")
@@ -554,8 +603,20 @@ func readVPK(raw []byte) (map[string][]byte, error) {
 	if end > len(raw) || end < header {
 		return nil, errors.New("VPK 目录越界")
 	}
+	dataEnd := len(raw)
+	if version == 2 {
+		sectionEnd := uint64(end)
+		for pos := 12; pos < 28; pos += 4 {
+			sectionEnd += uint64(le.Uint32(raw[pos:]))
+		}
+		if sectionEnd != uint64(len(raw)) {
+			return nil, errors.New("VPK v2 分区大小与文件长度不符")
+		}
+		dataEnd = end + int(le.Uint32(raw[12:]))
+	}
 	at := header
 	files := map[string][]byte{}
+	totalBytes := 0
 	str := func() (string, error) {
 		if at >= end {
 			return "", errors.New("VPK 字符串越界")
@@ -597,12 +658,18 @@ func readVPK(raw []byte) (map[string][]byte, error) {
 				}
 				crc, pre, archive, offset, size, term := le.Uint32(raw[at:]), int(le.Uint16(raw[at+4:])), le.Uint16(raw[at+6:]), int(le.Uint32(raw[at+8:])), int(le.Uint32(raw[at+12:])), le.Uint16(raw[at+16:])
 				at += 18
-				if term != 0xffff || at+pre > end || offset > len(raw)-end || size > len(raw)-end-offset || (size > 0 && archive != 0x7fff) {
+				if term != 0xffff || at+pre > end || (size > 0 && (archive != 0x7fff || offset > dataEnd-end || size > dataEnd-end-offset)) {
 					return nil, errors.New("VPK 条目无效或外部分卷")
 				}
+				if len(files) >= 10000 || pre+size > maxImportVPK-totalBytes {
+					return nil, errors.New("VPK 解包总量或文件数超限")
+				}
+				totalBytes += pre + size
 				data := append([]byte{}, raw[at:at+pre]...)
 				at += pre
-				data = append(data, raw[end+offset:end+offset+size]...)
+				if size > 0 {
+					data = append(data, raw[end+offset:end+offset+size]...)
+				}
 				if crc32.ChecksumIEEE(data) != crc {
 					return nil, errors.New("VPK CRC 校验失败")
 				}

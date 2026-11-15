@@ -52,6 +52,10 @@ type BatchResult struct {
 	Folder                            string
 }
 
+type batchInput struct {
+	Path, Source, Title, SortKey string
+}
+
 func scanFolder(root string) ([]string, int, error) {
 	root, e := filepath.Abs(root)
 	if e != nil {
@@ -144,6 +148,16 @@ func (a *App) ImportFolder(root string) (BatchResult, error) {
 			return result, errors.New("请选原始图片目录，不要导入工具自己的数据目录")
 		}
 	}
+	inputs := make([]batchInput, 0, len(files))
+	for _, path := range files {
+		key, _ := filepath.Rel(root, path)
+		inputs = append(inputs, batchInput{path, path, filepath.Base(path), filepath.ToSlash(key)})
+	}
+	return a.importBatch(inputs, result)
+}
+
+// All image and VPK imports share one capacity check and one catalog commit.
+func (a *App) importBatch(inputs []batchInput, result BatchResult, preserveVTF ...bool) (BatchResult, error) {
 	merged := map[string]Slot{}
 	// Select the lowest original slot as the update target when the user has
 	// intentionally imported the same source into multiple manual slots.
@@ -163,8 +177,8 @@ func (a *App) ImportFolder(root string) (BatchResult, error) {
 		}
 		merged[key] = row
 	}
-	for _, path := range files {
-		key := strings.ToLower(filepath.Clean(path))
+	for _, input := range inputs {
+		key := strings.ToLower(filepath.Clean(input.Source))
 		if _, ok := merged[key]; !ok {
 			merged[key] = Slot{}
 			result.Imported++
@@ -181,24 +195,38 @@ func (a *App) ImportFolder(root string) (BatchResult, error) {
 		return result, e
 	}
 	result.Folder = folder
-	for i, path := range files {
-		if _, e = safePath(root, strings.TrimPrefix(path, root+string(os.PathSeparator))); e != nil {
+	for i, input := range inputs {
+		path := input.Path
+		if _, e = safePath(filepath.Dir(path), filepath.Base(path)); e != nil {
 			return result, e
-		}
-		img, e := loadImage(path)
-		if e != nil {
-			return result, imageError(path, e)
 		}
 		item := fmt.Sprintf("%s/items/%03d", rel, i+1)
-		if e = savePNG(filepath.Join(a.Home, filepath.FromSlash(item), "preview.png"), img); e != nil {
-			return result, e
+		var raw []byte
+		var info *VTFInfo
+		previewPath := ""
+		if len(preserveVTF) > 0 && preserveVTF[0] {
+			raw, e = os.ReadFile(path)
+			if e == nil {
+				info, e = inspectVTF(raw)
+			}
+			if e != nil {
+				return result, imageError(input.Source, e)
+			}
+		} else {
+			img, err := loadImage(path)
+			if err != nil {
+				return result, imageError(path, err)
+			}
+			previewPath = item + "/preview.png"
+			if e = savePNG(filepath.Join(a.Home, filepath.FromSlash(previewPath)), img); e != nil {
+				return result, e
+			}
+			raw = encodeVTF(img)
 		}
-		raw := encodeVTF(img)
 		if e = atomicWrite(filepath.Join(a.Home, filepath.FromSlash(item), "texture.vtf"), raw); e != nil {
 			return result, e
 		}
-		key, _ := filepath.Rel(root, path)
-		merged[strings.ToLower(filepath.Clean(path))] = Slot{Title: filepath.Base(path), Texture: item + "/texture.vtf", Preview: item + "/preview.png", SHA256: digest(raw), Source: path, SortKey: filepath.ToSlash(key)}
+		merged[strings.ToLower(filepath.Clean(input.Source))] = Slot{Title: input.Title, Texture: item + "/texture.vtf", Preview: previewPath, SHA256: digest(raw), Source: input.Source, SortKey: input.SortKey, VTF: info}
 	}
 	type entry struct {
 		Key string

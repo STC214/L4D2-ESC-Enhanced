@@ -11,6 +11,19 @@ import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_go_top_level_counts_ignore_subtests_and_fuzz(self):
+        run = ('--- PASS: TestOne (0.00s)\n'
+               '    --- PASS: TestOne/child (0.00s)\n'
+               '--- PASS: TestTwo (0.00s)\n'
+               '--- PASS: FuzzParser (0.00s)\n'
+               '    --- PASS: FuzzParser/seed#0 (0.00s)\n')
+        release.verify_go_test_output(run * 2 + 'PASS\n', 2)
+        for bad in (run + 'PASS\n', run * 3 + 'PASS\n',
+                    run * 2 + '--- SKIP: TestMissing (0.00s)\nPASS\n',
+                    run * 2 + '--- FAIL: TestBad (0.00s)\n', run * 2):
+            with self.assertRaises(AssertionError):
+                release.verify_go_test_output(bad, 2)
+
     def test_archive_manifest_crc_and_determinism(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
             a, b = Path(folder) / 'a.zip', Path(folder) / 'b.zip'
