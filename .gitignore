@@ -3,6 +3,14 @@
 /extracted/
 /reports/
 
+# Local user spray sources; do not publish personal input assets.
+/142884156_p01.png
+/喷漆/
+
+# Runtime catalogs, converted user materials, and executable rollback copies.
+CSP_Spray_Data/
+.release-backups/
+
 # Downloaded archives/backups and cached Workshop pages; retain JSON metadata.
 /originals/*.vpk
 /originals/*.dll
