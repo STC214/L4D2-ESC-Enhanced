@@ -87,6 +87,11 @@ func loadImage(path string) (*image.NRGBA, error) {
 		if config.Width < 1 || config.Height < 1 || config.Width > 8192 || config.Height > 8192 || config.Width*config.Height > 32<<20 {
 			return nil, errors.New("图片尺寸超限（边长 8192，像素 32M）")
 		}
+		if format == "png" {
+			if e := validateStaticPNG(raw); e != nil {
+				return nil, e
+			}
+		}
 		if format == "gif" {
 			if e := validateStaticGIF(raw); e != nil {
 				return nil, e
@@ -107,6 +112,28 @@ func loadImage(path string) (*image.NRGBA, error) {
 		return nil, err
 	}
 	return fitImage(src), nil
+}
+
+// The standard PNG decoder ignores APNG animation chunks. Reject rather than
+// silently importing only the default frame, including APNG named *.png.
+func validateStaticPNG(raw []byte) error {
+	for at := 8; at < len(raw); {
+		if len(raw)-at < 12 {
+			return errors.New("PNG 块数据截断")
+		}
+		size := uint64(binary.BigEndian.Uint32(raw[at:]))
+		if size+12 > uint64(len(raw)-at) {
+			return errors.New("PNG 块长度异常")
+		}
+		if string(raw[at+4:at+8]) == "acTL" {
+			return errors.New("检测到 APNG 动画；请先转换为动画 GIF 或 VTF 后导入，避免丢失动画帧")
+		}
+		if string(raw[at+4:at+8]) == "IEND" {
+			return nil
+		}
+		at += int(size) + 12
+	}
+	return errors.New("PNG 缺少结束块")
 }
 
 // Count image descriptors before decompressing: animated GIFs must not allocate
@@ -425,15 +452,9 @@ func savePNG(path string, img image.Image) error {
 
 func previewBG(img image.Image) *image.RGBA {
 	out := image.NewRGBA(image.Rect(0, 0, 256, 256))
-	for y := 0; y < 256; y++ {
-		for x := 0; x < 256; x++ {
-			v := uint8(210)
-			if (x/16+y/16)%2 != 0 {
-				v = 240
-			}
-			out.SetRGBA(x, y, color.RGBA{v, v, v, 255})
-		}
-	}
+	// GDI's DIB blit is opaque: composite transparent padding against the
+	// preview surface color used by studioScene, not a checkerboard.
+	draw.Draw(out, out.Bounds(), &image.Uniform{C: color.RGBA{9, 17, 31, 255}}, image.Point{}, draw.Src)
 	draw.Draw(out, out.Bounds(), img, img.Bounds().Min, draw.Over)
 	return out
 }

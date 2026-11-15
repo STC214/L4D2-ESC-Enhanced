@@ -13,7 +13,7 @@ $env:GOARCH = 'amd64'
 New-Item -ItemType Directory -Force -Path $Report,$Out,$env:GOTMPDIR,$env:GOCACHE | Out-Null
 $Asset = Join-Path $PSScriptRoot 'assets\selector.vpk'
 $Base = Join-Path $Root 'dist\spray_selector_prototype\CSP_Numbered_Selector_TEST.vpk'
-$Pin = 'DB23C3A7BA9AAAFF8A062C771B6C4755CBDC2D34B0BCCA21A499FA8F51904F67'
+$Pin = '27CD1DBFDBA0E9FBDB02C0340A3FC6FE89298315A1A6EDC0020248868F37EC70'
 New-Item -ItemType Directory -Force -Path (Split-Path $Asset) | Out-Null
 if (Test-Path -LiteralPath $Base) {
     if ((Get-FileHash -LiteralPath $Base).Hash -ne $Pin) { throw 'Re-establish the selector baseline before rebuilding.' }
@@ -177,7 +177,7 @@ try {
     . (Join-Path $PSScriptRoot 'promote.ps1')
     $Promotion = Set-VerifiedProduct $Root $Exe $FinalExe $Backup $Expected
     $Exe = $FinalExe
-    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.5.1';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
+    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.6.0';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
     Write-ReportJson -Path (Join-Path $Report 'verification.json') -Value $Result
     Write-Output "PASS: $Exe"
 } finally {

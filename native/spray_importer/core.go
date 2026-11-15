@@ -349,23 +349,22 @@ func (a *App) Build() (string, error) {
 		if digest(b) != s.SHA256 {
 			return "", errors.New("导入图片已被外部修改")
 		}
-		frames := 1
+		info, err := inspectVTF(b)
+		if err != nil {
+			return "", err
+		}
 		if s.rawVTF() {
-			info, err := inspectVTF(b)
-			if err != nil {
-				return "", err
-			}
 			if s.VTF != nil && !reflect.DeepEqual(info, s.VTF) {
 				return "", errors.New("VTF 参数与导入记录不一致")
 			}
-			frames = info.Frames
 		} else if _, e = decodeVTF(b); e != nil {
 			return "", e
 		}
 		name := slotPath(n, "vtf")
 		files[name] = b
-		if frames > 1 {
-			files[slotPath(n, "vmt")] = animationMaterial(n, frames, s.FrameRate)
+		files[slotPath(n, "vmt")] = animationMaterial(n, info.Frames, s.FrameRate)
+		if e := configureSlotPreview(files, n, info, s.FrameRate); e != nil {
+			return "", e
 		}
 		meta.Changed = append(meta.Changed, name)
 	}

@@ -84,16 +84,25 @@ def build_files():
             column, row = index % 4, index // 4
             x, y = 12 + column * 108, 32 + row * 83
             widgets.append(node(f'CSPPreview{number:03}', controlname='ImagePanel', fieldname=f'CSPPreview{number:03}',
-                                xpos=x + 10, ypos=y, wide=80, tall=58, visible=1, scaleimage=1,
+                                xpos=x + 21, ypos=y, wide=58, tall=58, visible=1, scaleimage=1, mouseinputenabled=0,
                                 image='logos/ui/' + entry.native_name))
+            # Opaque alpha (for hit testing), but no painted background/border
+            # or label. The image remains visible under this square click area.
+            widgets.append(node(f'CSPClick{number:03}', controlname='Button', fieldname=f'CSPClick{number:03}',
+                                xpos=x + 21, ypos=y, wide=58, tall=58, zpos=2, visible=1, enabled=1,
+                                labeltext='', paintbackground=0, paintborder=0, mouseinputenabled=1,
+                                command=f'FlmCSPConfirm{number:03}'))
             previous = entries[(index - 1) % len(entries)].identifier.removeprefix('test_')
             following = entries[(index + 1) % len(entries)].identifier.removeprefix('test_')
             widgets.append(button(f'CSPPick{number:03}', entry.title, f'FlmCSPConfirm{number:03}', x, y + 58,
                                   navup='CSPClose' if index == 0 else 'CSPPick' + previous,
                                   navdown='CSPPrevPage' if index == len(entries) - 1 else 'CSPPick' + following))
-            confirm = [node('CSPConfirmPreview', controlname='ImagePanel', fieldname='CSPConfirmPreview',
+            confirm = [node('CSPConfirmArea', controlname='Panel', fieldname='CSPConfirmArea',
+                            xpos=145, ypos=35, wide=160, tall=160, visible=1, paintbackground=0,
+                            paintborder=0, mouseinputenabled=0),
+                       node('CSPConfirmPreview', controlname='ImagePanel', fieldname='CSPConfirmPreview',
                             xpos=145, ypos=35, wide=160, tall=160, visible=1, scaleimage=1,
-                            image='logos/ui/' + entry.native_name),
+                            image='logos/ui/' + entry.native_name, mouseinputenabled=0),
                        button(f'CSPApply{number:03}', 'Apply and return', f'CSP_TEST_APPLY_{number:03}', 40, 210, 170,
                               navup='CSPCancel', navdown='CSPCancel'),
                        button('CSPCancel', 'Cancel / page', f'FlmCSPPage{page + 1}', 240, 210, 170,
@@ -115,7 +124,7 @@ def build_files():
                               onlyactiveuser=1))
     last = text.rfind('}')
     files[MULTIPLAYER] = (text[:last] + '\n' + '\n'.join(additions) + '\n' + text[last:]).encode()
-    files['addoninfo.txt'] = b'"AddonInfo" { "addonSteamAppID" "550" "addontitle" "CSP numbered selector TEST 0.2.3" "addonversion" "0.2.3" "addonContent_Spray" "1" "addonDescription" "Prototype: verified native IConVar string slot 3. Requires CSPSelector.dll 0.2.3 and existing L4N. Live spray validation pending." }'
+    files['addoninfo.txt'] = b'"AddonInfo" { "addonSteamAppID" "550" "addontitle" "CSP numbered selector TEST 0.2.4" "addonversion" "0.2.4" "addonContent_Spray" "1" "addonDescription" "Square clickable previews. Requires CSPSelector.dll 0.2.3 and existing L4N. Live spray validation pending." }'
     return files
 
 
@@ -165,10 +174,19 @@ def validate(files):
         for entry in catalog.page(page):
             number = int(entry.identifier[-3:])
             assert nodes[f'CSPPick{number:03}']['command'] == f'FlmCSPConfirm{number:03}'
+            click = nodes[f'CSPClick{number:03}']
+            preview = nodes[f'CSPPreview{number:03}']
+            assert click['command'] == f'FlmCSPConfirm{number:03}'
+            assert click['controlname'] == 'Button' and click['mouseinputenabled'] == '1'
+            assert click['wide'] == click['tall'] == '58'
+            assert click['paintbackground'] == click['paintborder'] == '0' and click['labeltext'] == ''
+            assert preview['mouseinputenabled'] == '0' and preview['wide'] == preview['tall'] == '58'
+            assert (preview['xpos'], preview['ypos']) == (click['xpos'], click['ypos'])
             confirm = {name: fields(block) for name, _, _, block in blocks(files[f'resource/ui/csp_test/confirm_{number:03}.res'].decode())}
             assert confirm[f'CSPApply{number:03}']['command'] == f'CSP_TEST_APPLY_{number:03}'
             assert confirm['CSPCancel']['command'] == f'FlmCSPPage{page + 1}'
             assert confirm['CSPConfirmPreview']['image'] == 'logos/ui/' + entry.native_name
+            assert confirm['CSPConfirmArea']['wide'] == confirm['CSPConfirmArea']['tall'] == '160'
     c_files = read(ROOT / 'dist/【00】C_ESC_LED_血条和速度_TUMTaRA.vpk')
     assert set(c_files) & set(files) == {'addoninfo.txt'}, 'Unexpected resource collision with C'
 
@@ -183,7 +201,7 @@ def main():
     assert not built['tests_only'] and all(item['exit_status'] == 0 for item in built['records'])
     assert sha(DLL.read_bytes()) == built['files']['CSPSelector.dll']
     payload = {'left4dead2/addons/' + VPK.name: VPK.read_bytes(), 'bin/neko/plugins/CSPSelector.dll': DLL.read_bytes()}
-    manifest = dict(version='0.2.3', helper_version='0.2.3', runtime='NOT_TESTED', entries=40, page_size=12, ui='Options > Multiplayer > CSP TEST',
+    manifest = dict(version='0.2.4', helper_version='0.2.3', runtime='NOT_TESTED', entries=40, page_size=12, ui='Options > Multiplayer > CSP TEST',
                     requires='Existing x86 L4N; exact pinned GameUI/engine/vstdlib', persistence='NOT_IMPLEMENTED',
                     files={name: sha(data) for name, data in payload.items()})
     payload['manifest.json'] = (json.dumps(manifest, indent=2) + '\n').encode()

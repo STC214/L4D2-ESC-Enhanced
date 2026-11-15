@@ -19,6 +19,29 @@ class SelectorTests(unittest.TestCase):
     def test_full_ui_contract(self):
         validate(self.files)
 
+    def test_thumbnail_click_and_square_contract(self):
+        for number in range(1, 41):
+            path = f'resource/ui/csp_test/page_{(number - 1) // 12 + 1}.res'
+            nodes = {name: fields(block) for name, _, _, block in blocks(self.files[path].decode())}
+            click = nodes[f'CSPClick{number:03}']
+            image = nodes[f'CSPPreview{number:03}']
+            self.assertEqual(click['command'], nodes[f'CSPPick{number:03}']['command'])
+            self.assertEqual((click['wide'], click['tall']), ('58', '58'))
+            self.assertEqual((image['wide'], image['tall']), ('58', '58'))
+            self.assertEqual(image['mouseinputenabled'], '0')
+            self.assertEqual(click['paintbackground'], '0')
+
+    def test_bad_thumbnail_click_rejected(self):
+        path = 'resource/ui/csp_test/page_1.res'
+        text = self.files[path].decode()
+        for name, start, end, block in blocks(text):
+            if name == 'CSPClick001':
+                for changes in ({'command': 'FlmCSPConfirm002'}, {'tall': '57'}, {'paintbackground': '1'}):
+                    bad = dict(self.files)
+                    bad[path] = (text[:start] + set_fields(block, changes) + text[end:]).encode()
+                    with self.subTest(changes=changes), self.assertRaises(AssertionError):
+                        validate(bad)
+
     def test_later_page_entries_have_distinct_confirm_and_apply(self):
         for number in (16, 17, 24, 25, 37, 40):
             content = self.files[f'resource/ui/csp_test/confirm_{number:03}.res'].decode()
