@@ -6,13 +6,13 @@
 
 ## 一、下载哪个文件
 
-进入 [v1.5.1 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.5.1)，下载 **`C_session_release.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；该 ZIP 与旧 v1.3.2 发布保持一致。只安装 C 不需要喷漆工具。
+进入 [v1.15.1 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.15.1)，下载唯一的 **`L4D2_Tools_Portable_v1.15.1.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；不再单独提供 C 组件 ZIP。整包安装可双击 `Deploy.cmd`；只安装 C 时手动取下面的两份文件，不需要运行喷漆工具。
 
-| 发布文件 | 用途 |
+| 便携包内路径 | 用途 |
 |---|---|
-| `C_session_release.zip` | 推荐下载：包含菜单 VPK 和自动默认项 DLL，按游戏目录结构打包 |
-| `C_ESC_LED_Health_Speed_TUMTaRA.vpk` | 单独资源包，不含 DLL；自动默认项和 10 个勾选框提交都依赖配套 DLL；安装时使用下文固定中文文件名 |
-| `SHA256SUMS.txt` | 用于核对下载文件是否完整 |
+| `game/left4dead2/addons/【00】C_ESC_LED_血条和速度_TUMTaRA.vpk` | 菜单资源包，固定中文文件名已保留 |
+| `game/bin/neko/plugins/CSessionDefaults.dll` | 配套默认项和勾选提交 DLL，必须和 C 资源配对 |
+| `SHA256SUMS.txt`、`manifest.json` | 在同一个 ZIP 内，用于核对各资源完整性 |
 
 **首次安装和升级均推荐使用 ZIP，不要只替换 VPK。** 本版包含勾选提交所需的 DLL；手电资源和轮廓初始化功能继续保留。
 
@@ -28,7 +28,7 @@
 
 ## 三、安装或升级
 
-将 ZIP 解压到**游戏根目录**，确认形成以下结构：
+将便携 ZIP 完整解压到**独立可写目录**，不要把整个便携目录解压进游戏。只安装 C 时，仅将包内 `game/` 中上表的两个文件按相对路径复制到**游戏根目录**，确认形成以下结构：
 
 ```text
 Left 4 Dead 2/
@@ -43,8 +43,8 @@ Left 4 Dead 2/
 ```
 
 - 覆盖的是本套 C 的同名文件，不要覆盖无关模组或平台配置。
-- 若解压软件生成了额外的 `C_session_release` 外层文件夹，将里面的 `bin` 和 `left4dead2` 合并到游戏根目录。
-- ZIP 内 VPK 已保留固定中文文件名，不需要改名。单独下载英文名 VPK 时，重命名为上图文件名。
+- 只装 C 不要复制便携包内其他喷漆文件；需要 C＋数字喷漆一起安装时使用 `Deploy.cmd`，会先确认、备份并建立可回退事务。
+- 包内 C VPK 已保留固定中文文件名，不需要改名。
 - 游戏“附加内容”中保留 C，停用旧版 C、原版 A/B，以及覆盖同一 ESC 菜单或 HUD 资源的模组。工坊订阅的旧副本也可能重新下载，请检查重复启用情况。
 - 不要把原版和成品、历史包、备份包一起放入 `addons`。
 - 之前参加手电测试的用户，将 `C_flashlight_nofade_TEST.vpk` 移出加载目录；对应着色器已经集成到 C。不要同时加载其他覆盖 `flashlight_ps30.vcs` 或手电贴图的包。

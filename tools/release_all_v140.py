@@ -30,6 +30,7 @@ GO_TEST_COUNT = 29
 REQUIRE_STUDIO = False
 REQUIRE_PROMOTION = False
 PRERELEASE = True  # Historical entry points retain their original release policy.
+PORTABLE_ONLY = False
 NUMBERED_BASE_SHA256 = '27cd1dbfdba0e9fbdb02c0340a3fc6fe89298315a1a6edc0020248868f37ec70'
 
 
@@ -128,6 +129,14 @@ def manager_guide():
     return text.replace('(便携整合包使用说明.md)', '(' + portable + ')').encode('utf-8')
 
 
+def release_asset_names():
+    if PORTABLE_ONLY:
+        return [ALL_ZIP]
+    return [ALL_ZIP, SELECTOR_ZIP, MANAGER_ZIP, 'C_session_release.zip',
+            'C_ESC_LED_Health_Speed_TUMTaRA.vpk', EXE.name,
+            'CSP_Numbered_Test_Assets.vpk', 'numbered_contact_sheet.png', 'SHA256SUMS.txt']
+
+
 def package():
     verify_components()
     OUT.mkdir(parents=True, exist_ok=True)
@@ -147,18 +156,21 @@ def package():
         'Select Options > Multiplayer > CSP TEST before opening a campaign. Changing in-session does not refresh immediately. '
         'The 80 loose files under update are REQUIRED, not just the VPK/DLL. Restore your backup to uninstall/update backwards. '
         'No native engine DLL on disk is replaced. Current bridge is pinned to inspected game binaries.\n').encode()
-    archive(OUT / SELECTOR_ZIP, selector_files)
+    if not PORTABLE_ONLY:
+        archive(OUT / SELECTOR_ZIP, selector_files)
     manager_files = {'CSP_Spray_Manager.exe': EXE.read_bytes(),
                      '使用说明.md': manager_guide()}
     if REQUIRE_STUDIO:
         manager_files['images/spray-studio-preview.png'] = (ROOT / 'docs/images/spray-studio-preview.png').read_bytes()
-    archive(OUT / MANAGER_ZIP, manager_files)
+    if not PORTABLE_ONLY:
+        archive(OUT / MANAGER_ZIP, manager_files)
     for source, name in ((ROOT / 'dist/C_session_release.zip', 'C_session_release.zip'),
                          (ROOT / 'dist' / NAME, 'C_ESC_LED_Health_Speed_TUMTaRA.vpk'),
                          (EXE, EXE.name), (SELECTOR / 'CSP_Numbered_Test_Assets.vpk', 'CSP_Numbered_Test_Assets.vpk'),
                          (SELECTOR / 'numbered_contact_sheet.png', 'numbered_contact_sheet.png')):
-        shutil.copyfile(source, OUT / name)
-        assert sha(source) == sha(OUT / name)
+        if not PORTABLE_ONLY:
+            shutil.copyfile(source, OUT / name)
+            assert sha(source) == sha(OUT / name)
     all_files = {'game/' + name: data for name, data in selector_files.items() if name != 'INSTALL.md'}
     all_files['game/left4dead2/addons/' + NAME] = (ROOT / 'dist' / NAME).read_bytes()
     all_files['game/bin/neko/plugins/CSessionDefaults.dll'] = (ROOT / 'dist/c_session_helper/CSessionDefaults.dll').read_bytes()
@@ -169,8 +181,8 @@ def package():
             all_files[name] = (ROOT / 'portable' / name).read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
         all_files['PORTABLE_README.md'] = (ROOT / 'docs/便携整合包使用说明.md').read_bytes()
         assert len([name for name in all_files if name.startswith('game/')]) == 84
-    all_files['diagnostics/CSP_Numbered_Test_Assets.vpk'] = (OUT / 'CSP_Numbered_Test_Assets.vpk').read_bytes()
-    all_files['diagnostics/numbered_contact_sheet.png'] = (OUT / 'numbered_contact_sheet.png').read_bytes()
+    all_files['diagnostics/CSP_Numbered_Test_Assets.vpk'] = (SELECTOR / 'CSP_Numbered_Test_Assets.vpk').read_bytes()
+    all_files['diagnostics/numbered_contact_sheet.png'] = (SELECTOR / 'numbered_contact_sheet.png').read_bytes()
     all_files['README.md'] = (ROOT / 'README.md').read_bytes()
     for path in (ROOT / 'docs').rglob('*'):
         if path.is_file() and path.suffix in ('.md', '.json', '.png'):
@@ -178,20 +190,24 @@ def package():
     for name in ('spray_importer_go/verification.json', 'spray_importer_go/win32-smoke.json',
                  'spray_selector/verification.json', 'c_current_review/verification.json'):
         all_files['evidence/' + name] = (ROOT / 'reports' / name).read_bytes()
+    if PORTABLE_ONLY:
+        all_files['SHA256SUMS.txt'] = ''.join(
+            f'{hashlib.sha256(data).hexdigest()}  {name}\n'
+            for name, data in sorted(all_files.items())).encode('utf-8')
     archive(OUT / ALL_ZIP, all_files)
-    names = [ALL_ZIP, SELECTOR_ZIP, MANAGER_ZIP, 'C_session_release.zip', 'C_ESC_LED_Health_Speed_TUMTaRA.vpk',
-             EXE.name, 'CSP_Numbered_Test_Assets.vpk', 'numbered_contact_sheet.png']
-    sums = ''.join(f'{sha(OUT / name)}  {name}\n' for name in sorted(names))
-    (OUT / 'SHA256SUMS.txt').write_text(sums, encoding='utf-8', newline='\n')
-    names.append('SHA256SUMS.txt')
+    names = release_asset_names()
+    if not PORTABLE_ONLY:
+        sums = ''.join(f'{sha(OUT / name)}  {name}\n' for name in sorted(names) if name != 'SHA256SUMS.txt')
+        (OUT / 'SHA256SUMS.txt').write_text(sums, encoding='utf-8', newline='\n')
     save(REPORT / 'package.json', dict(tag=TAG, files={name: sha(OUT / name) for name in names},
          sources=sources(), scope='Current deliverables, numbered self-authored fixtures only; no user data, upstream downloads or historical builds'))
-    print('PASS 9 release assets; ZIP CRC/member hashes and component reviews verified')
+    print(f'PASS {len(names)} release asset(s); ZIP CRC/member hashes and component reviews verified')
 
 
 def check():
     manifest = json.loads((REPORT / 'package.json').read_text(encoding='utf-8'))
     assert manifest['sources'] == sources(), 'Sources/docs changed after packaging'
+    assert set(manifest['files']) == set(release_asset_names()), 'Release asset policy mismatch'
     for name, digest in manifest['files'].items():
         assert sha(OUT / name) == digest
         if name.endswith('.zip'):
@@ -270,7 +286,7 @@ def main():
         assert api.request(previous.API + '/releases/latest')['id'] == release['id'], 'Stable release is not Latest'
     save(REPORT / 'published.json', dict(tag=TAG, commit=commit, url=release['html_url'], prerelease=release['prerelease'],
         assets=[{key: row[key] for key in ('name', 'size', 'digest', 'browser_download_url')} for row in release['assets']]))
-    print('PASS remote tag/commit and all 9 SHA256/size checks')
+    print(f"PASS remote tag/commit and all {len(manifest['files'])} SHA256/size checks")
     print(release['html_url'])
 
 

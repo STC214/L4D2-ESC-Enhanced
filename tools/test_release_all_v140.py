@@ -5,12 +5,45 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_portable_only_merges_components_and_publishes_one_zip(self):
+        with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
+            with mock.patch.multiple(release, OUT=Path(folder)/'out', REPORT=Path(folder)/'report',
+                                     PORTABLE_ONLY=True, MANAGER_VERSION='1.12.0', REQUIRE_STUDIO=True):
+                with mock.patch.object(release, 'verify_components'):
+                    release.package()
+                self.assertEqual([p.name for p in release.OUT.iterdir()], [release.ALL_ZIP])
+                self.assertEqual(release.release_asset_names(), [release.ALL_ZIP])
+                report = json.loads((release.REPORT/'package.json').read_text(encoding='utf-8'))
+                self.assertEqual(set(report['files']), {release.ALL_ZIP})
+                with zipfile.ZipFile(release.OUT/release.ALL_ZIP) as z:
+                    names = z.namelist()
+                    self.assertFalse(any(n.endswith('.zip') for n in names))
+                    self.assertEqual(len([n for n in names if n.startswith('game/')]), 84)
+                    for member, source in {
+                        'manager/CSP_Spray_Manager.exe': release.EXE,
+                        'game/left4dead2/addons/'+release.NAME: release.ROOT/'dist'/release.NAME,
+                        'game/bin/neko/plugins/CSessionDefaults.dll': release.ROOT/'dist/c_session_helper/CSessionDefaults.dll',
+                        'game/left4dead2/addons/CSP_Numbered_Selector_TEST.vpk': release.SELECTOR/'CSP_Numbered_Selector_TEST.vpk',
+                        'game/bin/neko/plugins/CSPSelector.dll': release.SELECTOR/'native/CSPSelector.dll',
+                        'diagnostics/CSP_Numbered_Test_Assets.vpk': release.SELECTOR/'CSP_Numbered_Test_Assets.vpk',
+                        'diagnostics/numbered_contact_sheet.png': release.SELECTOR/'numbered_contact_sheet.png',
+                    }.items():
+                        self.assertEqual(hashlib.sha256(z.read(member)).hexdigest(), release.sha(source))
+                    manifest = json.loads(z.read('manifest.json'))['files']
+                    for line in z.read('SHA256SUMS.txt').decode('utf-8').splitlines():
+                        digest, name = line.split('  ', 1)
+                        self.assertEqual(manifest[name], digest)
+                        self.assertEqual(hashlib.sha256(z.read(name)).hexdigest(), digest)
+                    self.assertIn('Deploy.cmd', names)
+                    self.assertIn('Spray_Manager.cmd', names)
+
     def test_stable_and_prerelease_publication_policy(self):
         original = release.PRERELEASE
         try:
@@ -25,7 +58,7 @@ class ReleaseTests(unittest.TestCase):
             release.PRERELEASE = original
         import subprocess
         result = subprocess.run(['python', '-B', '-c',
-                                 'import release_current as c; assert c.release.PRERELEASE is False; assert c.release.publication_fields()["make_latest"] == "true"'],
+                                 'import release_current as c; assert c.release.PRERELEASE is False; assert c.release.PORTABLE_ONLY is True; assert c.release.release_asset_names() == [c.release.ALL_ZIP]; assert c.release.publication_fields()["make_latest"] == "true"'],
                                 cwd=release.ROOT / 'tools', capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
