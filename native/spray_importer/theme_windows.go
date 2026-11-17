@@ -10,7 +10,7 @@ import (
 type placement struct{ X, Y, W, H int }
 type studioLayout struct {
 	Labels                      [6]placement
-	Buttons                     [8]placement
+	Buttons                     [10]placement
 	List, Path, Status, Preview placement
 	Progress, Minimum           placement
 }
@@ -26,7 +26,7 @@ func studioGeometry(w, h int) studioLayout {
 	p.Progress = placement{304, 246 + size + 9, size, 12}
 	p.Minimum = placement{w - 250, 145, 110, 24}
 	for i := range p.Buttons {
-		p.Buttons[i] = placement{w - 236, 246 + i*35, 212, 28}
+		p.Buttons[i] = placement{w - 236, 246 + i*28, 212, 24}
 	}
 	return p
 }

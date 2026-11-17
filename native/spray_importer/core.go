@@ -187,8 +187,19 @@ func (a *App) checkState() error {
 }
 
 func (a *App) checkPending() error {
+	ref, err := a.readGameAction()
+	if err != nil {
+		return err
+	}
+	if ref.Kind == "managed" {
+		return a.managedPending()
+	}
 	var rel string
-	err := loadJSON(filepath.Join(a.Home, "last-deploy.json"), &rel)
+	if ref.Kind == "legacy" {
+		rel = ref.Reference
+	} else {
+		err = loadJSON(filepath.Join(a.Home, "last-deploy.json"), &rel)
+	}
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -577,6 +588,9 @@ func (a *App) Deploy(skipProcessCheck bool) (string, error) {
 		return "", e
 	}
 	txrel, _ := filepath.Rel(a.Home, tx)
+	if e = a.saveGameAction(gameActionRef{"legacy", txrel}); e != nil {
+		return "", e
+	}
 	if e = saveJSON(filepath.Join(a.Home, "last-deploy.json"), txrel); e != nil {
 		return "", e
 	}
@@ -604,13 +618,22 @@ func (a *App) Deploy(skipProcessCheck bool) (string, error) {
 }
 
 func (a *App) Rollback(skipProcessCheck bool) error {
+	ref, err := a.readGameAction()
+	if err != nil {
+		return err
+	}
+	if ref.Kind == "managed" {
+		return a.RollbackGameAction(skipProcessCheck)
+	}
 	if !skipProcessCheck {
 		if e := gameStopped(); e != nil {
 			return e
 		}
 	}
 	var rel string
-	if e := loadJSON(filepath.Join(a.Home, "last-deploy.json"), &rel); e != nil {
+	if ref.Kind == "legacy" {
+		rel = ref.Reference
+	} else if e := loadJSON(filepath.Join(a.Home, "last-deploy.json"), &rel); e != nil {
 		return errors.New("没有部署回退记录")
 	}
 	tx, e := safePath(a.Home, rel)

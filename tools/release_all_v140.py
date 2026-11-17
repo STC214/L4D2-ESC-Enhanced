@@ -53,8 +53,12 @@ def sources():
     files += [ROOT / 'maintenance/inspect_spray_menu.py', ROOT / 'maintenance/spray_mod_path_probe.py']
     for folder in ('native/spray_importer', 'experimental/spray_selector'):
         files += [path for path in (ROOT / folder).rglob('*') if path.is_file()
-                  and path.suffix in ('.go', '.mod', '.ps1', '.vpk', '.py', '.h', '.cpp', '.rc', '.ico', '.syso')]
+                  and path.suffix in ('.go', '.mod', '.ps1', '.vpk', '.dll', '.py', '.h', '.cpp', '.rc', '.ico', '.syso')]
     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(set(files))}
+
+
+def verify_selector_bridge(embedded, standalone, expected):
+    assert sha(embedded) == expected.lower() == sha(standalone), 'Embedded vs standalone selector DLL mismatch'
 
 
 def verify_components():
@@ -86,6 +90,9 @@ def verify_components():
     for name, digest in native['rounds'][0].items():
         assert sha(ROOT / name) == digest
     assert sha(ROOT / 'native/spray_importer/assets/selector.vpk') == sha(SELECTOR / 'CSP_Numbered_Selector_TEST.vpk')
+    if tuple(map(int, MANAGER_VERSION.split('.'))) >= (1, 11, 0):
+        verify_selector_bridge(ROOT / 'native/spray_importer/assets/CSPSelector.dll',
+                               SELECTOR / 'native/CSPSelector.dll', go['embedded_selector_dll_sha256'])
 
 
 def archive(path, files):

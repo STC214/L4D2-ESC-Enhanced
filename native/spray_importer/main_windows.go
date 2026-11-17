@@ -90,7 +90,7 @@ type openFile struct {
 
 var window, slotList, pathEdit, statusLabel, font uintptr
 var largeIcon, smallIcon uintptr
-var buttons [8]uintptr
+var buttons [10]uintptr
 var labels [6]uintptr
 var app *App
 var preview []byte
@@ -138,6 +138,13 @@ type jobResult struct {
 }
 
 var completed = make(chan jobResult, 1)
+
+type cleanupRequest struct {
+	Plan    *gamePlan
+	Preview string
+}
+
+var cleanupPrepared = make(chan cleanupRequest, 1)
 
 func beginJob(id int, work func() (string, error)) {
 	if id == 101 || id == 106 || id == 107 {
@@ -380,6 +387,40 @@ func operation(id int) {
 	if busy {
 		return
 	}
+	if id == 109 || id == 113 {
+		if err := saveGamePath(true); err != nil {
+			failure(err)
+			return
+		}
+		if id == 109 {
+			if !confirm("一键部署目标：" + app.Game + "\n请先退出游戏并确保已有配套 L4N。\n将自动构建当前槽位，安装／更新喷漆 VPK、80 个贴图材质、CSPSelector.dll 及选择器启用记录；无导入时安装默认槽位。C 和其他 MOD 不变。\n先备份，完成后可用‘回退最近操作’恢复。继续？") {
+				return
+			}
+			setStatus("正在自动构建并部署喷漆选择器……")
+			beginJob(id, func() (string, error) {
+				tx, err := app.OneClickDeploy(false)
+				if tx == "" && err == nil {
+					return "当前喷漆已是目标版本，无需重复写入。", nil
+				}
+				return "一键部署完成；重启游戏，在进入战役前选择喷漆。恢复记录：" + filepath.Base(tx), err
+			})
+		} else {
+			setStatus("正在检查游戏内 C 与喷漆组件，尚未删除文件……")
+			beginJob(id, func() (string, error) {
+				plan, err := app.PlanProjectCleanup(false)
+				if err != nil {
+					return "", err
+				}
+				preview, err := app.SaveCleanupPreview(plan)
+				if err != nil {
+					return "", err
+				}
+				cleanupPrepared <- cleanupRequest{plan, preview}
+				return "清理预检完成", nil
+			})
+		}
+		return
+	}
 	if id == 108 {
 		if !confirm("恢复全部 40 个槽位为默认编号喷漆？\n将清空当前导入绑定，保留原始文件、历史母版及清单备份，方便重新导入。\n这一步不直接修改游戏；如需恢复游戏内喷漆，请随后构建并退出游戏后部署。") {
 			return
@@ -474,7 +515,7 @@ func operation(id int) {
 	if id == 103 && !confirm("请先退出游戏。将同步更新选择器 VPK 和 80 个编号素材，并备份全部 81 个原文件。\n\n继续部署？") {
 		return
 	}
-	if id == 104 && !confirm("请先退出游戏。恢复最近一次部署前的 81 个文件？\n外部改动会阻止回退。") {
+	if id == 104 && !confirm("请先退出游戏。回退最近一次部署或项目清理？\n新安装的项目文件会移除，原有文件从备份恢复；外部改动会阻止回退。工具本地槽位不清空。") {
 		return
 	}
 	switch id {
@@ -493,7 +534,7 @@ func operation(id int) {
 	case 104:
 		setStatus("正在核对备份并恢复……")
 		beginJob(id, func() (string, error) {
-			return "已恢复最近部署前的全部 81 个文件。", app.Rollback(false)
+			return "已恢复最近一次游戏部署或项目清理前的状态；本地槽位未清空。", app.Rollback(false)
 		})
 	case 105:
 		if e := os.MkdirAll(app.Home, 0755); e != nil {
@@ -572,7 +613,7 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			selectionChanged()
 			return 0
 		}
-		if id >= 101 && id <= 108 && notification == 0 {
+		if ((id >= 101 && id <= 109) || id == 113) && notification == 0 {
 			operation(id)
 			return 0
 		}
@@ -604,7 +645,27 @@ func wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 			if result.Err != nil {
 				failure(result.Err)
 			} else {
-				if result.ID == 101 || result.ID == 106 || result.ID == 107 || result.ID == 108 {
+				if result.ID == 113 {
+					select {
+					case request := <-cleanupPrepared:
+						if len(request.Plan.After) == 0 {
+							setStatus("游戏目录中没有待清理的项目组件，未删除文件。")
+							return 0
+						}
+						question := fmt.Sprintf("清理目标：%s\n将处理 %d 个项目目标，范围仅限：\nC 的 VPK 与 CSessionDefaults.dll；喷漆选择器 VPK、CSPSelector.dll、40 份 VTF 和 40 份 VMT、诊断编号 VPK，以及这些项目在 addonlist.txt 中的条目。\n不删除 L4N、其他 MOD、游戏原生文件、config.cfg、工具数据或原图。\n完整绝对路径清单：%s\n先备份再清理，可用‘回退最近操作’恢复。确认执行？", request.Plan.Game, len(request.Plan.After), request.Preview)
+						if !confirm(question) {
+							setStatus("已取消清理；游戏文件未更改。")
+							return 0
+						}
+						beginJob(114, func() (string, error) {
+							tx, err := app.ApplyGamePlan(request.Plan, false)
+							return "游戏内 C 与喷漆项目组件已清理；L4N、其他 MOD 和工具本地素材已保留。恢复记录：" + filepath.Base(tx), err
+						})
+						return 0
+					default:
+					}
+				}
+				if result.ID == 101 || result.ID == 106 || result.ID == 107 || result.ID == 108 || result.ID == 109 {
 					if result.ID == 106 || result.ID == 107 || result.ID == 108 {
 						selected = 1
 					}
@@ -765,7 +826,7 @@ func runSmoke() {
 	}
 	iconsOK := largeIcon != 0 && smallIcon != 0 && send(window, 0x7f, 1, 0) == largeIcon && send(window, 0x7f, 0, 0) == smallIcon
 	resetPresent := call("GetDlgItem", window, 108) == buttons[7] && buttons[7] != 0
-	if !iconsOK || !resetPresent || !progressObserved || !gamePathRestored || windowText(minimumEdit) != strconv.Itoa(app.Settings.MinimumAnimationFrames) {
+	if !iconsOK || !resetPresent || call("GetDlgItem", window, 109) != buttons[8] || call("GetDlgItem", window, 113) != buttons[9] || buttons[8] == 0 || buttons[9] == 0 || !progressObserved || !gamePathRestored || windowText(minimumEdit) != strconv.Itoa(app.Settings.MinimumAnimationFrames) {
 		good = false
 	}
 	styled := studioPaints > 0 && paintedList && len(paintedActions) == len(buttons) && paintedListFocus
@@ -824,7 +885,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.10.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.11.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -852,7 +913,7 @@ func runWindow() error {
 	for i, item := range []struct {
 		ID    int
 		Title string
-	}{{107, "导入 VPK（最多2个）…"}, {106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏"}, {104, "回退最近部署"}, {105, "打开数据目录"}, {108, "恢复全部默认槽位…"}} {
+	}{{107, "导入 VPK（最多2个）…"}, {106, "整目录导入并排序…"}, {101, "单张导入到当前槽位…"}, {102, "构建部署包"}, {103, "部署到游戏（已有选择器）"}, {104, "回退最近操作"}, {105, "打开数据目录"}, {108, "恢复全部默认槽位…"}, {109, "一键部署到游戏…"}, {113, "清理游戏内本项目产物…"}} {
 		buttons[i] = widget("BUTTON", item.Title, 0x0001000b, item.ID)
 	}
 	send(labels[0], 0x30, titleFont, 1)

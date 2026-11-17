@@ -20,6 +20,9 @@ if (Test-Path -LiteralPath $Base) {
     Copy-Item -LiteralPath $Base -Destination $Asset
 }
 if ((Get-FileHash -LiteralPath $Asset).Hash -ne $Pin) { throw 'Embedded resource copy mismatch.' }
+$Bridge=Join-Path $PSScriptRoot 'assets\CSPSelector.dll'
+$BridgePin='95960A82415DE12EE920493B9915E4723332636DC82BF28C2F866E8693CB2129'
+if ((Get-FileHash -LiteralPath $Bridge).Hash -ne $BridgePin) { throw 'Embedded selector DLL mismatch.' }
 $Records = [Collections.Generic.List[object]]::new()
 Add-Type -AssemblyName System.Web.Extensions
 Add-Type -ReferencedAssemblies ([psobject].Assembly.Location) -TypeDefinition @'
@@ -170,6 +173,7 @@ try {
     if ($SourceHashes.Count -ne $SourceBefore.Count) { throw 'Sources changed during build; previous product kept.' }
     foreach ($Name in $SourceBefore.Keys) { if ($SourceHashes[$Name] -ne $SourceBefore[$Name]) { throw "Source changed during build: $Name; previous product kept." } }
     if ((Get-FileHash -LiteralPath $Asset).Hash -ne $Pin) { throw 'Embedded selector baseline changed during build.' }
+    if ((Get-FileHash -LiteralPath $Bridge).Hash -ne $BridgePin) { throw 'Embedded selector DLL changed during build.' }
     if ((Get-FileHash -LiteralPath $IconFile).Hash.ToLowerInvariant() -ne (Get-Content -LiteralPath $IconCheck -Raw | ConvertFrom-Json).ico_sha256) { throw 'ICO changed after linked-resource verification.' }
     Write-Output 'STAGE source-hashes-pass'
     $Expected = (Get-FileHash -LiteralPath $Exe).Hash
@@ -177,7 +181,7 @@ try {
     . (Join-Path $PSScriptRoot 'promote.ps1')
     $Promotion = Set-VerifiedProduct $Root $Exe $FinalExe $Backup $Expected
     $Exe = $FinalExe
-    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.10.1';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
+    $Result = @{status='TWO_GO_TEST_ROUNDS_AND_NATIVE_WIN32_SMOKE_PASS'; records=$Records.ToArray(); source_sha256=$SourceHashes; source_snapshot_matched=$true; embedded_vpk_sha256=$Pin; embedded_selector_dll_sha256=$BridgePin; embedded_ico_sha256=(Get-FileHash -LiteralPath $IconFile).Hash; exe=$Exe; exe_sha256=$Expected; protected=$Before; real_game_deployment='NOT_PERFORMED'; manual_ui='PENDING'; vet_exception='unsafeptr: Win32 LPARAM owner-draw/MINMAXINFO callback boundaries; native ABI smoke required'; version='1.11.0';preview_sha256=(Get-FileHash -LiteralPath $Preview).Hash;promotion=$Promotion}
     Write-ReportJson -Path (Join-Path $Report 'verification.json') -Value $Result
     Write-Output "PASS: $Exe"
 } finally {

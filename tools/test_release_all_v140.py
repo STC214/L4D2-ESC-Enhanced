@@ -11,6 +11,19 @@ import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_embedded_selector_matches_standalone_and_build_pin(self):
+        with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
+            embedded, standalone = Path(folder) / 'embedded.dll', Path(folder) / 'standalone.dll'
+            embedded.write_bytes(b'own bridge fixture')
+            standalone.write_bytes(embedded.read_bytes())
+            digest = release.sha(embedded)
+            release.verify_selector_bridge(embedded, standalone, digest.upper())
+            with self.assertRaises(AssertionError):
+                release.verify_selector_bridge(embedded, standalone, '0' * 64)
+            standalone.write_bytes(b'different bridge')
+            with self.assertRaises(AssertionError):
+                release.verify_selector_bridge(embedded, standalone, digest)
+
     def test_manager_guide_is_current_self_contained_manual(self):
         guide = release.manager_guide().decode('utf-8')
         self.assertIn('# CSP 喷漆处理工具使用说明', guide)
