@@ -885,7 +885,7 @@ func runWindow() error {
 		x = int(work.Left) + (int(work.Right-work.Left)-width)/2
 		y = int(work.Top) + (int(work.Bottom-work.Top)-height)/2
 	}
-	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.12.0 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
+	window, _, _ = user.NewProc("CreateWindowExW").Call(0, uintptr(unsafe.Pointer(class.Name)), uintptr(unsafe.Pointer(utf("CSP Spray Studio 1.12.1 · Go + Win32"))), 0x02cf0000, ptrInt(x), ptrInt(y), ptrInt(width), ptrInt(height), 0, 0, instance, 0)
 	if window == 0 {
 		return fmt.Errorf("Win32 窗口创建失败")
 	}
@@ -1050,7 +1050,7 @@ func main() {
 		return
 	}
 	if e == nil && len(os.Args) == 2 && os.Args[1] == "--portable-install" {
-		e = app.runPortableInstall(filepath.Join(filepath.Dir(exe), "..", "game"))
+		e = app.runPortableInstall(filepath.Join(filepath.Dir(exe), "game"))
 	} else if e == nil {
 		if err := app.PruneBackups(); err != nil {
 			app.MaintenanceWarning = "旧备份保留，清理待重试：" + err.Error()

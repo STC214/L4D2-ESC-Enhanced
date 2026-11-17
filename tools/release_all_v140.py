@@ -31,6 +31,7 @@ REQUIRE_STUDIO = False
 REQUIRE_PROMOTION = False
 PRERELEASE = True  # Historical entry points retain their original release policy.
 PORTABLE_ONLY = False
+ROOT_MANAGER = False
 NUMBERED_BASE_SHA256 = '27cd1dbfdba0e9fbdb02c0340a3fc6fe89298315a1a6edc0020248868f37ec70'
 
 
@@ -174,7 +175,8 @@ def package():
     all_files = {'game/' + name: data for name, data in selector_files.items() if name != 'INSTALL.md'}
     all_files['game/left4dead2/addons/' + NAME] = (ROOT / 'dist' / NAME).read_bytes()
     all_files['game/bin/neko/plugins/CSessionDefaults.dll'] = (ROOT / 'dist/c_session_helper/CSessionDefaults.dll').read_bytes()
-    all_files.update({'manager/' + name: data for name, data in manager_files.items()})
+    manager_prefix = '' if ROOT_MANAGER else 'manager/'
+    all_files.update({manager_prefix + name: data for name, data in manager_files.items()})
     all_files['INSTALL.md'] = NOTES.read_bytes()
     if tuple(map(int, MANAGER_VERSION.split('.'))) >= (1, 12, 0):
         for name in ('Deploy.cmd', 'Spray_Manager.cmd'):

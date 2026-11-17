@@ -6,7 +6,7 @@
 
 ## 一、下载哪个文件
 
-进入 [v1.15.1 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.15.1)，下载唯一的 **`L4D2_Tools_Portable_v1.15.1.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；不再单独提供 C 组件 ZIP。整包安装可双击 `Deploy.cmd`；只安装 C 时手动取下面的两份文件，不需要运行喷漆工具。
+进入 [v1.15.2 汇总发布页](https://github.com/STC214/L4D2-ESC-Enhanced/releases/tag/v1.15.2)，下载唯一的 **`L4D2_Tools_Portable_v1.15.2.zip`**。C 本体和 DLL 仍是本文的 1.3.2／1.3.1；不再单独提供 C 组件 ZIP。整包安装可双击根目录 `Deploy.cmd`；只安装 C 时手动取下面的两份文件，不需要运行喷漆工具。
 
 | 便携包内路径 | 用途 |
 |---|---|

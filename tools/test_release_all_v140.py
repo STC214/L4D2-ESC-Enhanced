@@ -15,7 +15,7 @@ class ReleaseTests(unittest.TestCase):
     def test_portable_only_merges_components_and_publishes_one_zip(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
             with mock.patch.multiple(release, OUT=Path(folder)/'out', REPORT=Path(folder)/'report',
-                                     PORTABLE_ONLY=True, MANAGER_VERSION='1.12.0', REQUIRE_STUDIO=True):
+                                     PORTABLE_ONLY=True, ROOT_MANAGER=True, MANAGER_VERSION='1.12.1', REQUIRE_STUDIO=True):
                 with mock.patch.object(release, 'verify_components'):
                     release.package()
                 self.assertEqual([p.name for p in release.OUT.iterdir()], [release.ALL_ZIP])
@@ -27,7 +27,7 @@ class ReleaseTests(unittest.TestCase):
                     self.assertFalse(any(n.endswith('.zip') for n in names))
                     self.assertEqual(len([n for n in names if n.startswith('game/')]), 84)
                     for member, source in {
-                        'manager/CSP_Spray_Manager.exe': release.EXE,
+                        'CSP_Spray_Manager.exe': release.EXE,
                         'game/left4dead2/addons/'+release.NAME: release.ROOT/'dist'/release.NAME,
                         'game/bin/neko/plugins/CSessionDefaults.dll': release.ROOT/'dist/c_session_helper/CSessionDefaults.dll',
                         'game/left4dead2/addons/CSP_Numbered_Selector_TEST.vpk': release.SELECTOR/'CSP_Numbered_Selector_TEST.vpk',
@@ -43,6 +43,8 @@ class ReleaseTests(unittest.TestCase):
                         self.assertEqual(hashlib.sha256(z.read(name)).hexdigest(), digest)
                     self.assertIn('Deploy.cmd', names)
                     self.assertIn('Spray_Manager.cmd', names)
+                    self.assertFalse(any(n.startswith('manager/') for n in names))
+                    self.assertIn('使用说明.md', names)
 
     def test_stable_and_prerelease_publication_policy(self):
         original = release.PRERELEASE
@@ -58,7 +60,7 @@ class ReleaseTests(unittest.TestCase):
             release.PRERELEASE = original
         import subprocess
         result = subprocess.run(['python', '-B', '-c',
-                                 'import release_current as c; assert c.release.PRERELEASE is False; assert c.release.PORTABLE_ONLY is True; assert c.release.release_asset_names() == [c.release.ALL_ZIP]; assert c.release.publication_fields()["make_latest"] == "true"'],
+                                 'import release_current as c; assert c.release.PRERELEASE is False; assert c.release.PORTABLE_ONLY is True; assert c.release.ROOT_MANAGER is True; assert c.release.release_asset_names() == [c.release.ALL_ZIP]; assert c.release.publication_fields()["make_latest"] == "true"'],
                                 cwd=release.ROOT / 'tools', capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
@@ -75,8 +77,8 @@ class ReleaseTests(unittest.TestCase):
     def test_portable_launchers_use_only_relative_packaged_manager(self):
         deploy = (release.ROOT / 'portable/Deploy.cmd').read_text(encoding='utf-8')
         manager = (release.ROOT / 'portable/Spray_Manager.cmd').read_text(encoding='utf-8')
-        self.assertIn('"%~dp0manager\\CSP_Spray_Manager.exe" --portable-install', deploy)
-        self.assertIn('"%~dp0manager\\CSP_Spray_Manager.exe"', manager)
+        self.assertIn('"%~dp0CSP_Spray_Manager.exe" --portable-install', deploy)
+        self.assertIn('"%~dp0CSP_Spray_Manager.exe"', manager)
         self.assertNotIn('E:\\', deploy)
         self.assertNotIn('D:\\', deploy)
         self.assertNotIn('python', deploy.lower())
