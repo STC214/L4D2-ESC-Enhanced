@@ -48,7 +48,7 @@ func projectGamePaths() []string {
 func allowedGameActionPath(path string, kind string) bool {
 	for _, p := range projectGamePaths() {
 		if path == p {
-			if kind == "cleanup-all" {
+			if kind == "cleanup-all" || kind == "install-bundle" && path != "left4dead2/addons/"+diagnosticVPK {
 				return true
 			}
 			return path != "left4dead2/addons/"+cProjectVPK && path != "bin/neko/plugins/CSessionDefaults.dll" && path != "left4dead2/addons/"+diagnosticVPK
@@ -346,7 +346,7 @@ func (a *App) loadGameJournal(ref gameActionRef) (string, gameJournal, error) {
 	if err != nil {
 		return "", journal, err
 	}
-	if journal.Kind != "install-spray" && journal.Kind != "cleanup-all" {
+	if journal.Kind != "install-spray" && journal.Kind != "install-bundle" && journal.Kind != "cleanup-all" {
 		return "", journal, errors.New("操作恢复类型异常")
 	}
 	if len(journal.Files) == 0 || len(journal.Files) > len(projectGamePaths()) {
@@ -395,10 +395,10 @@ func (a *App) ApplyGamePlan(plan *gamePlan, skipProcessCheck bool) (string, erro
 			return "", err
 		}
 	}
-	if err := a.validateActionGame(plan.Kind == "install-spray"); err != nil {
+	if err := a.validateActionGame(plan.Kind == "install-spray" || plan.Kind == "install-bundle"); err != nil {
 		return "", err
 	}
-	if plan.Kind != "install-spray" && plan.Kind != "cleanup-all" {
+	if plan.Kind != "install-spray" && plan.Kind != "install-bundle" && plan.Kind != "cleanup-all" {
 		return "", errors.New("操作类型异常")
 	}
 	if plan.Kind == "install-spray" {

@@ -29,6 +29,7 @@ MANAGER_VERSION = '1.1.1'
 GO_TEST_COUNT = 29
 REQUIRE_STUDIO = False
 REQUIRE_PROMOTION = False
+NUMBERED_BASE_SHA256 = '27cd1dbfdba0e9fbdb02c0340a3fc6fe89298315a1a6edc0020248868f37ec70'
 
 
 def verify_go_test_output(output, expected):
@@ -50,6 +51,7 @@ def sources():
     files += [path for path in (ROOT / 'docs').rglob('*') if path.is_file() and path.suffix in ('.md', '.json', '.png')]
     files += list((ROOT / 'tools').glob('*.py'))
     files += list((ROOT / 'tools').glob('*.ps1'))
+    files += list((ROOT / 'portable').glob('*.cmd'))
     files += [ROOT / 'maintenance/inspect_spray_menu.py', ROOT / 'maintenance/spray_mod_path_probe.py']
     for folder in ('native/spray_importer', 'experimental/spray_selector'):
         files += [path for path in (ROOT / folder).rglob('*') if path.is_file()
@@ -59,6 +61,10 @@ def sources():
 
 def verify_selector_bridge(embedded, standalone, expected):
     assert sha(embedded) == expected.lower() == sha(standalone), 'Embedded vs standalone selector DLL mismatch'
+
+
+def verify_numbered_baseline(embedded, standalone):
+    assert sha(embedded) == NUMBERED_BASE_SHA256 == sha(standalone), 'Only the original numbered spray baseline may be packaged'
 
 
 def verify_components():
@@ -89,7 +95,7 @@ def verify_components():
         assert sha(ROOT / name) == digest
     for name, digest in native['rounds'][0].items():
         assert sha(ROOT / name) == digest
-    assert sha(ROOT / 'native/spray_importer/assets/selector.vpk') == sha(SELECTOR / 'CSP_Numbered_Selector_TEST.vpk')
+    verify_numbered_baseline(ROOT / 'native/spray_importer/assets/selector.vpk', SELECTOR / 'CSP_Numbered_Selector_TEST.vpk')
     if tuple(map(int, MANAGER_VERSION.split('.'))) >= (1, 11, 0):
         verify_selector_bridge(ROOT / 'native/spray_importer/assets/CSPSelector.dll',
                                SELECTOR / 'native/CSPSelector.dll', go['embedded_selector_dll_sha256'])
@@ -116,7 +122,9 @@ def manager_guide():
     # point at the matching immutable repository tag instead.
     text = (ROOT / 'docs/喷漆工具使用说明.md').read_text(encoding='utf-8')
     history = 'https://github.com/' + previous.REPO + '/blob/' + TAG + '/docs/' + urllib.parse.quote('喷漆导入工具.md')
-    return text.replace('(喷漆导入工具.md)', '(' + history + ')').encode('utf-8')
+    text = text.replace('(喷漆导入工具.md)', '(' + history + ')')
+    portable = 'https://github.com/' + previous.REPO + '/blob/' + TAG + '/docs/' + urllib.parse.quote('便携整合包使用说明.md')
+    return text.replace('(便携整合包使用说明.md)', '(' + portable + ')').encode('utf-8')
 
 
 def package():
@@ -155,6 +163,11 @@ def package():
     all_files['game/bin/neko/plugins/CSessionDefaults.dll'] = (ROOT / 'dist/c_session_helper/CSessionDefaults.dll').read_bytes()
     all_files.update({'manager/' + name: data for name, data in manager_files.items()})
     all_files['INSTALL.md'] = NOTES.read_bytes()
+    if tuple(map(int, MANAGER_VERSION.split('.'))) >= (1, 12, 0):
+        for name in ('Deploy.cmd', 'Spray_Manager.cmd'):
+            all_files[name] = (ROOT / 'portable' / name).read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+        all_files['PORTABLE_README.md'] = (ROOT / 'docs/便携整合包使用说明.md').read_bytes()
+        assert len([name for name in all_files if name.startswith('game/')]) == 84
     all_files['diagnostics/CSP_Numbered_Test_Assets.vpk'] = (OUT / 'CSP_Numbered_Test_Assets.vpk').read_bytes()
     all_files['diagnostics/numbered_contact_sheet.png'] = (OUT / 'numbered_contact_sheet.png').read_bytes()
     all_files['README.md'] = (ROOT / 'README.md').read_bytes()

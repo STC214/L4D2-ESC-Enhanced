@@ -1,13 +1,13 @@
 param(
     [ValidateSet('Install','Rollback','Verify')][string]$Action = 'Verify',
-    [string]$ProductionRoot = 'D:\tools\01_Game_tools\spray_importer_go',
+    [string]$ProductionRoot = 'D:\tools\01_Game_tools\L4D2_tools\spray_importer_go',
     [string]$ReportDirectory
 )
 $ErrorActionPreference = 'Stop'
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $ProductionRoot = [IO.Path]::GetFullPath($ProductionRoot).TrimEnd('\')
 if ($ProductionRoot.Length -le 3) { throw 'A specific production directory is required.' }
-if (-not $ReportDirectory) { $ReportDirectory = Join-Path $Root 'reports\spray_production' }
+if (-not $ReportDirectory) { $ReportDirectory = Join-Path $Root 'reports\spray_production_l4d2_tools' }
 $ReportDirectory = [IO.Path]::GetFullPath($ReportDirectory)
 if (-not $ReportDirectory.StartsWith($Root+'\',[StringComparison]::OrdinalIgnoreCase)) { throw 'Report directory must stay inside workspace.' }
 $Destination = Join-Path $ProductionRoot 'CSP_Spray_Manager.exe'
@@ -89,7 +89,7 @@ if ($Action -ne 'Verify') {
 $BeforeData = Snapshot-Data
 if ($Action -eq 'Install') {
     $Build = Get-Content -LiteralPath (Join-Path $Root 'reports\spray_importer_go\verification.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($Build.version -ne '1.11.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.11.0 build required.' }
+    if ($Build.version -ne '1.12.0' -or -not $Build.source_snapshot_matched) { throw 'Verified 1.12.0 build required.' }
     foreach ($Step in $Build.records) { if ($Step.exit_status -ne 0) { throw 'Build verification contains a failed step.' } }
     $Source = Join-Path $Root 'dist\spray_importer_go\CSP_Spray_Manager.exe'
     if ((Get-FileHash -LiteralPath $Source).Hash -ne $Build.exe_sha256) { throw 'Source product hash differs from build evidence.' }

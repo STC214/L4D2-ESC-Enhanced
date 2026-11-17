@@ -11,6 +11,25 @@ import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_numbered_baseline_pin_rejects_custom_or_matching_replacements(self):
+        original = release.ROOT / 'native/spray_importer/assets/selector.vpk'
+        release.verify_numbered_baseline(original, release.SELECTOR / 'CSP_Numbered_Selector_TEST.vpk')
+        with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
+            custom = Path(folder) / 'custom.vpk'
+            custom.write_bytes(b'custom game spray; never a release baseline')
+            for a, b in ((original, custom), (custom, original), (custom, custom)):
+                with self.assertRaises(AssertionError):
+                    release.verify_numbered_baseline(a, b)
+
+    def test_portable_launchers_use_only_relative_packaged_manager(self):
+        deploy = (release.ROOT / 'portable/Deploy.cmd').read_text(encoding='utf-8')
+        manager = (release.ROOT / 'portable/Spray_Manager.cmd').read_text(encoding='utf-8')
+        self.assertIn('"%~dp0manager\\CSP_Spray_Manager.exe" --portable-install', deploy)
+        self.assertIn('"%~dp0manager\\CSP_Spray_Manager.exe"', manager)
+        self.assertNotIn('E:\\', deploy)
+        self.assertNotIn('D:\\', deploy)
+        self.assertNotIn('python', deploy.lower())
+
     def test_embedded_selector_matches_standalone_and_build_pin(self):
         with tempfile.TemporaryDirectory(dir=release.ROOT / 'reports') as folder:
             embedded, standalone = Path(folder) / 'embedded.dll', Path(folder) / 'standalone.dll'
@@ -30,6 +49,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn('settings.json', guide)
         self.assertIn('2～256', guide)
         self.assertNotIn('](喷漆导入工具.md)', guide)
+        self.assertNotIn('](便携整合包使用说明.md)', guide)
         self.assertIn('/blob/' + release.TAG + '/docs/', guide)
 
     def test_go_top_level_counts_ignore_subtests_and_fuzz(self):

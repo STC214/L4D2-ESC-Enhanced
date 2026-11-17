@@ -12,7 +12,7 @@ $Data = Join-Path $Production 'CSP_Spray_Data'
 New-Item -ItemType Directory -Force -Path $Data | Out-Null
 $Old = Join-Path $Root 'reports\spray_release_review\baseline\production-before.exe'
 if (-not (Test-Path -LiteralPath $Old)) {
-    Copy-Item -LiteralPath 'D:\tools\01_Game_tools\spray_importer_go\CSP_Spray_Manager.exe' -Destination $Old
+    Copy-Item -LiteralPath 'D:\tools\01_Game_tools\L4D2_tools\spray_importer_go\CSP_Spray_Manager.exe' -Destination $Old
 }
 $OldHash = (Get-FileHash -LiteralPath $Old).Hash
 Copy-Item -LiteralPath $Old -Destination (Join-Path $Production 'CSP_Spray_Manager.exe')

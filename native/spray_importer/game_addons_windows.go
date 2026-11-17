@@ -127,7 +127,8 @@ func legacyAddonName(name string) (string, error) {
 
 // Install enables only the selector (and disables its diagnostic-only pack).
 // Cleanup removes only the three exact project entries; unrelated bytes survive.
-func patchProjectAddons(raw []byte, cleanup bool) ([]byte, error) {
+func patchProjectAddons(raw []byte, cleanup bool, installC ...bool) ([]byte, error) {
+	enableC := len(installC) == 1 && installC[0] && !cleanup
 	tokens, err := addonTokens(raw)
 	if err != nil {
 		return nil, err
@@ -178,7 +179,7 @@ func patchProjectAddons(raw []byte, cleanup bool) ([]byte, error) {
 		}
 		if cleanup {
 			edits = append(edits, edit{tokens[i].start, tokens[i+1].end, nil})
-		} else if name == vpkName || name == diagnosticVPK {
+		} else if name == vpkName || name == diagnosticVPK || enableC && name == cProjectVPK {
 			state := []byte("\"1\"")
 			if name == diagnosticVPK {
 				state = []byte("\"0\"")
@@ -201,6 +202,18 @@ func patchProjectAddons(raw []byte, cleanup bool) ([]byte, error) {
 		}
 		at := tokens[len(tokens)-1].start
 		edits = append(edits, edit{at, at, []byte("\t\"" + diagnosticVPK + "\"\t\"0\"" + newline)})
+	}
+	if enableC && !projectSeen[cProjectVPK] {
+		name := cProjectVPK
+		if !utf8.Valid(raw) {
+			name = legacy
+		}
+		newline := "\n"
+		if bytes.Contains(raw, []byte("\r\n")) {
+			newline = "\r\n"
+		}
+		at := tokens[len(tokens)-1].start
+		edits = append(edits, edit{at, at, []byte("\t\"" + name + "\"\t\"1\"" + newline)})
 	}
 	result := append([]byte{}, raw...)
 	for i := len(edits) - 1; i >= 0; i-- {

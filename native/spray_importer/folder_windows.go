@@ -42,13 +42,17 @@ func newFolderDialog() (*comObject, error) {
 	return dialog, nil
 }
 
-func modernDirectory(owner uintptr) (string, error) {
+func modernDirectory(owner uintptr, titles ...string) (string, error) {
 	dialog, err := newFolderDialog()
 	if err != nil {
 		return "", err
 	}
 	defer dialog.invoke(2)
-	title := utf("选择喷漆素材目录（包含子目录）")
+	text := "选择喷漆素材目录（包含子目录）"
+	if len(titles) == 1 {
+		text = titles[0]
+	}
+	title := utf(text)
 	if hr := dialog.invoke(17, uintptr(unsafe.Pointer(title))); int32(hr) < 0 {
 		return "", fmt.Errorf("目录窗口标题设置失败：0x%x", hr)
 	}

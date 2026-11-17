@@ -24,7 +24,7 @@ func recordFailure(home string, cause error) error {
 		}
 		message = message[:end] + " [诊断文本已截断]"
 	}
-	record := struct{ Time, Version, Error string }{time.Now().Format(time.RFC3339Nano), "1.11.0", message}
+	record := struct{ Time, Version, Error string }{time.Now().Format(time.RFC3339Nano), "1.12.0", message}
 	latest, err := safePath(home, "logs/last-error.json")
 	if err != nil {
 		return err
