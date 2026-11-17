@@ -11,6 +11,24 @@ import release_all_v140 as release
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_stable_and_prerelease_publication_policy(self):
+        original = release.PRERELEASE
+        try:
+            for prerelease in (False, True):
+                release.PRERELEASE = prerelease
+                self.assertEqual(release.publication_fields(True),
+                                 dict(draft=True, prerelease=prerelease, make_latest='false'))
+                self.assertEqual(release.publication_fields(),
+                                 dict(draft=False, prerelease=prerelease,
+                                      make_latest='false' if prerelease else 'true'))
+        finally:
+            release.PRERELEASE = original
+        import subprocess
+        result = subprocess.run(['python', '-B', '-c',
+                                 'import release_current as c; assert c.release.PRERELEASE is False; assert c.release.publication_fields()["make_latest"] == "true"'],
+                                cwd=release.ROOT / 'tools', capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_numbered_baseline_pin_rejects_custom_or_matching_replacements(self):
         original = release.ROOT / 'native/spray_importer/assets/selector.vpk'
         release.verify_numbered_baseline(original, release.SELECTOR / 'CSP_Numbered_Selector_TEST.vpk')

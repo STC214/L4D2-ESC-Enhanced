@@ -29,6 +29,7 @@ MANAGER_VERSION = '1.1.1'
 GO_TEST_COUNT = 29
 REQUIRE_STUDIO = False
 REQUIRE_PROMOTION = False
+PRERELEASE = True  # Historical entry points retain their original release policy.
 NUMBERED_BASE_SHA256 = '27cd1dbfdba0e9fbdb02c0340a3fc6fe89298315a1a6edc0020248868f37ec70'
 
 
@@ -208,6 +209,11 @@ def verify_remote(release, manifest):
         assert row.get('digest') == 'sha256:' + digest, name
 
 
+def publication_fields(draft=False):
+    return dict(draft=draft, prerelease=PRERELEASE,
+                make_latest='false' if draft or PRERELEASE else 'true')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('package', 'check', 'preflight', 'publish', 'verify'))
@@ -241,7 +247,7 @@ def main():
         if release is None:
             release = api.request(previous.API + '/releases', 'POST', dict(tag_name=TAG, target_commitish=commit,
                 name=TAG + ' — C + Spray Studio ' + MANAGER_VERSION, body=NOTES.read_text(encoding='utf-8'),
-                draft=True, prerelease=True))
+                **publication_fields(draft=True)))
         existing = {row['name']: row for row in release['assets']}
         for name, digest in manifest['files'].items():
             if name in existing:
@@ -255,10 +261,13 @@ def main():
         release = api.request(previous.API + '/releases/' + str(release['id']))
         verify_remote(release, manifest)
         if release['draft']:
-            release = api.request(previous.API + '/releases/' + str(release['id']), 'PATCH', {'draft': False, 'prerelease': True})
+            release = api.request(previous.API + '/releases/' + str(release['id']), 'PATCH', publication_fields())
     assert release and not release['draft']
     release = api.request(previous.API + '/releases/' + str(release['id']))
     verify_remote(release, manifest)
+    assert release['prerelease'] == PRERELEASE, 'Release channel differs from configured policy'
+    if not PRERELEASE:
+        assert api.request(previous.API + '/releases/latest')['id'] == release['id'], 'Stable release is not Latest'
     save(REPORT / 'published.json', dict(tag=TAG, commit=commit, url=release['html_url'], prerelease=release['prerelease'],
         assets=[{key: row[key] for key in ('name', 'size', 'digest', 'browser_download_url')} for row in release['assets']]))
     print('PASS remote tag/commit and all 9 SHA256/size checks')

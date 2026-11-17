@@ -10,6 +10,7 @@ release.MANAGER_VERSION = '1.12.0'
 release.GO_TEST_COUNT = 113
 release.REQUIRE_STUDIO = True
 release.REQUIRE_PROMOTION = True
+release.PRERELEASE = False
 release.MANAGER_ZIP = 'CSP_Spray_Manager_v1.12.0.zip'
 release.SELECTOR_ZIP = 'CSP_Selector_Complete_v1.15.0.zip'
 release.ALL_ZIP = 'L4D2_Tools_Portable_v1.15.0.zip'
